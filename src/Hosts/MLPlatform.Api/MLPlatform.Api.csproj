@@ -31,5 +31,6 @@
     <ProjectReference Include="../../Framework/MLPlatform.Ray/MLPlatform.Ray.csproj" />
     <ProjectReference Include="../../Framework/MLPlatform.Storage/MLPlatform.Storage.csproj" />
     <ProjectReference Include="../../ControlPlane/MLPlatform.ControlPlane.Application/MLPlatform.ControlPlane.Application.csproj" />
+    <ProjectReference Include="../../ControlPlane/MLPlatform.ControlPlane.Infrastructure/MLPlatform.ControlPlane.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Grpc.Core;
 using MLPlatform.Api.Infrastructure;
+using MLPlatform.ControlPlane.Infrastructure;
 using MLPlatform.ControlPlane.Application.Catalog;
 using MLPlatform.Contracts.V1;
 using MLPlatform.Cqrs;

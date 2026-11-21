@@ -1,6 +1,7 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.Api.Infrastructure;
+using MLPlatform.ControlPlane.Infrastructure;
 using MLPlatform.ControlPlane.Application.Identity;
 using MLPlatform.Contracts.V1;
 using MLPlatform.Cqrs;

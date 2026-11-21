@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.Api.Infrastructure;
+using MLPlatform.ControlPlane.Infrastructure;
 using MLPlatform.ControlPlane.Application.LlmOps;
 using MLPlatform.Contracts.V1;
 using MLPlatform.Cqrs;

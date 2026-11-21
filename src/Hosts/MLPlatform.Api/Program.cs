@@ -4,6 +4,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System.Text;
 using MLPlatform.Api.Infrastructure;
+using MLPlatform.ControlPlane.Infrastructure;
 using MLPlatform.Api.Services;
 using MLPlatform.ControlPlane.Application.Common;
 using MLPlatform.ControlPlane.Application.Generated;
@@ -212,7 +213,7 @@ app.MapGet("/install/agent.sh", () =>
     var path = cfg["Install:ScriptPath"] ?? Path.Combine(AppContext.BaseDirectory, "install", "agent.sh");
     if (!File.Exists(path)) return Results.NotFound();
     var text = File.ReadAllText(path).Replace("__MLP_PUBLIC_URL__", cfg["PublicUrl"] ?? "").Replace("__MLP_AGENT_ADDR__", cfg["Install:AgentAddress"] ?? "")
-        .Replace("__MLP_AGENT_PIN__", MLPlatform.Api.Infrastructure.AgentListener.CertPin(cfg) ?? "");
+        .Replace("__MLP_AGENT_PIN__", MLPlatform.ControlPlane.Infrastructure.AgentListener.CertPin(cfg) ?? "");
     return Results.Text(text, "text/x-shellscript");
 });
 app.MapGet("/install/agent.ps1", () =>
@@ -220,7 +221,7 @@ app.MapGet("/install/agent.ps1", () =>
     var path = Path.Combine(Path.GetDirectoryName(cfg["Install:ScriptPath"] ?? Path.Combine(AppContext.BaseDirectory, "install", "agent.sh"))!, "agent.ps1");
     if (!File.Exists(path)) return Results.NotFound();
     var text = File.ReadAllText(path).Replace("__MLP_PUBLIC_URL__", cfg["PublicUrl"] ?? "").Replace("__MLP_AGENT_ADDR__", cfg["Install:AgentAddress"] ?? "")
-        .Replace("__MLP_AGENT_PIN__", MLPlatform.Api.Infrastructure.AgentListener.CertPin(cfg) ?? "");
+        .Replace("__MLP_AGENT_PIN__", MLPlatform.ControlPlane.Infrastructure.AgentListener.CertPin(cfg) ?? "");
     return Results.Text(text, "text/plain; charset=utf-8");
 });
 app.MapAgentBuilds();

@@ -164,6 +164,16 @@
           "MLPlatform.Storage": "[1.0.0, )"
         }
       },
+      "mlplatform.controlplane.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "MLPlatform.AgentProtocol": "[1.0.0, )",
+          "MLPlatform.Contracts": "[1.0.0, )",
+          "MLPlatform.ControlPlane.Application": "[1.0.0, )",
+          "MLPlatform.Ray": "[1.0.0, )",
+          "MLPlatform.Storage": "[1.0.0, )"
+        }
+      },
       "mlplatform.cqrs": {
         "type": "Project"
       },

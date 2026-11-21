@@ -2,6 +2,7 @@
   <Folder Name="/src/" />
   <Folder Name="/src/ControlPlane/">
     <Project Path="src/ControlPlane/MLPlatform.ControlPlane.Application/MLPlatform.ControlPlane.Application.csproj" />
+    <Project Path="src/ControlPlane/MLPlatform.ControlPlane.Infrastructure/MLPlatform.ControlPlane.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Framework/">
     <Project Path="src/Framework/MLPlatform.AgentProtocol/MLPlatform.AgentProtocol.csproj" />

@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Infrastructure;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.ControlPlane.Application.Serving;
@@ -6,8 +7,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Services;
 
-public sealed class ServingGrpc(IMediator mediator, MLPlatform.Api.Infrastructure.WorkloadLauncher launcher, MLPlatform.Api.Infrastructure.PublicRoutes routes,
-    MLPlatform.Api.Infrastructure.ModelServerClients clients) : ServingService.ServingServiceBase
+public sealed class ServingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infrastructure.WorkloadLauncher launcher, MLPlatform.Api.Infrastructure.PublicRoutes routes,
+    MLPlatform.ControlPlane.Infrastructure.ModelServerClients clients) : ServingService.ServingServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });

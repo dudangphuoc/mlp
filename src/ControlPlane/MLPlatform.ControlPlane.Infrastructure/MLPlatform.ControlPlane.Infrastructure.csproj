@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MLPlatform.ControlPlane.Application/MLPlatform.ControlPlane.Application.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Contracts/MLPlatform.Contracts.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.AgentProtocol/MLPlatform.AgentProtocol.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Ray/MLPlatform.Ray.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Storage/MLPlatform.Storage.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,5 @@
 using MLPlatform.Api.Infrastructure;
+using MLPlatform.ControlPlane.Infrastructure;
 using System.Text.Json.Nodes;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -116,26 +117,5 @@ public sealed class FeatureGrpc(IMediator mediator) : FeatureService.FeatureServ
         var p = new DeploymentFeatures { Bound = true, Entity = b.EntityName, JoinKey = b.JoinKey, UpdatedAt = Ts(b.UpdatedAt) };
         p.Features.AddRange(JsonNode.Parse(b.Features)!.AsArray().Select(x => x!.ToString()));
         return p;
-    }
-}
-
-/// <summary>M07: every minute, materialize feature views whose schedule is due.</summary>
-public sealed class FeatureLoop(IServiceScopeFactory scopes, SystemHealth health, ILogger<FeatureLoop> log) : BackgroundService
-{
-    protected override async Task ExecuteAsync(CancellationToken stop)
-    {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(60));
-        health.Beat("feature", 60);
-        while (await timer.WaitForNextTickAsync(stop))
-        {
-            health.Beat("feature", 60);
-            try
-            {
-                await using var scope = scopes.CreateAsyncScope();
-                var n = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new MaterializeDueCommand(), stop);
-                if (n > 0) log.LogInformation("Materialized {N} scheduled feature view(s)", n);
-            }
-            catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Materialize loop failed"); }
-        }
     }
 }

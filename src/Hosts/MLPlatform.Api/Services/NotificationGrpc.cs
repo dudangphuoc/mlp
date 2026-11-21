@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Infrastructure;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.ControlPlane.Application.Notifications;
@@ -6,7 +7,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Services;
 
-public sealed class NotificationGrpc(IMediator mediator, TimeProvider time, MLPlatform.Api.Infrastructure.StreamBroker broker) : NotificationService.NotificationServiceBase
+public sealed class NotificationGrpc(IMediator mediator, TimeProvider time, MLPlatform.ControlPlane.Infrastructure.StreamBroker broker) : NotificationService.NotificationServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -33,7 +34,7 @@ public sealed class NotificationGrpc(IMediator mediator, TimeProvider time, MLPl
         {
             while (true)
             {
-                await broker.WaitAsync([MLPlatform.Api.Infrastructure.StreamBroker.Ws(ws)], TimeSpan.FromSeconds(5), ctx.CancellationToken);
+                await broker.WaitAsync([MLPlatform.ControlPlane.Infrastructure.StreamBroker.Ws(ws)], TimeSpan.FromSeconds(5), ctx.CancellationToken);
                 var (rows, n) = await mediator.Query(new NotificationsChangedQuery(ws, since.AddSeconds(-5)), ctx.CancellationToken);
                 var items = rows.Where(it => !sent.TryGetValue(it.Id, out var at) || at != it.UpdatedAt).ToList();
                 foreach (var it in items)

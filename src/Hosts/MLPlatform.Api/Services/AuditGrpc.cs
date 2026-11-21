@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Infrastructure;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.ControlPlane.Application.Audit;

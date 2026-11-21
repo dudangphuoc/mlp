@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Infrastructure;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.ControlPlane.Application.Tracking;
@@ -7,8 +8,8 @@ using Empty = MLPlatform.Contracts.V1.Empty;
 
 namespace MLPlatform.Api.Services;
 
-public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Api.Infrastructure.WorkloadLauncher launcher, MLPlatform.Storage.S3Client s3,
-    MLPlatform.Api.Infrastructure.LogStore logs) : TrackingService.TrackingServiceBase
+public sealed class TrackingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infrastructure.WorkloadLauncher launcher, MLPlatform.Storage.S3Client s3,
+    MLPlatform.ControlPlane.Infrastructure.LogStore logs) : TrackingService.TrackingServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
