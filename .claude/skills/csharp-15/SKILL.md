@@ -7,7 +7,12 @@ description: C# 15 / .NET 11 coding guide for MLPlatform — union types, closed
 
 Sources read 2026-11-21 on learn.microsoft.com: What's new in C# 15 (updated 2026-11-19), the language reference pages for `union`, `closed`, `extension`, collection expressions, jump statements, interfaces, unsafe code, patterns, configure-language-version, IDE0410, the compiler breaking changes for .NET 11, and What's new in .NET 11 (runtime, libraries, SDK) with its compatibility index and the ASP.NET Core 11 release notes. .NET 11 GA: SDK 11.0.100, released 2026-11-10.
 
-Repo rules still apply on top of this guide: Native AOT with IL warnings as errors, no comments in C#, English identifiers, one type or feature slice per file (docs/refactor-plan.md).
+Repo rules still apply on top of this guide: Native AOT with IL warnings as errors, English identifiers, one type or feature slice per file (docs/refactor-plan.md).
+
+Comment rule (owner, 2026-11-21):
+- **No comment of any kind inside a member body**: method, constructor, accessor, lambda, local function, including end-of-line comments. Express it with names, extracted methods and named constants instead (gate `MLPCODE001`).
+- **Declaration comments (type or member) are optional and short**: one sentence, at most 2 lines, at most 120 characters per line, in English. Say what or why, never how. No `<remarks>`, no paragraphs (gate `MLPCODE003`).
+- Never add a comment just to satisfy a rule; skip it when the name already says enough.
 
 ## 1. Project setup
 
@@ -237,4 +242,4 @@ foreach (var host in online)
 5. Lookups on `JsonObject`, config or maps repeated across files → extension indexer or extension property.
 6. A backing field used only by one property → `field`.
 7. Hot path: no LINQ inside per-item loops of the scheduler or gateway, no boxing of value-type union cases, spans over arrays, pooled writers.
-8. Still AOT-clean (`dotnet publish` with IL warnings as errors at milestones), no comments, English names.
+8. Still AOT-clean (`dotnet publish` with IL warnings as errors at milestones), English names, no comment inside any member body, declaration comments one short sentence (≤ 2 lines).

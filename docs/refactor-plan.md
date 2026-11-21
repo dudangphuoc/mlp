@@ -54,7 +54,7 @@ Nhiều dòng rất dài (tối đa 286–370 ký tự), nên số dòng ở tr�
 | Comment khối `/* */` | 15 |
 | Tham chiếu spec trong comment (`D-xx`, `M03 §5`, `20/02 §4`) | 268 |
 
-Gate hiện tại đi ngược mục tiêu mới. `MLPDOC001` (`tools/MLPlatform.SqlGate/Program.cs:77`) bắt mọi type public trong `src/ControlPlane` và `src/Hosts` phải có `/// <summary>`. `gates/baseline.txt` có 546 dòng, trong đó 461 dòng là `MLPDOC001`. Baseline này **khoá theo đường dẫn file**, nên chỉ cần di chuyển file là vi phạm cũ hiện lại thành vi phạm mới.
+Gate hiện tại không hợp luật comment mới (mục 4.0). `MLPDOC001` (`tools/MLPlatform.SqlGate/Program.cs:77`) bắt mọi type public trong `src/ControlPlane` và `src/Hosts` phải có `/// <summary>`. `gates/baseline.txt` có 546 dòng, trong đó 461 dòng là `MLPDOC001`. Baseline này **khoá theo đường dẫn file**, nên chỉ cần di chuyển file là vi phạm cũ hiện lại thành vi phạm mới.
 
 ### 1.4 Bề mặt API, phân quyền, DB
 
@@ -498,10 +498,16 @@ Project này chỉ cần `Microsoft.Extensions.Hosting` và `Http`, cùng kiểu
 
 ### 4.0 Luật chung
 
-**Thứ tự.** Giữ thứ tự chủ dự án đưa ra: phân tầng → tách file → thư mục API → bỏ comment → OpenAPI/docs → explorer. Có một chỗ lệch, cần chủ dự án duyệt:
+**Thứ tự.** Giữ thứ tự chủ dự án đưa ra: phân tầng → tách file → thư mục API → dọn comment → OpenAPI/docs → explorer. Có một chỗ lệch, cần chủ dự án duyệt:
 - Phần **cấu trúc** của phân tầng làm đầu tiên (Phase 1): project mới, nơi giữ người dùng hiện tại, Kernel, manifest, analyzer ở chế độ báo cáo.
 - Phần **đổi logic** để gỡ vòng giữa các module làm ở Phase 4, sau khi đã tách file và gom thư mục API. Lý do: lúc đó chuyển một slice sang module khác chỉ còn là di chuyển một file nhỏ, và mỗi file không phải sửa hai, ba lần.
-- Phần "đọc hiểu không cần comment" (trích method, đổi tên) gộp với bỏ comment thành một phase (Phase 5).
+- Phần đọc hiểu (trích method, đổi tên) gộp với dọn comment thành một phase (Phase 5).
+
+**Luật comment (chủ dự án chốt 2026-11-21, thay cho luật "không comment"):**
+- **Trong thân hàm: không có comment nào.** Thân method, constructor, accessor, lambda, local function, kể cả comment cuối dòng. Ý cần giải thích → tên biến, tên method trích ra, hằng có tên.
+- **Ở khai báo (type, member): được phép, ngắn.** Một câu, tối đa 2 dòng, mỗi dòng ≤ 120 ký tự, tiếng Anh. Nói *cái gì / vì sao*, không kể *làm thế nào*. Không `<remarks>`, không đoạn văn.
+- **Không bắt buộc** có comment: type/member tự rõ nghĩa thì không cần.
+- Gate: `MLPCODE001` (comment trong thân hàm = lỗi) và `MLPCODE003` (comment khai báo quá 2 dòng hoặc quá 120 ký tự/dòng = lỗi). `MLPDOC001` (bắt buộc `/// <summary>`) bỏ hẳn.
 
 **Kiểm chứng mỗi bước:**
 - Build: `MSBUILDDISABLENODEREUSE=1 nice -n 19 dotnet build MLPlatform.slnx -m:1 -warnaserror`.
@@ -589,14 +595,14 @@ Khi gặp phụ thuộc "ngược lên", chọn cách xử lý theo thứ tự �
 | 4.6 | Monitoring→Pipelines | event `DriftDetected` | | scenario drift → pipeline |
 | 4.7 | Analyzer | `MLPARCH001` và `MLPARCH002` chuyển thành lỗi cứng, baseline rỗng | | build xanh |
 
-### Phase 5 — Đọc hiểu không cần comment (M–L)
+### Phase 5 — Đọc hiểu, dọn comment (M–L)
 
 | Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
 |---|---|---|---|---|
-| 5.1 | theo module, dựa trên kho comment ở 0.5 | phân loại từng comment: (a) thừa → xoá; (b) giải thích "cái gì" → đổi tên, trích method, đặt hằng có tên, tạo type; (c) giải thích "tại sao" → đưa vào tên (ví dụ `ReholdReservationsLostByRayRestart`) hoặc tên scenario; (d) tham chiếu spec → trường `spec` của module trong `modules.json` (docs sinh ra sẽ link tới cookbook) | mất tri thức | duyệt mẫu theo từng module |
+| 5.1 | theo module, dựa trên kho comment ở 0.5 | **comment trong thân hàm** (301 dòng riêng + 106 cuối dòng, hầu hết nằm trong thân): (a) thừa → xoá; (b) giải thích "cái gì" → đổi tên, trích method, hằng có tên, type; (c) giải thích "tại sao" → tên method trích ra (ví dụ `ReholdReservationsLostByRayRestart`), hoặc một câu ngắn ở khai báo của method đó. **Comment khai báo** (1 304 dòng `///`): rút còn một câu ≤ 2 dòng, bỏ phần kể cách làm, bỏ `<remarks>`; xoá nếu tên đã nói đủ. Tham chiếu spec dài → trường `spec` của module trong `modules.json`; mã ngắn (`D-40`) giữ được trong câu khai báo. | mất tri thức | duyệt mẫu theo từng module |
 | 5.2 | các method dài | trích method giữ nguyên hành vi: `AdvancePipelineRunCommandHandler` (~260 dòng), `WorkloadLauncher` (~300), `AiRuntime`, `Shim/Runner`, `HfHub`. Làm cùng lúc với 5.1, mỗi file chỉ động vào một lần. | trung bình | scenario |
 | 5.4 | theo module, cùng lần chạm với 5.1–5.2 | áp dụng C# 15 theo checklist của skill `csharp-15` (mục 11): họ record trừu tượng nội bộ → `closed` (bỏ nhánh `_ => throw`); kết quả "một trong N" (tuple `(trial, job?)`, `ChatReply`/`DecisionReply`, bước pipeline) → `union` với case là record class; collection biết trước kích thước → `[with(capacity: n), ..]`; vòng lồng thoát bằng cờ/`goto` → `break`/`continue` có nhãn (IDE0410 bật mức lỗi); backing field chỉ để kiểm tra → `field`; nhóm extension → khối `extension` (kể cả extension indexer cho `JsonObject`/config). Không dùng tính năng preview (`unsafe(...)`, `safe`). | đổi chữ ký public | build + snapshot + scenario |
-| 5.3 | toàn bộ C# viết tay | tool Roslyn xoá hết trivia comment còn lại. Thêm `MLPCODE001`: cấm comment trong C# viết tay, trừ `obj/` và file sinh. Giữ directive `#pragma`. Không đụng `.sql` (dòng `-- mlp:query` là cú pháp) và proto. Đổi comment tiếng Việt trong `Directory.Build.props` sang tiếng Anh. | | build + gate xanh |
+| 5.3 | toàn bộ C# viết tay | bật `MLPCODE001` (không comment trong thân hàm) và `MLPCODE003` (comment khai báo ≤ 2 dòng, ≤ 120 ký tự/dòng) ở mức lỗi, trừ `obj/` và file sinh. Giữ directive `#pragma`. Không đụng `.sql` (dòng `-- mlp:query` là cú pháp) và proto. | | build + gate xanh |
 
 ### Phase 5b — Hiệu năng (M, đo trước rồi mới sửa)
 
@@ -673,7 +679,7 @@ Khi gặp phụ thuộc "ngược lên", chọn cách xử lý theo thứ tự �
 ## 7. Quyết định của chủ dự án (2026-11-21: đồng ý cả 6)
 
 1. ✅ `git init` + commit nền (đã làm: commit `89f65d2`).
-2. ✅ Tắt `MLPDOC001` ngay từ Phase 0, baseline khoá theo symbol (0.4).
+2. ✅ Tắt `MLPDOC001` ngay từ Phase 0, baseline khoá theo symbol (0.4). Sau đó chủ dự án đổi luật: **không bỏ hết comment**; comment ngắn ở khai báo được phép, trong thân hàm thì không (mục 4.0).
 3. ✅ Thêm stack kiểm chứng riêng `mlp-verify` (0.2).
 4. ✅ Phân tầng làm hai phần: cấu trúc ở Phase 1, gỡ vòng ở Phase 4.
 5. ✅ Explorer cho gọi lệnh ghi, có công tắc và xác nhận hai bước (7.4).
