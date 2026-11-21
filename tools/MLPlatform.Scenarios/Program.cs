@@ -401,7 +401,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
     {
         var ops = new OpsService.OpsServiceClient(channel);
         var st = await ops.GetSystemStatusAsync(new SystemStatusRequest { WorkspaceId = wsId }, auth);
-        foreach (var name in new[] { "Database", "S3 storage", "Ray head", "Agent channel :7443", "Job scheduling", "Unfinished work recovery" })
+        foreach (var name in new[] { "Database", "S3 storage", "Ray head", $"Agent channel :{agentCp.Split(':')[^1]}", "Job scheduling", "Unfinished work recovery" })
             Assert(st.Items.Any(i => i.Name == name && i.Status == "ok"), $"{name} not ok: " + string.Join(", ", st.Items.Select(i => $"{i.Name}={i.Status}")));
         Assert(st.Overall == "ok", "overall " + st.Overall);
 

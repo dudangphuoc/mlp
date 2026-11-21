@@ -1,0 +1,36 @@
+# Isolated verification stack (refactor plan step 0.2): own project, network, names, ports and volumes.
+# It never touches the dev stack (compose project "mlplatform", network mlp-dev, ports 5080/5081/7443/8080/8265).
+name: mlp-verify
+services:
+  postgres:
+    container_name: mlp-verify-pg
+    image: postgres:17-alpine
+    networks: [verify]
+    environment: { POSTGRES_DB: mlp, POSTGRES_PASSWORD: verify }
+    volumes: [pg:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:55433:5432"]
+    cpus: 1
+  s3:
+    container_name: mlp-verify-s3
+    image: chrislusf/seaweedfs:4.54
+    networks: [verify]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mkdir -p /etc/mlp && printf '{"identities":[{"name":"mlp","credentials":[{"accessKey":"verifyaccess","secretKey":"verifysecret-not-real"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        > /etc/mlp/s3.json && exec /entrypoint.sh server -ip.bind=0.0.0.0 -s3 -s3.config=/etc/mlp/s3.json
+    volumes: [s3:/data]
+    ports: ["127.0.0.1:8433:8333"]
+    cpus: 1
+  ray-head:
+    container_name: mlp-verify-ray
+    image: rayproject/ray:2.60.0-py312-cpu
+    networks: [verify]
+    volumes: ["../../python:/opt/mlp:ro"]
+    ports: ["127.0.0.1:8266:8265"]
+    command: ray start --head --block --num-cpus=0 --num-gpus=0 --dashboard-host=0.0.0.0 --port=6379
+    shm_size: 1g
+    cpus: 1
+networks:
+  verify: { name: mlp-verify }
+volumes: { pg: {}, s3: {} }
