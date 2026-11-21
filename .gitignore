@@ -9,7 +9,8 @@ deploy/dev/id_ed25519_*
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .idea/
-artifacts/
+artifacts/*
+!artifacts/refactor/
 *.pfx
 *.key
 __pycache__/
