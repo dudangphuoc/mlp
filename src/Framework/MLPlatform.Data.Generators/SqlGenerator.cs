@@ -98,8 +98,7 @@ public sealed class SqlGenerator : IIncrementalGenerator
         }
         var kind = header.Groups[2].Value;
         var s = m.Symbol;
-        if (!s.IsStatic || !s.IsExtensionMethod || s.Parameters.Length < 2
-            || s.Parameters.Last().Type.ToDisplayString() != "System.Threading.CancellationToken")
+        if (!HasExtensionShape(s))
         {
             spc.ReportDiagnostic(Diagnostic.Create(BadShape, m.Location,
                 $"{s.Name}: must be a static extension (this IReadSession|IWriteSession db, …, CancellationToken ct)"));
@@ -109,11 +108,7 @@ public sealed class SqlGenerator : IIncrementalGenerator
         var sqlParams = ParamRx.Matches(body).Cast<Match>().Select(x => x.Groups[1].Value).Distinct().ToList();
         var methodParams = s.Parameters.Skip(1).Take(s.Parameters.Length - 2).ToList();
         var byName = methodParams.ToDictionary(p => Snake(p.Name), p => p);
-        foreach (var sp in sqlParams.Where(p => !byName.ContainsKey(p)))
-            spc.ReportDiagnostic(Diagnostic.Create(ParamMismatch, m.Location, m.Path, $"missing method parameter for @{sp}"));
-        foreach (var mp in byName.Keys.Where(k => !sqlParams.Contains(k)))
-            spc.ReportDiagnostic(Diagnostic.Create(ParamMismatch, m.Location, m.Path, $"parameter '{byName[mp].Name}' has no @{mp} in the SQL"));
-
+        ReportParamMismatches(spc, m, sqlParams, byName);
         var ret = (INamedTypeSymbol)s.ReturnType;
         var inner = ret.TypeArguments.Length == 1 ? ret.TypeArguments[0] : null;
         var db = s.Parameters[0];
@@ -129,6 +124,26 @@ public sealed class SqlGenerator : IIncrementalGenerator
         sb.AppendLine($"        await using var __cmd = new global::Npgsql.NpgsqlCommand(__sql_{s.Name}, __conn, {db.Name}.Transaction);");
         foreach (var p in methodParams)
             sb.AppendLine($"        __cmd.Parameters.Add(new global::Npgsql.NpgsqlParameter(\"{Snake(p.Name)}\", {ToDb(p.Type, p.Name)}));");
+        EmitExecution(sb, kind, inner, ct);
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static bool HasExtensionShape(IMethodSymbol s) =>
+        s.IsStatic && s.IsExtensionMethod && s.Parameters.Length >= 2
+        && s.Parameters.Last().Type.ToDisplayString() == "System.Threading.CancellationToken";
+
+    private static void ReportParamMismatches(SourceProductionContext spc, MethodInfo m, List<string> sqlParams,
+        Dictionary<string, IParameterSymbol> byName)
+    {
+        foreach (var sp in sqlParams.Where(p => !byName.ContainsKey(p)))
+            spc.ReportDiagnostic(Diagnostic.Create(ParamMismatch, m.Location, m.Path, $"missing method parameter for @{sp}"));
+        foreach (var mp in byName.Keys.Where(k => !sqlParams.Contains(k)))
+            spc.ReportDiagnostic(Diagnostic.Create(ParamMismatch, m.Location, m.Path, $"parameter '{byName[mp].Name}' has no @{mp} in the SQL"));
+    }
+
+    private static void EmitExecution(StringBuilder sb, string kind, ITypeSymbol? inner, string ct)
+    {
         switch (kind)
         {
             case "exec":
@@ -159,8 +174,6 @@ public sealed class SqlGenerator : IIncrementalGenerator
                 }
                 break;
         }
-        sb.AppendLine("    }");
-        sb.AppendLine();
     }
 
     private static string SyntaxFacts(Accessibility a) => a switch

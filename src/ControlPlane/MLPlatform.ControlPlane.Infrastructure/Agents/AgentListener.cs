@@ -82,56 +82,15 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
 
     private async Task ControlChannelAsync(Stream stream, ConnectionHello hello, CancellationToken stop)
     {
-        HelloResult result;
-        Guid hostId, workspaceId;
-        string agentVersion;
-        await using (var scope = scopes.CreateAsyncScope())
-        {
-            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-            try
-            {
-                if (hello.KindCase == ConnectionHello.KindOneofCase.Enroll)
-                {
-                    var e = hello.Enroll;
-                    agentVersion = e.AgentVersion;
-                    var r = await mediator.Send(new EnrollAgentCommand(e.EnrollToken, e.PreviousCredential,
-                        e.HostInfo?.MachineName ?? "host", e.AgentVersion, e.WgPublicKey, e.HostInfo?.ToByteArray() ?? []), stop);
-                    hostId = r.HostId;
-                    workspaceId = r.WorkspaceId;
-                    result = new HelloResult { Ok = true, HostId = r.HostId.ToString(), Credential = r.Credential, OverlayIp = r.OverlayIp };
-                }
-                else
-                {
-                    var g = hello.Register;
-                    agentVersion = g.AgentVersion;
-                    var h = await mediator.Send(new AgentRegisterCommand(g.Credential, g.AgentVersion, g.HostInfo?.ToByteArray(), g.WgPublicKey), stop);
-                    hostId = h.Id;
-                    workspaceId = h.WorkspaceId;
-                    result = new HelloResult { Ok = true, HostId = h.Id.ToString(), OverlayIp = h.OverlayIp.Split('/')[0] };
-                }
-            }
-            catch (AppException ex)
-            {
-                await Framing.WriteAsync(stream, new ControlToAgent { HelloResult = new HelloResult { Ok = false, ErrorReason = ex.Reason } }, stop);
-                return;
-            }
-        }
-        result.RayHead = cfg["Ray:HeadAddress"] ?? "10.88.0.1:6379";
-        result.NodeImage = cfg["Images:Node"] ?? "";
-        result.MlpNetImage = cfg["Images:MlpNet"] ?? "";
-        result.WgPeer = new WireGuardPeer
-        {
-            PublicKey = Overlay.HubPublicKey(cfg) ?? "", Endpoint = cfg["WireGuard:Endpoint"] ?? "", AllowedIps = "10.88.0.0/16",
-        };
+        if (await HandshakeAsync(stream, hello, stop) is not { } outcome) return;
+        var (result, hostId, workspaceId, agentVersion) = outcome;
+        ApplyClusterSettings(result);
         await Framing.WriteAsync(stream, new ControlToAgent { HelloResult = result }, stop);
 
         var conn = new Connection<AgentToControl, ControlToAgent>(stream, AgentToControl.Parser,
             () => new ControlToAgent { Heartbeat = new Heartbeat { At = Connection<AgentToControl, ControlToAgent>.Now(time) } },
             log, oddStreamIds: false);
-        var helloInfo = hello.KindCase == ConnectionHello.KindOneofCase.Enroll ? hello.Enroll.HostInfo : hello.Register.HostInfo;
-        var session = new AgentSession(hostId, workspaceId, conn)
-            { Info = helloInfo, AgentVersion = helloInfo?.AgentVersion is { Length: > 0 } hv ? hv : agentVersion, ConnectedAt = time.GetUtcNow(),
-              Hello = hello, OverlayIp = result.OverlayIp };
+        var session = CreateSession(hello, hostId, workspaceId, agentVersion, result, conn);
         registry.Add(session);
         if (string.Equals(cfg["Ray:AutoStartNodes"], "true", StringComparison.OrdinalIgnoreCase))
             _ = Task.Run(() => StartRayNodeAsync(session, hello, result.OverlayIp, stop), stop);
@@ -150,6 +109,61 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
         }
     }
 
+    private sealed record HandshakeOutcome(HelloResult Result, Guid HostId, Guid WorkspaceId, string AgentVersion);
+
+    /// <summary>Enrolls or registers the agent; on rejection writes the failed hello result and returns null.</summary>
+    private async Task<HandshakeOutcome?> HandshakeAsync(Stream stream, ConnectionHello hello, CancellationToken stop)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        try
+        {
+            return hello.KindCase == ConnectionHello.KindOneofCase.Enroll
+                ? await EnrollAsync(mediator, hello.Enroll, stop)
+                : await RegisterAsync(mediator, hello.Register, stop);
+        }
+        catch (AppException ex)
+        {
+            await Framing.WriteAsync(stream, new ControlToAgent { HelloResult = new HelloResult { Ok = false, ErrorReason = ex.Reason } }, stop);
+            return null;
+        }
+    }
+
+    private static async Task<HandshakeOutcome> EnrollAsync(IMediator mediator, EnrollHello e, CancellationToken stop)
+    {
+        var r = await mediator.Send(new EnrollAgentCommand(e.EnrollToken, e.PreviousCredential,
+            e.HostInfo?.MachineName ?? "host", e.AgentVersion, e.WgPublicKey, e.HostInfo?.ToByteArray() ?? []), stop);
+        var result = new HelloResult { Ok = true, HostId = r.HostId.ToString(), Credential = r.Credential, OverlayIp = r.OverlayIp };
+        return new HandshakeOutcome(result, r.HostId, r.WorkspaceId, e.AgentVersion);
+    }
+
+    private static async Task<HandshakeOutcome> RegisterAsync(IMediator mediator, RegisterHello g, CancellationToken stop)
+    {
+        var h = await mediator.Send(new AgentRegisterCommand(g.Credential, g.AgentVersion, g.HostInfo?.ToByteArray(), g.WgPublicKey), stop);
+        var result = new HelloResult { Ok = true, HostId = h.Id.ToString(), OverlayIp = h.OverlayIp.Split('/')[0] };
+        return new HandshakeOutcome(result, h.Id, h.WorkspaceId, g.AgentVersion);
+    }
+
+    private void ApplyClusterSettings(HelloResult result)
+    {
+        result.RayHead = cfg["Ray:HeadAddress"] ?? "10.88.0.1:6379";
+        result.NodeImage = cfg["Images:Node"] ?? "";
+        result.MlpNetImage = cfg["Images:MlpNet"] ?? "";
+        result.WgPeer = new WireGuardPeer
+        {
+            PublicKey = Overlay.HubPublicKey(cfg) ?? "", Endpoint = cfg["WireGuard:Endpoint"] ?? "", AllowedIps = "10.88.0.0/16",
+        };
+    }
+
+    private AgentSession CreateSession(ConnectionHello hello, Guid hostId, Guid workspaceId, string agentVersion, HelloResult result,
+        Connection<AgentToControl, ControlToAgent> conn)
+    {
+        var helloInfo = hello.KindCase == ConnectionHello.KindOneofCase.Enroll ? hello.Enroll.HostInfo : hello.Register.HostInfo;
+        return new AgentSession(hostId, workspaceId, conn)
+            { Info = helloInfo, AgentVersion = helloInfo?.AgentVersion is { Length: > 0 } hv ? hv : agentVersion, ConnectedAt = time.GetUtcNow(),
+              Hello = hello, OverlayIp = result.OverlayIp };
+    }
+
     private async ValueTask OnMessage(AgentSession s, AgentToControl msg, string agentVersion, CancellationToken ct)
     {
         switch (msg.BodyCase)
@@ -161,23 +175,7 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
                 await logs.AppendAsync(la, msg.LogChunk.TsMs, msg.LogChunk.Lines);
                 break;
             case AgentToControl.BodyOneofCase.HostMetrics:
-                var hm = msg.HostMetrics;
-                await using (var ds = scopes.CreateAsyncScope())
-                    if (await ds.ServiceProvider.GetRequiredService<IMediator>().Send(new SetHostDockerCommand(s.HostId, !hm.DockerDown, hm.DockerError), ct))
-                    {
-                        if (hm.DockerDown) log.LogWarning("Host {Host}: Docker is not running: {Err}", s.HostId, hm.DockerError);
-                        else
-                        {
-                            log.LogInformation("Host {Host}: Docker is back; rebuilding network + Ray node", s.HostId);
-                            if (s.Hello is { } h0 && string.Equals(cfg["Ray:AutoStartNodes"], "true", StringComparison.OrdinalIgnoreCase))
-                                _ = Task.Run(() => StartRayNodeAsync(s, h0, s.OverlayIp, CancellationToken.None), CancellationToken.None);
-                        }
-                    }
-                await using (var ms = scopes.CreateAsyncScope())
-                    await ms.ServiceProvider.GetRequiredService<IMediator>().Send(new MLPlatform.ControlPlane.Application.Ops.RecordHostMetricsCommand(s.HostId,
-                        Google.Protobuf.JsonFormatter.Default.Format(hm),
-                        hm.Containers.Select(c => (c.Name, c.CpuPercent, (long)c.MemoryBytes)).ToList(),
-                        hm.Gpus.Select(g => (g.Uuid, g.UtilPercent, (long)g.MemoryUsedBytes)).ToList()), ct);
+                await OnHostMetricsAsync(s, msg.HostMetrics, ct);
                 break;
             case AgentToControl.BodyOneofCase.ContainerSnapshot:
                 _ = Task.Run(() => ReconcileAsync(s, msg.ContainerSnapshot), CancellationToken.None);
@@ -192,6 +190,26 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
                         msg.BodyCase == AgentToControl.BodyOneofCase.HostInfo ? msg.HostInfo.ToByteArray() : null, agentVersion), ct);
                 break;
         }
+    }
+
+    private async Task OnHostMetricsAsync(AgentSession s, HostMetrics hm, CancellationToken ct)
+    {
+        await using (var ds = scopes.CreateAsyncScope())
+            if (await ds.ServiceProvider.GetRequiredService<IMediator>().Send(new SetHostDockerCommand(s.HostId, !hm.DockerDown, hm.DockerError), ct))
+            {
+                if (hm.DockerDown) log.LogWarning("Host {Host}: Docker is not running: {Err}", s.HostId, hm.DockerError);
+                else
+                {
+                    log.LogInformation("Host {Host}: Docker is back; rebuilding network + Ray node", s.HostId);
+                    if (s.Hello is { } h0 && string.Equals(cfg["Ray:AutoStartNodes"], "true", StringComparison.OrdinalIgnoreCase))
+                        _ = Task.Run(() => StartRayNodeAsync(s, h0, s.OverlayIp, CancellationToken.None), CancellationToken.None);
+                }
+            }
+        await using (var ms = scopes.CreateAsyncScope())
+            await ms.ServiceProvider.GetRequiredService<IMediator>().Send(new MLPlatform.ControlPlane.Application.Ops.RecordHostMetricsCommand(s.HostId,
+                Google.Protobuf.JsonFormatter.Default.Format(hm),
+                hm.Containers.Select(c => (c.Name, c.CpuPercent, (long)c.MemoryBytes)).ToList(),
+                hm.Gpus.Select(g => (g.Uuid, g.UtilPercent, (long)g.MemoryUsedBytes)).ToList()), ct);
     }
 
     /// <summary>An agent that just (re)connected reports running/exited containers (20/10 §4.3, §4.7): finalize exited

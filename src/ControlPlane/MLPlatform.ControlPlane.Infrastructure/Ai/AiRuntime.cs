@@ -143,36 +143,20 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
         var cands = Select(cat, spec);
         var eligible = cands.Where(c => c.Eligible).Take(spec.PinnedModel is null ? 2 : 1).ToList();
         var first = eligible.FirstOrDefault();
-        var selection = new JsonObject
-        {
-            ["role"] = spec.Role,
-            ["note"] = first is null ? $"No usable model for role {spec.Role}"
-                : spec.PinnedModel is not null ? "Model chosen explicitly for this call"
-                : cat.Defaults.Any(d => d.Role == spec.Role && d.ModelId == first.Model.Id) ? $"Role default for {spec.Role}"
-                : $"No usable default for role {spec.Role}; best eligible model used",
-            ["deadline_ms"] = spec.DeadlineMs,
-            ["candidates"] = new JsonArray([.. cands.Select(c => (JsonNode)new JsonObject
-            {
-                ["model_id"] = c.Model.Id.ToString(), ["label"] = Label(c.Model, c.Connection), ["eligible"] = c.Eligible, ["reason"] = c.Reason, ["rank"] = c.Rank,
-            })]),
-        };
+        var selection = BuildSelection(cat, cands, first, spec);
         var runId = Ids.New();
         await SendAsync(new StartAiRunCommand(runId, spec.WorkspaceId, spec.Kind, spec.Purpose, spec.Subject, spec.Trigger, spec.ActorId, first?.Model.Id,
             first is null ? null : Label(first.Model, first.Connection), selection.ToJsonString(), input.ToJsonString()));
 
-        var total = Stopwatch.StartNew();
+        var trail = new RunTrail(runId, Stopwatch.StartNew());
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         if (spec.DeadlineMs is { } dl) deadline.CancelAfter(dl);
-        var attempts = new JsonArray();
-        string? lastCode = null, lastError = null, fallback = null;
         var n = 0;
-        int spentIn = 0, spentOut = 0;
         foreach (var cand in eligible)
         {
             n++;
-            if (n > 1) fallback = $"{Label(first!.Model, first.Connection)} failed ({lastCode}: {lastError}) → used {Label(cand.Model, cand.Connection)}";
+            if (n > 1) trail.Fallback = $"{Label(first!.Model, first.Connection)} failed ({trail.LastCode}: {trail.LastError}) → used {Label(cand.Model, cand.Connection)}";
             var w = Stopwatch.StartNew();
-            var status = 0;
             try
             {
                 if (deadline.IsCancellationRequested) throw new AiCallException("timeout", $"The {spec.DeadlineMs} ms deadline passed before this model was tried");
@@ -181,32 +165,76 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
                 using var callCts = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token);
                 callCts.CancelAfter(cand.Connection.TimeoutMs);
                 var (output, tin, tout, conf) = await call(cand, KeyOf(cand.Connection), callCts.Token);
-                status = 200;
-                circuits.Report(cand.Model.Id, true);
-                attempts.Add((JsonNode)Attempt(n, cand, status, (int)w.ElapsedMilliseconds, "ok", null));
-                tin += spentIn; tout += spentOut;
-                var cost = cand.Model.InputUsdPer1m is { } pi && cand.Model.OutputUsdPer1m is { } po ? (tin * pi + tout * po) / 1_000_000.0 : (double?)null;
-                var latency = (int)total.ElapsedMilliseconds;
-                await FinishAsync(new FinishAiRunCommand(runId, "succeeded", fallback, cand.Model.Id, Label(cand.Model, cand.Connection), output.ToJsonString(), "model",
-                    conf, latency, tin, tout, cost, attempts.ToJsonString(), null, null, spec.UpdateHealth, null), eligible.Take(n - 1), spec.UpdateHealth, lastError);
-                return new AiResult(runId, true, output["text"]?.ToString(), output["answers"] as JsonObject, "model", conf, fallback, null, null, latency,
-                    cand.Model.Id, Label(cand.Model, cand.Connection));
+                return await SucceedAsync(trail, spec, eligible, n, cand, w, output, tin, tout, conf);
             }
             catch (Exception e) when (e is AiCallException || (e is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                var ex = e as AiCallException ?? new AiCallException("timeout", deadline.IsCancellationRequested
-                    ? $"No answer within the {spec.DeadlineMs} ms deadline" : $"No answer within the connection timeout ({cand.Connection.TimeoutMs} ms)");
-                if (ex.Outcome is not ("circuit-open" or "busy" or "rate-limited")) circuits.Report(cand.Model.Id, false);
-                status = ex.Status;
-                lastCode = ex.Outcome;
-                lastError = ex.Message;
-                spentIn += ex.TokensIn; spentOut += ex.TokensOut;
-                attempts.Add((JsonNode)Attempt(n, cand, status, (int)w.ElapsedMilliseconds, ex.Outcome, ex.Message));
-                log.LogInformation("AI run {Run}: {Model} failed with {Outcome}: {Error}", runId, cand.Model.ModelId, ex.Outcome, ex.Message);
+                RecordFailure(trail, spec, deadline, n, cand, w, e);
             }
         }
+        return await FinishWithoutModelAsync(trail, spec, cands, first, eligible, heuristic);
+    }
 
-        var latencyAll = (int)total.ElapsedMilliseconds;
+    private sealed class RunTrail(Guid runId, Stopwatch total)
+    {
+        public Guid RunId { get; } = runId;
+        public Stopwatch Total { get; } = total;
+        public JsonArray Attempts { get; } = [];
+        public string? LastCode { get; set; }
+        public string? LastError { get; set; }
+        public string? Fallback { get; set; }
+        public int SpentIn { get; set; }
+        public int SpentOut { get; set; }
+    }
+
+    private static JsonObject BuildSelection(AiOverview cat, List<Candidate> cands, Candidate? first, AiCallSpec spec) => new()
+    {
+        ["role"] = spec.Role,
+        ["note"] = first is null ? $"No usable model for role {spec.Role}"
+            : spec.PinnedModel is not null ? "Model chosen explicitly for this call"
+            : cat.Defaults.Any(d => d.Role == spec.Role && d.ModelId == first.Model.Id) ? $"Role default for {spec.Role}"
+            : $"No usable default for role {spec.Role}; best eligible model used",
+        ["deadline_ms"] = spec.DeadlineMs,
+        ["candidates"] = new JsonArray([.. cands.Select(c => (JsonNode)new JsonObject
+        {
+            ["model_id"] = c.Model.Id.ToString(), ["label"] = Label(c.Model, c.Connection), ["eligible"] = c.Eligible, ["reason"] = c.Reason, ["rank"] = c.Rank,
+        })]),
+    };
+
+    private async Task<AiResult> SucceedAsync(RunTrail trail, AiCallSpec spec, List<Candidate> eligible, int n, Candidate cand, Stopwatch w,
+        JsonObject output, int tin, int tout, double? conf)
+    {
+        var status = 200;
+        circuits.Report(cand.Model.Id, true);
+        trail.Attempts.Add((JsonNode)Attempt(n, cand, status, (int)w.ElapsedMilliseconds, "ok", null));
+        tin += trail.SpentIn; tout += trail.SpentOut;
+        var cost = cand.Model.InputUsdPer1m is { } pi && cand.Model.OutputUsdPer1m is { } po ? (tin * pi + tout * po) / 1_000_000.0 : (double?)null;
+        var latency = (int)trail.Total.ElapsedMilliseconds;
+        await FinishAsync(new FinishAiRunCommand(trail.RunId, "succeeded", trail.Fallback, cand.Model.Id, Label(cand.Model, cand.Connection), output.ToJsonString(), "model",
+            conf, latency, tin, tout, cost, trail.Attempts.ToJsonString(), null, null, spec.UpdateHealth, null), eligible.Take(n - 1), spec.UpdateHealth, trail.LastError);
+        return new AiResult(trail.RunId, true, output["text"]?.ToString(), output["answers"] as JsonObject, "model", conf, trail.Fallback, null, null, latency,
+            cand.Model.Id, Label(cand.Model, cand.Connection));
+    }
+
+    private void RecordFailure(RunTrail trail, AiCallSpec spec, CancellationTokenSource deadline, int n, Candidate cand, Stopwatch w, Exception e)
+    {
+        var ex = e as AiCallException ?? new AiCallException("timeout", deadline.IsCancellationRequested
+            ? $"No answer within the {spec.DeadlineMs} ms deadline" : $"No answer within the connection timeout ({cand.Connection.TimeoutMs} ms)");
+        if (ex.Outcome is not ("circuit-open" or "busy" or "rate-limited")) circuits.Report(cand.Model.Id, false);
+        var status = ex.Status;
+        trail.LastCode = ex.Outcome;
+        trail.LastError = ex.Message;
+        trail.SpentIn += ex.TokensIn; trail.SpentOut += ex.TokensOut;
+        trail.Attempts.Add((JsonNode)Attempt(n, cand, status, (int)w.ElapsedMilliseconds, ex.Outcome, ex.Message));
+        log.LogInformation("AI run {Run}: {Model} failed with {Outcome}: {Error}", trail.RunId, cand.Model.ModelId, ex.Outcome, ex.Message);
+    }
+
+    /// <summary>Closes a run in which no model answered: heuristic fallback or a recorded failure.</summary>
+    private async Task<AiResult> FinishWithoutModelAsync(RunTrail trail, AiCallSpec spec, List<Candidate> cands, Candidate? first, List<Candidate> eligible,
+        Func<JsonObject>? heuristic)
+    {
+        var (runId, attempts, lastCode, lastError, spentIn, spentOut) = (trail.RunId, trail.Attempts, trail.LastCode, trail.LastError, trail.SpentIn, trail.SpentOut);
+        var latencyAll = (int)trail.Total.ElapsedMilliseconds;
         var failedModel = eligible.LastOrDefault();
         if (heuristic is not null)
         {

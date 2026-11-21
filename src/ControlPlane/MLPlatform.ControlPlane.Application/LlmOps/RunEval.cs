@@ -31,28 +31,8 @@ public sealed class RunEvalCommandHandler(IWriteSession db, IClock clock, Worksp
             var cs = cases[i]!.AsObject();
             var vars = cs["vars"]!.AsObject().ToDictionary(kv => kv.Key, kv => kv.Value?.ToString() ?? "");
             var checks = new JsonObject();
-            string output;
-            LlmCallResult? r = null;
-            try
-            {
-                r = await LlmCall.RunAsync(db, clock, invoker, dep, PromptLookup.Messages(v, vars), v.MaxTokens, v.Temperature, "eval", p.Id, v.Version, ct);
-                output = r.Text;
-                if (r.Blocked) checks["guardrail"] = false;
-            }
-            catch (InvalidArgumentException e) { output = ""; checks["render"] = false; checks["error"] = e.Message; }
-            foreach (var (k, ev) in cs["expect"]!.AsObject())
-            {
-                var want = ev?.ToString() ?? "";
-                checks[k] = k switch
-                {
-                    "contains" => output.Contains(want, StringComparison.OrdinalIgnoreCase),
-                    "not_contains" => !output.Contains(want, StringComparison.OrdinalIgnoreCase),
-                    "equals" => string.Equals(output.Trim(), want.Trim(), StringComparison.Ordinal),
-                    "regex" => Regex.IsMatch(output, want, RegexOptions.None, TimeSpan.FromMilliseconds(200)),
-                    "max_chars" => int.TryParse(want, out var n) && output.Length <= n,
-                    _ => false,
-                };
-            }
+            var (output, r) = await InvokeCaseAsync(dep, p, v, vars, checks, ct);
+            AddExpectationChecks(cs["expect"]!.AsObject(), output, checks);
             var ok = checks.All(kv => kv.Value is not JsonValue b || !b.TryGetValue<bool>(out var x) || x);
             if (ok) passed++;
             results.Add((JsonNode)new JsonObject
@@ -66,5 +46,39 @@ public sealed class RunEvalCommandHandler(IWriteSession db, IClock clock, Worksp
         var now = clock.UtcNow;
         await db.InsertEvalRunAsync(id, c.WorkspaceId, set.Id, p.Id, v.Version, score, results.ToJsonString(), uid, now, ct);
         return new EvalRunRow(id, set.Id, set.Name, p.Id, p.Name, v.Version, score, results.ToJsonString(), now);
+    }
+
+    private async Task<(string Output, LlmCallResult? Result)> InvokeCaseAsync(DeploymentRow dep, PromptRow p, PromptVersionRow v,
+        Dictionary<string, string> vars, JsonObject checks, CancellationToken ct)
+    {
+        try
+        {
+            var r = await LlmCall.RunAsync(db, clock, invoker, dep, PromptLookup.Messages(v, vars), v.MaxTokens, v.Temperature, "eval", p.Id, v.Version, ct);
+            if (r.Blocked) checks["guardrail"] = false;
+            return (r.Text, r);
+        }
+        catch (InvalidArgumentException e)
+        {
+            checks["render"] = false;
+            checks["error"] = e.Message;
+            return ("", null);
+        }
+    }
+
+    private static void AddExpectationChecks(JsonObject expect, string output, JsonObject checks)
+    {
+        foreach (var (k, ev) in expect)
+        {
+            var want = ev?.ToString() ?? "";
+            checks[k] = k switch
+            {
+                "contains" => output.Contains(want, StringComparison.OrdinalIgnoreCase),
+                "not_contains" => !output.Contains(want, StringComparison.OrdinalIgnoreCase),
+                "equals" => string.Equals(output.Trim(), want.Trim(), StringComparison.Ordinal),
+                "regex" => Regex.IsMatch(output, want, RegexOptions.None, TimeSpan.FromMilliseconds(200)),
+                "max_chars" => int.TryParse(want, out var n) && output.Length <= n,
+                _ => false,
+            };
+        }
     }
 }

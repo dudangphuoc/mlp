@@ -20,38 +20,41 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
         }
         if (msg.BodyCase != ControlToAgent.BodyOneofCase.Command) return ValueTask.CompletedTask;
         var cmd = msg.Command;
-        _ = Task.Run(async () =>
-        {
-            CommandResult result;
-            var started = System.Diagnostics.Stopwatch.StartNew();
-            var quiet = cmd.KindCase is AgentCommand.KindOneofCase.FileRead or AgentCommand.KindOneofCase.BrowsePath;
-            if (!quiet) log.LogInformation("Command {Kind} started: {Detail}", cmd.KindCase, Describe(cmd));
-            try { result = await ExecuteAsync(cmd, ct); }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                log.LogWarning("Command {Kind} timed out", cmd.KindCase);
-                result = new CommandResult { Ok = false, ErrorReason = "FLEET_COMMAND_TIMEOUT", Message = $"{cmd.KindCase} did not finish within its time limit" };
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                log.LogError(e, "Command {Kind} failed", cmd.KindCase);
-                result = new CommandResult { Ok = false, ErrorReason = "FLEET_COMMAND_FAILED", Message = e.Message };
-            }
-            result.CommandId = cmd.CommandId;
-            if (!quiet)
-            {
-                if (result.Ok) log.LogInformation("Command {Kind} finished in {Seconds:0.0}s{Kept}", cmd.KindCase, started.Elapsed.TotalSeconds, result.Kept ? " (already present)" : "");
-                else log.LogWarning("Command {Kind} failed after {Seconds:0.0}s: {Reason} {Message}", cmd.KindCase, started.Elapsed.TotalSeconds, result.ErrorReason, result.Message);
-            }
-            await conn.SendAsync(new AgentToControl { StreamId = msg.StreamId, CommandResult = result }, ct);
-            if (cmd.KindCase == AgentCommand.KindOneofCase.Disconnect)
-            {
-                state.Disconnected = true;
-                state.Forget();
-                await conn.DisposeAsync();
-            }
-        }, ct);
+        _ = Task.Run(() => RunCommandAsync(conn, msg, cmd, ct), ct);
         return ValueTask.CompletedTask;
+    }
+
+    private async Task RunCommandAsync(Connection<ControlToAgent, AgentToControl> conn, ControlToAgent msg, AgentCommand cmd,
+        CancellationToken ct)
+    {
+        CommandResult result;
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        var quiet = cmd.KindCase is AgentCommand.KindOneofCase.FileRead or AgentCommand.KindOneofCase.BrowsePath;
+        if (!quiet) log.LogInformation("Command {Kind} started: {Detail}", cmd.KindCase, Describe(cmd));
+        try { result = await ExecuteAsync(cmd, ct); }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("Command {Kind} timed out", cmd.KindCase);
+            result = new CommandResult { Ok = false, ErrorReason = "FLEET_COMMAND_TIMEOUT", Message = $"{cmd.KindCase} did not finish within its time limit" };
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            log.LogError(e, "Command {Kind} failed", cmd.KindCase);
+            result = new CommandResult { Ok = false, ErrorReason = "FLEET_COMMAND_FAILED", Message = e.Message };
+        }
+        result.CommandId = cmd.CommandId;
+        if (!quiet)
+        {
+            if (result.Ok) log.LogInformation("Command {Kind} finished in {Seconds:0.0}s{Kept}", cmd.KindCase, started.Elapsed.TotalSeconds, result.Kept ? " (already present)" : "");
+            else log.LogWarning("Command {Kind} failed after {Seconds:0.0}s: {Reason} {Message}", cmd.KindCase, started.Elapsed.TotalSeconds, result.ErrorReason, result.Message);
+        }
+        await conn.SendAsync(new AgentToControl { StreamId = msg.StreamId, CommandResult = result }, ct);
+        if (cmd.KindCase == AgentCommand.KindOneofCase.Disconnect)
+        {
+            state.Disconnected = true;
+            state.Forget();
+            await conn.DisposeAsync();
+        }
     }
 
     private static string Describe(AgentCommand c) => c.KindCase switch

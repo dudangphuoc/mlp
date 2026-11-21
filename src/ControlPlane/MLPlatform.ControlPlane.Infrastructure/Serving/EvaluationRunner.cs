@@ -120,26 +120,36 @@ public sealed class EvaluationRunner(IServiceScopeFactory scopes, ModelServerCli
         catch (Grpc.Core.RpcException ex) { return fail with { Error = "Replica error: " + ex.Status.Detail }; }
         var latency = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         var output = res.Outputs.FirstOrDefault();
-        string Name(int id, string name) => name.Length > 0 ? EvalMath.Norm(name) : id >= 0 && id < classes.Count ? classes[id] : id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (detect) return await EvaluateDetectionAsync(s, classes, coco, conf, bytes, output, latency, fail, stop);
+        return ClassificationSample(s, output, latency);
+    }
 
-        if (detect)
+    private static string ClassName(List<string> classes, int id, string name) =>
+        name.Length > 0 ? EvalMath.Norm(name) : id >= 0 && id < classes.Count ? classes[id] : id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private async Task<RecordEvalSampleCommand> EvaluateDetectionAsync((int Idx, string Image, string ImageUrl, string? Label, string? LabelUrl, string? ClassName) s,
+        List<string> classes, Dictionary<string, List<EvalBox>>? coco, double conf, byte[] bytes, TaskOutput? output, double latency,
+        RecordEvalSampleCommand fail, CancellationToken stop)
+    {
+        var size = output?.Detect is { Width: > 0, Height: > 0 } d ? (d.Width, d.Height) : EvalMath.ImageSize(bytes) ?? (0, 0);
+        List<EvalBox> gt;
+        if (coco is not null) gt = coco.GetValueOrDefault(Path.GetFileName(s.Image)) ?? [];
+        else if (s.LabelUrl is null) gt = [];
+        else
         {
-            var size = output?.Detect is { Width: > 0, Height: > 0 } d ? (d.Width, d.Height) : EvalMath.ImageSize(bytes) ?? (0, 0);
-            List<EvalBox> gt;
-            if (coco is not null) gt = coco.GetValueOrDefault(Path.GetFileName(s.Image)) ?? [];
-            else if (s.LabelUrl is null) gt = [];
-            else
-            {
-                try { gt = EvalMath.ParseYolo(System.Text.Encoding.UTF8.GetString(await DownloadAsync(s.LabelUrl, stop)), classes, size.Item1, size.Item2); }
-                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { return fail with { Error = "Label download failed: " + ex.Message }; }
-            }
-            var pred = (output?.Detect?.Objects ?? []).OrderByDescending(o => o.Score).Take(100)
-                .Select(o => new EvalBox(Name(o.ClassId, o.ClassName), o.X1, o.Y1, o.X2, o.Y2, o.Score)).ToList();
-            var (tp, fp, fn) = EvalMath.CountAt(gt, pred, conf);
-            return new RecordEvalSampleCommand(Guid.Empty, s.Idx, s.Image, size.Item1, size.Item2, BoxesJson(gt, false), BoxesJson(pred, true),
-                tp, fp, fn, fp == 0 && fn == 0, null, latency);
+            try { gt = EvalMath.ParseYolo(System.Text.Encoding.UTF8.GetString(await DownloadAsync(s.LabelUrl, stop)), classes, size.Item1, size.Item2); }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { return fail with { Error = "Label download failed: " + ex.Message }; }
         }
+        var pred = (output?.Detect?.Objects ?? []).OrderByDescending(o => o.Score).Take(100)
+            .Select(o => new EvalBox(ClassName(classes, o.ClassId, o.ClassName), o.X1, o.Y1, o.X2, o.Y2, o.Score)).ToList();
+        var (tp, fp, fn) = EvalMath.CountAt(gt, pred, conf);
+        return new RecordEvalSampleCommand(Guid.Empty, s.Idx, s.Image, size.Item1, size.Item2, BoxesJson(gt, false), BoxesJson(pred, true),
+            tp, fp, fn, fp == 0 && fn == 0, null, latency);
+    }
 
+    private static RecordEvalSampleCommand ClassificationSample((int Idx, string Image, string ImageUrl, string? Label, string? LabelUrl, string? ClassName) s,
+        TaskOutput? output, double latency)
+    {
         var labels = output?.Classify?.Labels.OrderByDescending(l => l.Score).ToList() ?? [];
         var top = labels.FirstOrDefault();
         var truth = EvalMath.Norm(s.ClassName ?? "");

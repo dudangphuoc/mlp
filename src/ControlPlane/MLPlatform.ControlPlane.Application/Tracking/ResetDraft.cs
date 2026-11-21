@@ -36,25 +36,7 @@ public sealed class ResetDraftCommandHandler(IWriteSession db, IClock clock, Wor
         Guid? retrainOf = null;
         if (c.Retrain && c.RunId is null) throw new InvalidArgumentException("TRACK_DRAFT_INVALID", "Train again needs a run");
         if (c.RunId is { } runId)
-        {
-            var run = await db.GetRunAsync(runId, ct);
-            if (run is null || run.WorkspaceId != c.WorkspaceId || run.ProjectId != pr.ProjectId) throw new NotFoundException("TRACK_RUN_NOT_FOUND", "Run not found");
-            if (run.Recipe != pr.OriginName) throw new PreconditionException("TRACK_RECIPE_MISMATCH", $"Run #{run.Number} used recipe {run.Recipe}");
-            var extra = (await db.RunExtrasAsync(c.WorkspaceId, [run.Id], ct)).FirstOrDefault();
-            var rev = extra?.RevisionId is { } rid ? await db.GetRevisionAsync(rid, c.WorkspaceId, ct) : null;
-            basis = rev?.Id;
-            variant = rev?.Variant ?? run.Variant;
-            parameters = rev?.Params ?? RecipeDrafts.Normalise(RecipeDrafts.Parse(run.Params), schema).ToJsonString();
-            (version, start, host, gpus, cpus) = (run.DatasetVersionId, run.FromScratch ? "backbone" : "pretrained", extra?.HostId, run.Gpus, run.Cpus);
-            if (c.Retrain)
-            {
-                if (run.State != "succeeded") throw new PreconditionException("TRACK_RETRAIN_NOT_FINISHED", $"Run #{run.Number} has not finished successfully");
-                if (rev is null) throw new PreconditionException("TRACK_RETRAIN_NO_REVISION", $"Run #{run.Number} was trained before revisions existed — cook it again instead");
-                if (rev.ManifestSha256 != pr.OriginManifestSha256)
-                    throw new PreconditionException("TRACK_RETRAIN_RECIPE_CHANGED", $"The project's recipe changed since run #{run.Number} — cook it again instead");
-                (trainKind, retrainOf, version, start) = ("retrain", run.Id, null, extra?.StartKind ?? start);
-            }
-        }
+            (basis, variant, parameters, version, start, host, gpus, cpus, trainKind, retrainOf) = await ResetFromRunAsync(c, runId, pr, schema, ct);
         else if (c.Origin)
         {
             var recipe = await mediator.Query(new GetRecipeQuery(c.WorkspaceId, pr.OriginName), ct);
@@ -74,5 +56,25 @@ public sealed class ResetDraftCommandHandler(IWriteSession db, IClock clock, Wor
         }
         await db.UpdateDraftAsync(d.Id, c.WorkspaceId, basis, variant, parameters, version, start, trainKind, retrainOf, host, gpus, cpus, d.RunName, -1, clock.UtcNow, ct);
         return await RecipeDrafts.StateAsync(db, mediator, c.WorkspaceId, pr, (await db.GetDraftAsync(pr.Id, uid, c.WorkspaceId, ct))!, project.Task, ct);
+    }
+
+    private sealed record DraftFields(Guid? Basis, string Variant, string Parameters, Guid? Version, string Start, Guid? Host, int Gpus, double Cpus,
+        string TrainKind, Guid? RetrainOf);
+
+    private async Task<DraftFields> ResetFromRunAsync(ResetDraftCommand c, Guid runId, ProjectRecipeRow pr, JsonObject schema, CancellationToken ct)
+    {
+        var run = await db.GetRunAsync(runId, ct);
+        if (run is null || run.WorkspaceId != c.WorkspaceId || run.ProjectId != pr.ProjectId) throw new NotFoundException("TRACK_RUN_NOT_FOUND", "Run not found");
+        if (run.Recipe != pr.OriginName) throw new PreconditionException("TRACK_RECIPE_MISMATCH", $"Run #{run.Number} used recipe {run.Recipe}");
+        var extra = (await db.RunExtrasAsync(c.WorkspaceId, [run.Id], ct)).FirstOrDefault();
+        var rev = extra?.RevisionId is { } rid ? await db.GetRevisionAsync(rid, c.WorkspaceId, ct) : null;
+        var fields = new DraftFields(rev?.Id, rev?.Variant ?? run.Variant, rev?.Params ?? RecipeDrafts.Normalise(RecipeDrafts.Parse(run.Params), schema).ToJsonString(),
+            run.DatasetVersionId, run.FromScratch ? "backbone" : "pretrained", extra?.HostId, run.Gpus, run.Cpus, "fine_tune", null);
+        if (!c.Retrain) return fields;
+        if (run.State != "succeeded") throw new PreconditionException("TRACK_RETRAIN_NOT_FINISHED", $"Run #{run.Number} has not finished successfully");
+        if (rev is null) throw new PreconditionException("TRACK_RETRAIN_NO_REVISION", $"Run #{run.Number} was trained before revisions existed — cook it again instead");
+        if (rev.ManifestSha256 != pr.OriginManifestSha256)
+            throw new PreconditionException("TRACK_RETRAIN_RECIPE_CHANGED", $"The project's recipe changed since run #{run.Number} — cook it again instead");
+        return fields with { TrainKind = "retrain", RetrainOf = run.Id, Version = null, Start = extra?.StartKind ?? fields.Start };
     }
 }

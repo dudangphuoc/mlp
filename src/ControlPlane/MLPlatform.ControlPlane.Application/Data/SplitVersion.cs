@@ -25,9 +25,7 @@ public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, W
     {
         var uid = await auth.RequireAsync(c.WorkspaceId, "dataset.write", ct);
         var src = await db.GetVersionAsync(c.VersionId, c.WorkspaceId, ct) ?? throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found");
-        var (train, val, test) = c.TrainPct == 0 && c.ValPct == 0 && c.TestPct == 0 ? (80, 10, 10) : (c.TrainPct, c.ValPct, c.TestPct);
-        if (train < 1 || val < 1 || test < 0 || train + val + test != 100)
-            throw new InvalidArgumentException("DATA_SPLIT_INVALID", "The split needs train and val above 0 and the three parts must add up to 100");
+        var (train, val, test) = ResolveRatios(c);
         var byFolder = c.GroupBy == "folder";
         if (!byFolder && c.GroupBy is not ("" or "file")) throw new InvalidArgumentException("DATA_SPLIT_INVALID", "group_by is file or folder");
         var files = (await db.ListVersionFilesAsync(src.Id, ct)).Where(f => f.Path != SplitRules.File).ToList();
@@ -36,35 +34,10 @@ public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, W
         if (images.Any(p => SplitRules.FolderSplit(p) == "val"))
             throw new PreconditionException("DATA_ALREADY_SPLIT", "This version already has train/val folders");
 
-        string Key(string path) => byFolder && path.LastIndexOf('/') is > 0 and var i ? path[..i] : path;
         var seed = src.DatasetId.ToString();
-        var groups = images.Select(Key).Distinct().ToDictionary(k => k, k => SplitRules.Bucket(seed, k));
-        var of = groups.ToDictionary(g => g.Key, g => g.Value < train * 100 ? "train" : g.Value < (train + val) * 100 ? "val" : "test");
-        foreach (var need in test > 0 ? new[] { "val", "test" } : ["val"])
-            if (!of.ContainsValue(need) && of.Count(g => g.Value == "train") > 1)
-                of[of.Where(g => g.Value == "train").MinBy(g => groups[g.Key]).Key] = need;
-        if (!of.ContainsValue("val")) throw new PreconditionException("DATA_SPLIT_EMPTY", "Every image is in one folder — split by file instead");
-
-        var counts = new Dictionary<string, long> { ["train"] = 0, ["val"] = 0, ["test"] = 0 };
-        using var ms = new MemoryStream();
-        using (var w = new Utf8JsonWriter(ms))
-        {
-            w.WriteStartObject();
-            w.WriteString("seed", seed);
-            w.WriteStartObject("ratios"); w.WriteNumber("train", train); w.WriteNumber("val", val); w.WriteNumber("test", test); w.WriteEndObject();
-            w.WriteString("group_by", byFolder ? "folder" : "file");
-            w.WriteStartObject("files");
-            foreach (var p in images.Order(StringComparer.Ordinal))
-            {
-                var s = of[Key(p)];
-                counts[s]++;
-                w.WriteString(p, s);
-            }
-            w.WriteEndObject();
-            w.WriteEndObject();
-        }
-        var body = ms.ToArray();
-        var valHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', images.Where(p => of[Key(p)] == "val").Order(StringComparer.Ordinal)))));
+        var of = AssignSplits(images, byFolder, seed, train, val, test);
+        var (body, counts) = WriteSplitFile(images, of, byFolder, seed, train, val, test);
+        var valHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', images.Where(p => of[SplitKey(p, byFolder)] == "val").Order(StringComparer.Ordinal)))));
 
         var n = await db.NextVersionNumberAsync(src.DatasetId, c.WorkspaceId, ct);
         var prefix = Buckets.Version(c.WorkspaceId, src.DatasetId, n);
@@ -78,5 +51,50 @@ public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, W
         await db.InsertVersionFileAsync(id, SplitRules.File, body.Length, ct);
         await db.SetVersionSplitAsync(id, "file", SplitRules.CountsJson(counts), valHash, ct);
         return new VersionRow(id, src.DatasetId, n, prefix, files.Count + 1, size, note, now, "copied", null);
+    }
+
+    private static (int Train, int Val, int Test) ResolveRatios(SplitVersionCommand c)
+    {
+        var (train, val, test) = c.TrainPct == 0 && c.ValPct == 0 && c.TestPct == 0 ? (80, 10, 10) : (c.TrainPct, c.ValPct, c.TestPct);
+        if (train < 1 || val < 1 || test < 0 || train + val + test != 100)
+            throw new InvalidArgumentException("DATA_SPLIT_INVALID", "The split needs train and val above 0 and the three parts must add up to 100");
+        return (train, val, test);
+    }
+
+    private static string SplitKey(string path, bool byFolder) => byFolder && path.LastIndexOf('/') is > 0 and var i ? path[..i] : path;
+
+    private static Dictionary<string, string> AssignSplits(List<string> images, bool byFolder, string seed, int train, int val, int test)
+    {
+        var groups = images.Select(p => SplitKey(p, byFolder)).Distinct().ToDictionary(k => k, k => SplitRules.Bucket(seed, k));
+        var of = groups.ToDictionary(g => g.Key, g => g.Value < train * 100 ? "train" : g.Value < (train + val) * 100 ? "val" : "test");
+        foreach (var need in test > 0 ? new[] { "val", "test" } : ["val"])
+            if (!of.ContainsValue(need) && of.Count(g => g.Value == "train") > 1)
+                of[of.Where(g => g.Value == "train").MinBy(g => groups[g.Key]).Key] = need;
+        if (!of.ContainsValue("val")) throw new PreconditionException("DATA_SPLIT_EMPTY", "Every image is in one folder — split by file instead");
+        return of;
+    }
+
+    private static (byte[] Body, Dictionary<string, long> Counts) WriteSplitFile(List<string> images, Dictionary<string, string> of, bool byFolder,
+        string seed, int train, int val, int test)
+    {
+        var counts = new Dictionary<string, long> { ["train"] = 0, ["val"] = 0, ["test"] = 0 };
+        using var ms = new MemoryStream();
+        using (var w = new Utf8JsonWriter(ms))
+        {
+            w.WriteStartObject();
+            w.WriteString("seed", seed);
+            w.WriteStartObject("ratios"); w.WriteNumber("train", train); w.WriteNumber("val", val); w.WriteNumber("test", test); w.WriteEndObject();
+            w.WriteString("group_by", byFolder ? "folder" : "file");
+            w.WriteStartObject("files");
+            foreach (var p in images.Order(StringComparer.Ordinal))
+            {
+                var s = of[SplitKey(p, byFolder)];
+                counts[s]++;
+                w.WriteString(p, s);
+            }
+            w.WriteEndObject();
+            w.WriteEndObject();
+        }
+        return (ms.ToArray(), counts);
     }
 }

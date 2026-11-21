@@ -53,68 +53,26 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
     /// <summary>One file to import: relative path, size, and where to read it from.</summary>
     private sealed record SourceFile(string Path, long Size, string Url);
 
+    private const int JobLookupAttempts = 20;
+    private const int JobLookupDelayMs = 500;
+
     private async Task RunAsync(Guid id, CancellationToken ct)
     {
         await using var scope = scopes.CreateAsyncScope();
         var m = scope.ServiceProvider.GetRequiredService<IMediator>();
-        var job = await m.Query(new GetHubImportJobQuery(id), ct);
-        for (var i = 0; job is null && i < 20; i++)
-        {
-            await Task.Delay(500, ct);
-            job = await m.Query(new GetHubImportJobQuery(id), ct);
-        }
+        var job = await WaitForJobAsync(m, id, ct);
         if (job is not { State: "queued" }) return;
         scope.ServiceProvider.GetRequiredService<CurrentUser>().ActAs(job.CreatedBy);
         var token = job.Source == "hf" ? secrets.Open(await m.Query(new GetHubSecretQuery(job.WorkspaceId), ct)) : null;
         await UpdateAsync(id, "running", job.TargetId, 0, 0, 0, 0, "Listing files");
 
-        string sourceRef;
-        List<SourceFile> files;
-        var gated = false;
-        switch (job.Source)
-        {
-            case "url":
-                files = await ListUrlsAsync(job.Include, ct);
-                sourceRef = job.Include.Length == 1 ? job.Include[0] : $"{job.Include.Length} URLs";
-                break;
-            case "s3":
-                var (bucket0, prefix0) = ParseS3(job.Repo);
-                files = (await s3.ListAsync(bucket0, prefix0, ct)).Where(o => !o.Key.EndsWith('/'))
-                    .Select(o => new SourceFile(o.Key[prefix0.Length..].TrimStart('/'), o.Size, $"s3://{bucket0}/{o.Key}"))
-                    .Where(f => f.Path.Length > 0 && HfHub.Match(f.Path, job.Include)).ToList();
-                sourceRef = job.Repo;
-                break;
-            default:
-                var info = await hub.InfoAsync(job.Kind, job.Repo, job.Revision, token, ct);
-                var sha = info["sha"]?.ToString() is { Length: > 0 } s ? s : job.Revision;
-                gated = info["gated"] is JsonValue gv && (gv.TryGetValue<bool>(out var gb) ? gb : gv.ToString() is "auto" or "manual") || info["private"]?.GetValue<bool>() == true;
-                files = (await hub.TreeAsync(job.Kind, job.Repo, sha, token, ct)).Where(f => HfHub.Match(f.Path, job.Include))
-                    .Select(f => new SourceFile(f.Path, f.Size, hub.ResolveUrl(job.Kind, job.Repo, sha, f.Path))).ToList();
-                sourceRef = $"hf://{(job.Kind == "dataset" ? "datasets/" : "")}{job.Repo}@{sha}";
-                break;
-        }
+        var (files, sourceRef, gated) = await ListSourceAsync(job, token, ct);
         if (files.Count == 0) { await UpdateAsync(id, "failed", null, 0, 0, 0, 0, "No files match the filter"); return; }
         var total = files.Sum(f => f.Size);
 
         if (job.Mode == "reference")
         {
-            if (gated) { await UpdateAsync(id, "failed", null, files.Count, 0, total, 0, "This repo is gated/private — import it with \"Copy to storage\" instead"); return; }
-            var refs = files.Select(f => (f.Path, f.Size, f.Url)).ToList();
-            Guid target;
-            if (job.Kind == "model")
-            {
-                var (versionId, _) = await m.Send(new ReserveHubModelVersionCommand(job.WorkspaceId, job.TargetName, job.Task, sourceRef, SourceKind(job.Source)), ct);
-                await m.Send(new SetModelVersionReferenceCommand(versionId, refs), ct);
-                target = versionId;
-            }
-            else
-            {
-                await m.Send(new CreateReferenceVersionCommand(job.WorkspaceId, job.TargetId!.Value, "Reference to " + sourceRef, sourceRef, refs), ct);
-                target = job.TargetId!.Value;
-            }
-            await UpdateAsync(id, "succeeded", target, files.Count, files.Count, total, 0,
-                job.Kind == "model" ? "Model version created (reference — downloaded when used)" : "Dataset version created (reference — downloaded when used)");
-            log.LogInformation("Reference import {Source} done: {N} file(s)", sourceRef, files.Count);
+            await ImportReferenceAsync(m, id, job, files, sourceRef, gated, total, ct);
             return;
         }
 
@@ -130,33 +88,106 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
         else (bucket, prefix) = (Buckets.Datasets, Buckets.Raw(job.WorkspaceId, job.TargetId!.Value));
         await UpdateAsync(id, "running", targetId, files.Count, 0, total, 0, "Copying");
 
+        var (n, done) = await CopyFilesAsync(m, id, job, files, token, bucket, prefix, targetId, total, ct);
+        await FinishCopyAsync(m, job, files, sourceRef, prefix, targetId, total, ct);
+        await UpdateAsync(id, "succeeded", targetId, files.Count, n, total, done, job.Kind == "model" ? "Model version created" : "Dataset version committed");
+        log.LogInformation("Import {Source} done: {N} file(s), {Bytes} bytes", sourceRef, n, done);
+    }
+
+    private static async Task<HubImportJob?> WaitForJobAsync(IMediator m, Guid id, CancellationToken ct)
+    {
+        var job = await m.Query(new GetHubImportJobQuery(id), ct);
+        for (var i = 0; job is null && i < JobLookupAttempts; i++)
+        {
+            await Task.Delay(JobLookupDelayMs, ct);
+            job = await m.Query(new GetHubImportJobQuery(id), ct);
+        }
+        return job;
+    }
+
+    private sealed record SourceListing(List<SourceFile> Files, string SourceRef, bool Gated);
+
+    private async Task<SourceListing> ListSourceAsync(HubImportJob job, string? token, CancellationToken ct)
+    {
+        switch (job.Source)
+        {
+            case "url":
+                return new SourceListing(await ListUrlsAsync(job.Include, ct),
+                    job.Include.Length == 1 ? job.Include[0] : $"{job.Include.Length} URLs", false);
+            case "s3":
+                var (bucket0, prefix0) = ParseS3(job.Repo);
+                var objects = (await s3.ListAsync(bucket0, prefix0, ct)).Where(o => !o.Key.EndsWith('/'))
+                    .Select(o => new SourceFile(o.Key[prefix0.Length..].TrimStart('/'), o.Size, $"s3://{bucket0}/{o.Key}"))
+                    .Where(f => f.Path.Length > 0 && HfHub.Match(f.Path, job.Include)).ToList();
+                return new SourceListing(objects, job.Repo, false);
+            default:
+                var info = await hub.InfoAsync(job.Kind, job.Repo, job.Revision, token, ct);
+                var sha = info["sha"]?.ToString() is { Length: > 0 } s ? s : job.Revision;
+                var gated = info["gated"] is JsonValue gv && (gv.TryGetValue<bool>(out var gb) ? gb : gv.ToString() is "auto" or "manual") || info["private"]?.GetValue<bool>() == true;
+                var files = (await hub.TreeAsync(job.Kind, job.Repo, sha, token, ct)).Where(f => HfHub.Match(f.Path, job.Include))
+                    .Select(f => new SourceFile(f.Path, f.Size, hub.ResolveUrl(job.Kind, job.Repo, sha, f.Path))).ToList();
+                return new SourceListing(files, $"hf://{(job.Kind == "dataset" ? "datasets/" : "")}{job.Repo}@{sha}", gated);
+        }
+    }
+
+    private async Task ImportReferenceAsync(IMediator m, Guid id, HubImportJob job, List<SourceFile> files, string sourceRef, bool gated, long total, CancellationToken ct)
+    {
+        if (gated) { await UpdateAsync(id, "failed", null, files.Count, 0, total, 0, "This repo is gated/private — import it with \"Copy to storage\" instead"); return; }
+        var refs = files.Select(f => (f.Path, f.Size, f.Url)).ToList();
+        Guid target;
+        if (job.Kind == "model")
+        {
+            var (versionId, _) = await m.Send(new ReserveHubModelVersionCommand(job.WorkspaceId, job.TargetName, job.Task, sourceRef, SourceKind(job.Source)), ct);
+            await m.Send(new SetModelVersionReferenceCommand(versionId, refs), ct);
+            target = versionId;
+        }
+        else
+        {
+            await m.Send(new CreateReferenceVersionCommand(job.WorkspaceId, job.TargetId!.Value, "Reference to " + sourceRef, sourceRef, refs), ct);
+            target = job.TargetId!.Value;
+        }
+        await UpdateAsync(id, "succeeded", target, files.Count, files.Count, total, 0,
+            job.Kind == "model" ? "Model version created (reference — downloaded when used)" : "Dataset version created (reference — downloaded when used)");
+        log.LogInformation("Reference import {Source} done: {N} file(s)", sourceRef, files.Count);
+    }
+
+    private async Task<(int Count, long Bytes)> CopyFilesAsync(IMediator m, Guid id, HubImportJob job, List<SourceFile> files, string? token,
+        string bucket, string prefix, Guid? targetId, long total, CancellationToken ct)
+    {
         long done = 0;
         var n = 0;
         var put = http.CreateClient("s3-put");
         foreach (var f in files)
         {
-            var key = prefix + Buckets.SafePath(f.Path);
-            if (f.Url.StartsWith("s3://", StringComparison.Ordinal))
-            {
-                var (sb, sk) = ParseS3(f.Url);
-                await s3.CopyAsync(sb, sk, bucket, key, ct);
-            }
-            else
-            {
-                using var src = job.Source == "hf"
-                    ? await hub.DownloadUrlAsync(f.Url, token, ct)
-                    : await http.CreateClient("import").GetAsync(f.Url, HttpCompletionOption.ResponseHeadersRead, ct);
-                src.EnsureSuccessStatusCode();
-                var url = s3.Presign(HttpMethod.Put, bucket, key, TimeSpan.FromHours(6), Audience.Internal);
-                using var body = new StreamContent(await src.Content.ReadAsStreamAsync(ct));
-                body.Headers.ContentLength = src.Content.Headers.ContentLength ?? f.Size;
-                using var res = await put.PutAsync(url, body, ct);
-                if (!res.IsSuccessStatusCode) throw new IOException($"S3 storage returned {(int)res.StatusCode} while writing {f.Path}");
-            }
+            await CopyFileAsync(job, f, token, bucket, prefix + Buckets.SafePath(f.Path), put, ct);
             if (job.Kind == "dataset") await m.Send(new CompleteUploadCommand(job.WorkspaceId, job.TargetId!.Value, f.Path), ct);
             done += f.Size; n++;
             await UpdateAsync(id, "running", targetId, files.Count, n, total, done, f.Path);
         }
+        return (n, done);
+    }
+
+    private async Task CopyFileAsync(HubImportJob job, SourceFile f, string? token, string bucket, string key, HttpClient put, CancellationToken ct)
+    {
+        if (f.Url.StartsWith("s3://", StringComparison.Ordinal))
+        {
+            var (sb, sk) = ParseS3(f.Url);
+            await s3.CopyAsync(sb, sk, bucket, key, ct);
+            return;
+        }
+        using var src = job.Source == "hf"
+            ? await hub.DownloadUrlAsync(f.Url, token, ct)
+            : await http.CreateClient("import").GetAsync(f.Url, HttpCompletionOption.ResponseHeadersRead, ct);
+        src.EnsureSuccessStatusCode();
+        var url = s3.Presign(HttpMethod.Put, bucket, key, TimeSpan.FromHours(6), Audience.Internal);
+        using var body = new StreamContent(await src.Content.ReadAsStreamAsync(ct));
+        body.Headers.ContentLength = src.Content.Headers.ContentLength ?? f.Size;
+        using var res = await put.PutAsync(url, body, ct);
+        if (!res.IsSuccessStatusCode) throw new IOException($"S3 storage returned {(int)res.StatusCode} while writing {f.Path}");
+    }
+
+    private async Task FinishCopyAsync(IMediator m, HubImportJob job, List<SourceFile> files, string sourceRef, string prefix, Guid? targetId, long total, CancellationToken ct)
+    {
         if (job.Kind == "model")
         {
             var root = prefix[..^"weights/".Length];
@@ -169,8 +200,6 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
             await m.Send(new FinishHubModelVersionCommand(targetId!.Value, files.Count + 1, total), ct);
         }
         else await m.Send(new CreateVersionCommand(job.WorkspaceId, job.TargetId!.Value, "Imported from " + sourceRef), ct);
-        await UpdateAsync(id, "succeeded", targetId, files.Count, n, total, done, job.Kind == "model" ? "Model version created" : "Dataset version committed");
-        log.LogInformation("Import {Source} done: {N} file(s), {Bytes} bytes", sourceRef, n, done);
     }
 
     private static string SourceKind(string source) => source switch { "url" => "url", "s3" => "s3", _ => "hf_hub" };

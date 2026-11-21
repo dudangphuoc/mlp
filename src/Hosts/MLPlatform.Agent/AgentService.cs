@@ -52,53 +52,16 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
         var o = state.Options;
         var parts = o.ControlPlane.Split(':');
         using var tcp = new TcpClient { NoDelay = true };
-        try
-        {
-            await tcp.ConnectAsync(parts[0], parts.Length > 1 ? int.Parse(parts[1]) : 7443, stop);
-        }
-        catch (SocketException e)
-        {
-            log.LogWarning("Could not connect to {Cp}: {Msg}", o.ControlPlane, e.Message);
-            return Outcome.Failed;
-        }
-        Stream stream = tcp.GetStream();
-        try { stream = await AgentTls.WrapAsync(stream, o, parts[0], stop); }
-        catch (System.Security.Authentication.AuthenticationException e)
-        {
-            log.LogError("TLS to {Cp} failed (wrong certificate pin?): {Msg}", o.ControlPlane, e.Message);
-            return Outcome.Failed;
-        }
+        if (await OpenStreamAsync(tcp, o, parts, stop) is not { } stream) return Outcome.Failed;
 
         var info = await HostProbe.CollectAsync(o, stop);
         info.AgentStateDir = state.Dir;
-        var hello = o.Credential is { Length: > 0 } && o.EnrollToken is null
-            ? new ConnectionHello { Register = new RegisterHello { Credential = o.Credential, AgentVersion = Version, HostInfo = info } }
-            : new ConnectionHello { Enroll = new EnrollHello
-                { EnrollToken = o.EnrollToken ?? "", AgentVersion = Version, HostInfo = info, PreviousCredential = o.Credential ?? "" } };
+        var hello = BuildHello(o, info);
         await Framing.WriteAsync(stream, hello, stop);
         var first = await Framing.ReadAsync(stream, ControlToAgent.Parser, stop);
         if (first?.HelloResult is not { } res) return Outcome.Failed;
-        if (!res.Ok)
-        {
-            log.LogError("Control plane rejected: {Reason}", res.ErrorReason);
-            if (res.ErrorReason == "FLEET_ENROLL_TOKEN_INVALID" && o.Credential is { Length: > 0 } && o.EnrollToken is not null)
-            {
-                o.EnrollToken = null;
-                state.Save();
-                return Outcome.Failed;
-            }
-            return res.ErrorReason is "FLEET_ENROLL_TOKEN_INVALID" or "FLEET_CREDENTIAL_INVALID" ? Outcome.Fatal : Outcome.Failed;
-        }
-        if (hello.KindCase == ConnectionHello.KindOneofCase.Enroll)
-        {
-            o.Credential = res.Credential;
-            o.EnrollToken = null;
-            o.HostId = res.HostId;
-            o.OverlayIp = res.OverlayIp;
-            state.Save();
-            log.LogInformation("Enrolled: host {Host}, overlay {Ip}", res.HostId, res.OverlayIp);
-        }
-        else log.LogInformation("Connected: host {Host}", res.HostId);
+        if (!res.Ok) return HandleRejection(o, res);
+        AcceptHello(o, hello, res);
         HostOwnership.HostId = res.HostId;
 
         await using var conn = new Connection<ControlToAgent, AgentToControl>(stream, ControlToAgent.Parser,
@@ -113,6 +76,67 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
         var run = conn.RunAsync(m => commands.HandleAsync(conn, m, stop), stop);
         await commands.OnConnectedAsync(conn, stop);
         using var metricsCts = CancellationTokenSource.CreateLinkedTokenSource(stop);
+        StartMetricsLoop(conn, metricsCts);
+        await run;
+        await metricsCts.CancelAsync();
+        return state.Disconnected ? Outcome.Fatal : Outcome.Connected;
+    }
+
+    private async Task<Stream?> OpenStreamAsync(TcpClient tcp, AgentOptions o, string[] parts, CancellationToken stop)
+    {
+        try
+        {
+            await tcp.ConnectAsync(parts[0], parts.Length > 1 ? int.Parse(parts[1]) : 7443, stop);
+        }
+        catch (SocketException e)
+        {
+            log.LogWarning("Could not connect to {Cp}: {Msg}", o.ControlPlane, e.Message);
+            return null;
+        }
+        Stream stream = tcp.GetStream();
+        try { stream = await AgentTls.WrapAsync(stream, o, parts[0], stop); }
+        catch (System.Security.Authentication.AuthenticationException e)
+        {
+            log.LogError("TLS to {Cp} failed (wrong certificate pin?): {Msg}", o.ControlPlane, e.Message);
+            return null;
+        }
+        return stream;
+    }
+
+    private static ConnectionHello BuildHello(AgentOptions o, HostInfo info) =>
+        o.Credential is { Length: > 0 } && o.EnrollToken is null
+        ? new ConnectionHello { Register = new RegisterHello { Credential = o.Credential, AgentVersion = Version, HostInfo = info } }
+        : new ConnectionHello { Enroll = new EnrollHello
+            { EnrollToken = o.EnrollToken ?? "", AgentVersion = Version, HostInfo = info, PreviousCredential = o.Credential ?? "" } };
+
+    private Outcome HandleRejection(AgentOptions o, HelloResult res)
+    {
+        log.LogError("Control plane rejected: {Reason}", res.ErrorReason);
+        if (res.ErrorReason == "FLEET_ENROLL_TOKEN_INVALID" && o.Credential is { Length: > 0 } && o.EnrollToken is not null)
+        {
+            o.EnrollToken = null;
+            state.Save();
+            return Outcome.Failed;
+        }
+        return res.ErrorReason is "FLEET_ENROLL_TOKEN_INVALID" or "FLEET_CREDENTIAL_INVALID" ? Outcome.Fatal : Outcome.Failed;
+    }
+
+    private void AcceptHello(AgentOptions o, ConnectionHello hello, HelloResult res)
+    {
+        if (hello.KindCase == ConnectionHello.KindOneofCase.Enroll)
+        {
+            o.Credential = res.Credential;
+            o.EnrollToken = null;
+            o.HostId = res.HostId;
+            o.OverlayIp = res.OverlayIp;
+            state.Save();
+            log.LogInformation("Enrolled: host {Host}, overlay {Ip}", res.HostId, res.OverlayIp);
+        }
+        else log.LogInformation("Connected: host {Host}", res.HostId);
+    }
+
+    private void StartMetricsLoop(Connection<ControlToAgent, AgentToControl> conn, CancellationTokenSource metricsCts)
+    {
         _ = Task.Run(async () =>
         {
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15), time);
@@ -122,8 +146,5 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
                 catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException or OperationCanceledException) { return; }
             } while (await timer.WaitForNextTickAsync(metricsCts.Token).AsTask().ContinueWith(t => !t.IsCanceled && t.Result, TaskScheduler.Default));
         }, CancellationToken.None);
-        await run;
-        await metricsCts.CancelAsync();
-        return state.Disconnected ? Outcome.Fatal : Outcome.Connected;
     }
 }

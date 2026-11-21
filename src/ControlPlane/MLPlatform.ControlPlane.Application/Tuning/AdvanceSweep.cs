@@ -32,11 +32,7 @@ public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, I
         var failed = trials.Count(t => t.State is "failed" or "cancelled");
         if (trials.Count >= s.MaxTrials && active == 0)
         {
-            var ok = best is not null;
-            await db.FinishSweepAsync(s.Id, ok ? "completed" : "failed", ok ? null : "No trial produced an objective value", clock.UtcNow, ct);
-            await Notifier.SendAsync(db, clock, s.WorkspaceId, [s.CreatedBy], ok ? "sweep.completed" : "sweep.failed",
-                ok ? $"Sweep \"{s.Name}\" finished — best is trial #{best!.Number} ({s.Objective} = {best.Value!.Value.ToString("0.####", CultureInfo.InvariantCulture)})"
-                   : $"Sweep \"{s.Name}\" failed", $"#/sweeps/{s.Id}", $"sweep/{s.Id}", ok ? "success" : "error", ct);
+            await FinishWhenBudgetUsedAsync(s, best, ct);
             return 0;
         }
         if (failed >= 3 && scored.Count == 0 && trials.Count == failed)
@@ -52,22 +48,38 @@ public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, I
         var launched = 0;
         for (var n = trials.Count; n < s.MaxTrials && active < s.Parallel; n++, active++)
         {
-            var p = JsonNode.Parse(s.BaseParams) as JsonObject ?? [];
-            foreach (var (k, v) in s.Algorithm == "grid" ? space.Grid(n) : space.Random(s.Seed, n)) p[k] = v?.DeepClone();
-            var paramsJson = p.ToJsonString();
-            try
-            {
-                var run = await mediator.Send(new StartTrainingCommand(s.WorkspaceId, s.ProjectId, $"{s.Name}-t{n}", s.Recipe, s.Variant, s.Task,
-                    paramsJson, false, s.Cpus, s.Gpus, s.ImageOverride, s.Network, s.DatasetVersionId), ct);
-                await db.InsertSweepTrialAsync(s.Id, n, paramsJson, run.Id, "queued", null, clock.UtcNow, ct);
-            }
-            catch (AppException e)
-            {
-                await db.InsertSweepTrialAsync(s.Id, n, paramsJson, null, "failed", $"{e.Reason}: {e.Message}", clock.UtcNow, ct);
-                active--;
-            }
+            if (!await LaunchTrialAsync(s, space, n, ct)) active--;
             launched++;
         }
         return launched;
+    }
+
+    private async Task FinishWhenBudgetUsedAsync(SweepRow s, TrialRow? best, CancellationToken ct)
+    {
+        var ok = best is not null;
+        await db.FinishSweepAsync(s.Id, ok ? "completed" : "failed", ok ? null : "No trial produced an objective value", clock.UtcNow, ct);
+        await Notifier.SendAsync(db, clock, s.WorkspaceId, [s.CreatedBy], ok ? "sweep.completed" : "sweep.failed",
+            ok ? $"Sweep \"{s.Name}\" finished — best is trial #{best!.Number} ({s.Objective} = {best.Value!.Value.ToString("0.####", CultureInfo.InvariantCulture)})"
+               : $"Sweep \"{s.Name}\" failed", $"#/sweeps/{s.Id}", $"sweep/{s.Id}", ok ? "success" : "error", ct);
+    }
+
+    /// <summary>Starts trial n; false when the start failed and the trial was recorded as failed.</summary>
+    private async Task<bool> LaunchTrialAsync(SweepRow s, SearchSpace space, int n, CancellationToken ct)
+    {
+        var p = JsonNode.Parse(s.BaseParams) as JsonObject ?? [];
+        foreach (var (k, v) in s.Algorithm == "grid" ? space.Grid(n) : space.Random(s.Seed, n)) p[k] = v?.DeepClone();
+        var paramsJson = p.ToJsonString();
+        try
+        {
+            var run = await mediator.Send(new StartTrainingCommand(s.WorkspaceId, s.ProjectId, $"{s.Name}-t{n}", s.Recipe, s.Variant, s.Task,
+                paramsJson, false, s.Cpus, s.Gpus, s.ImageOverride, s.Network, s.DatasetVersionId), ct);
+            await db.InsertSweepTrialAsync(s.Id, n, paramsJson, run.Id, "queued", null, clock.UtcNow, ct);
+        }
+        catch (AppException e)
+        {
+            await db.InsertSweepTrialAsync(s.Id, n, paramsJson, null, "failed", $"{e.Reason}: {e.Message}", clock.UtcNow, ct);
+            return false;
+        }
+        return true;
     }
 }

@@ -7,6 +7,6 @@ Path prefix: `/mlplatform.v1.OpsService/`
 | Method | Request → Response | Effect | Access | Permission | Roles | Sends |
 |---|---|---|---|---|---|---|
 | GetSystemStatus | [SystemStatusRequest](../types/ops.md#systemstatusrequest) → [SystemStatus](../types/ops.md#systemstatus) | read |  |  |  |  |
-| WatchWorkspace (stream) | [WatchWorkspaceRequest](../types/ops.md#watchworkspacerequest) → [WorkspaceUpdate](../types/ops.md#workspaceupdate) | read | WorkspacePermission | dataset.read | owner, admin, editor, reviewer, annotator, viewer | Notifications.NotificationsChangedQuery, Ops.ActiveJobsQuery, Ops.JobAttemptIdsQuery, Ops.JobEventsAfterQuery |
+| WatchWorkspace (stream) | [WatchWorkspaceRequest](../types/ops.md#watchworkspacerequest) → [WorkspaceUpdate](../types/ops.md#workspaceupdate) | read | WorkspacePermission | dataset.read | owner, admin, editor, reviewer, annotator, viewer | Notifications.NotificationsChangedQuery, Ops.ActiveJobsQuery |
 | GetClusterMap | [ClusterMapRequest](../types/ops.md#clustermaprequest) → [ClusterMap](../types/ops.md#clustermap) | read | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Ops.ClusterMapQuery |
 | GetRayHealth | [ClusterMapRequest](../types/ops.md#clustermaprequest) → [RayHealth](../types/ops.md#rayhealth) | read | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Ops.ClusterMapQuery |

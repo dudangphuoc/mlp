@@ -135,6 +135,19 @@ public static class HostContainers
         if (!k.Ok || key.Length != 44) { log.LogWarning("Could not get the mlp-net key on {Host}: {Msg}", s.HostId, k.Message); return false; }
         await using (var scope = scopes.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new SetHostWgKeyCommand(s.HostId, key), ct);
+        var spoke = NetSpokeSpec(overlayIp, hubKey, cfg);
+        var r = await s.SendCommandAsync(new AgentCommand { ContainerApply = new ContainerApply { Spec = spoke, KeepIfSame = true } }, TimeSpan.FromMinutes(3), ct);
+        if (!r.Ok) { log.LogWarning("mlp-net on {Host} failed: {Msg}", s.HostId, r.Message); return false; }
+        if (!r.Kept)
+        {
+            await s.SendCommandAsync(new AgentCommand { ContainerRemove = new ContainerRemove { Name = RayNodeName(s.HostId), Force = true } }, TimeSpan.FromMinutes(2), ct);
+            log.LogInformation("mlp-net on {Host}: {Ip} → hub {Endpoint}", s.HostId, overlayIp, cfg["WireGuard:Endpoint"]);
+        }
+        return await CheckNetworkAsync(s, overlayIp, cfg, scopes, log, ct);
+    }
+
+    private static ContainerSpec NetSpokeSpec(string overlayIp, string hubKey, IConfiguration cfg)
+    {
         var spoke = new ContainerSpec { Name = NetName, Image = NetImage, Restart = "unless-stopped" };
         spoke.Labels["mlp.role"] = "net";
         spoke.CapAdd.Add("NET_ADMIN");
@@ -145,13 +158,12 @@ public static class HostContainers
         spoke.Env["PEER_ALLOWED"] = "10.88.0.0/16";
         if (cfg["WireGuard:Mtu"] is { Length: > 0 } mtu) spoke.Env["MTU"] = mtu;
         spoke.Command.Add("spoke");
-        var r = await s.SendCommandAsync(new AgentCommand { ContainerApply = new ContainerApply { Spec = spoke, KeepIfSame = true } }, TimeSpan.FromMinutes(3), ct);
-        if (!r.Ok) { log.LogWarning("mlp-net on {Host} failed: {Msg}", s.HostId, r.Message); return false; }
-        if (!r.Kept)
-        {
-            await s.SendCommandAsync(new AgentCommand { ContainerRemove = new ContainerRemove { Name = RayNodeName(s.HostId), Force = true } }, TimeSpan.FromMinutes(2), ct);
-            log.LogInformation("mlp-net on {Host}: {Ip} → hub {Endpoint}", s.HostId, overlayIp, cfg["WireGuard:Endpoint"]);
-        }
+        return spoke;
+    }
+
+    /// <summary>Checks that the spoke joined the VPN and records the result on the host.</summary>
+    private static async Task<bool> CheckNetworkAsync(AgentSession s, string overlayIp, IConfiguration cfg, IServiceScopeFactory scopes, ILogger log, CancellationToken ct)
+    {
         var check = new ContainerSpec { Image = NetImage, Network = "container:" + NetName };
         check.CapAdd.Add("NET_ADMIN");
         check.Command.Add("check");

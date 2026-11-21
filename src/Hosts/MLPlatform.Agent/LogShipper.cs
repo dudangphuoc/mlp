@@ -27,54 +27,72 @@ public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
     {
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!_following.TryAdd(container, done)) return;
-        _ = Task.Run(async () =>
+        _ = Task.Run(() => FollowAsync(container, attemptId, since, done));
+    }
+
+    private async Task FollowAsync(string container, string attemptId, string? since, TaskCompletionSource done)
+    {
+        try
         {
+            await ShipLogsAsync(container, attemptId, since);
+        }
+        catch (Exception e) when (e is IOException or InvalidOperationException) { log.LogDebug("Log follow for {C} stopped: {M}", container, e.Message); }
+        finally { _following.TryRemove(container, out _); done.TrySetResult(); }
+    }
+
+    private async Task ShipLogsAsync(string container, string attemptId, string? since)
+    {
+        using var p = StartDockerLogs(container, since);
+        var lines = new List<(long, string)>();
+        var bytes = 0;
+        var flushAt = Environment.TickCount64 + 1000;
+        var gate = new SemaphoreSlim(1);
+        async Task FlushAsync()
+        {
+            await gate.WaitAsync();
             try
             {
-                var psi = new ProcessStartInfo("docker") { RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = System.Text.Encoding.UTF8, StandardErrorEncoding = System.Text.Encoding.UTF8 };
-                foreach (var a in new[] { "logs", "-f", "-t" }) psi.ArgumentList.Add(a);
-                if (since is not null) { psi.ArgumentList.Add("--since"); psi.ArgumentList.Add(since); }
-                psi.ArgumentList.Add(container);
-                using var p = Process.Start(psi)!;
-                var lines = new List<(long, string)>();
-                var bytes = 0;
-                var flushAt = Environment.TickCount64 + 1000;
-                var gate = new SemaphoreSlim(1);
-                async Task FlushAsync()
-                {
-                    await gate.WaitAsync();
-                    try
-                    {
-                        if (lines.Count == 0) return;
-                        var batch = lines.ToList();
-                        lines.Clear(); bytes = 0;
-                        await SendOrSpoolAsync(attemptId, batch);
-                    }
-                    finally { gate.Release(); }
-                }
-                void OnLine(string? l)
-                {
-                    if (l is null) return;
-                    var sp = l.IndexOf(' ');
-                    var ts = sp > 0 && DateTimeOffset.TryParse(l[..sp], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t)
-                        ? t.ToUnixTimeMilliseconds() : TimeProvider.System.GetUtcNow().ToUnixTimeMilliseconds();
-                    var text = sp > 0 ? l[(sp + 1)..] : l;
-                    lock (lines) { lines.Add((ts, text)); bytes += text.Length; }
-                }
-                p.OutputDataReceived += (_, e) => OnLine(e.Data);
-                p.ErrorDataReceived += (_, e) => OnLine(e.Data);
-                p.BeginOutputReadLine(); p.BeginErrorReadLine();
-                while (!p.HasExited)
-                {
-                    await Task.Delay(200);
-                    if (bytes >= MaxChunkBytes || Environment.TickCount64 >= flushAt) { await FlushAsync(); flushAt = Environment.TickCount64 + 1000; }
-                }
-                await Task.Delay(300);
-                await FlushAsync();
+                if (lines.Count == 0) return;
+                var batch = lines.ToList();
+                lines.Clear(); bytes = 0;
+                await SendOrSpoolAsync(attemptId, batch);
             }
-            catch (Exception e) when (e is IOException or InvalidOperationException) { log.LogDebug("Log follow for {C} stopped: {M}", container, e.Message); }
-            finally { _following.TryRemove(container, out _); done.TrySetResult(); }
-        });
+            finally { gate.Release(); }
+        }
+        void OnLine(string? l)
+        {
+            if (l is null) return;
+            var (ts, text) = ParseLine(l);
+            lock (lines) { lines.Add((ts, text)); bytes += text.Length; }
+        }
+        p.OutputDataReceived += (_, e) => OnLine(e.Data);
+        p.ErrorDataReceived += (_, e) => OnLine(e.Data);
+        p.BeginOutputReadLine(); p.BeginErrorReadLine();
+        while (!p.HasExited)
+        {
+            await Task.Delay(200);
+            if (bytes >= MaxChunkBytes || Environment.TickCount64 >= flushAt) { await FlushAsync(); flushAt = Environment.TickCount64 + 1000; }
+        }
+        await Task.Delay(300);
+        await FlushAsync();
+    }
+
+    private static Process StartDockerLogs(string container, string? since)
+    {
+        var psi = new ProcessStartInfo("docker") { RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = System.Text.Encoding.UTF8, StandardErrorEncoding = System.Text.Encoding.UTF8 };
+        foreach (var a in new[] { "logs", "-f", "-t" }) psi.ArgumentList.Add(a);
+        if (since is not null) { psi.ArgumentList.Add("--since"); psi.ArgumentList.Add(since); }
+        psi.ArgumentList.Add(container);
+        return Process.Start(psi)!;
+    }
+
+    private static (long Timestamp, string Text) ParseLine(string l)
+    {
+        var sp = l.IndexOf(' ');
+        var ts = sp > 0 && DateTimeOffset.TryParse(l[..sp], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t)
+            ? t.ToUnixTimeMilliseconds() : TimeProvider.System.GetUtcNow().ToUnixTimeMilliseconds();
+        var text = sp > 0 ? l[(sp + 1)..] : l;
+        return (ts, text);
     }
 
     /// <summary>Wait for a container's log stream to send its last block (up to max) so logs are complete before

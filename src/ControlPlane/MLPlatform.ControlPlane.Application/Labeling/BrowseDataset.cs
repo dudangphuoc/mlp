@@ -20,13 +20,9 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
     {
         await auth.RequireAsync(q.WorkspaceId, "dataset.read", ct);
         _ = await db.GetDatasetAsync(q.DatasetId, q.WorkspaceId, ct) ?? throw new NotFoundException("DATA_DATASET_NOT_FOUND", "Dataset not found");
-        var version = q.VersionId is { } vid
-            ? await db.GetVersionAsync(vid, q.WorkspaceId, ct) ?? throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found")
-            : null;
-        if (version is not null && version.DatasetId != q.DatasetId) throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found");
+        var version = await ResolveVersionAsync(q, ct);
 
-        var prefix = q.Prefix.Replace('\\', '/').TrimStart('/');
-        if (prefix.Length > 0 && !prefix.EndsWith('/')) prefix += "/";
+        var prefix = NormalizePrefix(q.Prefix);
         var prefixLike = FileKinds.LikeEscape(prefix) + "%";
         var qLike = string.IsNullOrWhiteSpace(q.Search) ? "" : "%" + FileKinds.LikeEscape(q.Search.Trim()) + "%";
         var exts = FileKinds.Extensions(q.Kind);
@@ -54,15 +50,32 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
         {
             string? labelUrl = null, labelPath = null;
             if (candidates.TryGetValue(r.Path, out var cs) && cs.FirstOrDefault(labelFiles.ContainsKey) is { } lp) { labelPath = lp; labelUrl = Url(lp, labelFiles[lp]); }
-            string? ann = null;
-            if (annotations.TryGetValue(r.Path, out var list))
-                ann = new JsonArray(list.Select(a => (JsonNode)new JsonObject
-                {
-                    ["kind"] = a.Kind, ["class_id"] = a.ClassId, ["geometry"] = JsonNode.Parse(a.Geometry), ["source"] = a.Source,
-                }).ToArray()).ToJsonString();
+            var ann = annotations.TryGetValue(r.Path, out var list) ? AnnotationsJson(list) : null;
             return new BrowsedFile(r.Path, r.SizeBytes, FileKinds.Of(r.Path), Url(r.Path, r.Url), labelUrl, labelPath, ann);
         }).ToList();
         var classes = (await LabelSql.GetCurrentSchemaAsync(db, q.DatasetId, ct))?.Classes ?? "[]";
         return new BrowseResult(folders, files, total, classes);
     }
+
+    private async Task<VersionRow?> ResolveVersionAsync(BrowseDatasetQuery q, CancellationToken ct)
+    {
+        var version = q.VersionId is { } vid
+            ? await db.GetVersionAsync(vid, q.WorkspaceId, ct) ?? throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found")
+            : null;
+        if (version is not null && version.DatasetId != q.DatasetId) throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found");
+        return version;
+    }
+
+    private static string NormalizePrefix(string raw)
+    {
+        var prefix = raw.Replace('\\', '/').TrimStart('/');
+        if (prefix.Length > 0 && !prefix.EndsWith('/')) prefix += "/";
+        return prefix;
+    }
+
+    private static string AnnotationsJson(List<PathAnnotationRow> list) =>
+        new JsonArray(list.Select(a => (JsonNode)new JsonObject
+        {
+            ["kind"] = a.Kind, ["class_id"] = a.ClassId, ["geometry"] = JsonNode.Parse(a.Geometry), ["source"] = a.Source,
+        }).ToArray()).ToJsonString();
 }

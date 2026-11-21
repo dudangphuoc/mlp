@@ -55,6 +55,40 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         File.WriteAllText(Path.Combine(_mlpDir, "command.txt"), command);
         log.WriteLine($"[mlp-shim] {spec.Entrypoint}: {command}");
 
+        var (collector, train) = CreateCollector(entry);
+        _failures = LoadFailurePatterns();
+        _failure = null;
+        await using var metricsOut = new StreamWriter(Path.Combine(_mlpDir, "metrics.jsonl"), append: true);
+
+        using var proc = StartRecipeProcess(command, workdir, env, extra, collector);
+        using var reg = RegisterTermination(proc, ct);
+
+        var progressSettings = ReadProgressSettings(entry, ops);
+        var watcher = CreateCheckpointWatcher(entry, ops);
+        var phases = spec.Manifest["canvas"]?["phases"] as JsonArray;
+        var configPath = (entry["progress"] as JsonObject)?["config"]?.GetValue<string>() is { } cfgT ? Template.Render(cfgT, spec.Resolve, RenderMode.Raw) : null;
+        if (ops is not null) await ops.ProgressAsync("running", 0, progressSettings.Total, progressSettings.Unit, spec.Checkpoint is null ? "" : "resuming from checkpoint");
+
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        var wait = proc.WaitForExitAsync(CancellationToken.None);
+        while (!wait.IsCompleted)
+        {
+            await Task.WhenAny(wait, timer.WaitForNextTickAsync().AsTask());
+            await Flush(collector, metricsOut, sink);
+            if (ops is null) continue;
+            await ReportTickAsync(ops, train, progressSettings, phases, configPath, watcher, proc, ct);
+        }
+        await Flush(collector, metricsOut, sink);
+
+        var code = proc.ExitCode;
+        log.WriteLine($"[mlp-shim] process exited {code}");
+        return code;
+    }
+
+    private sealed record ProgressSettings(string? Metric, double Total, string Unit);
+
+    private (MetricCollector Collector, TrainProgress Train) CreateCollector(JsonObject entry)
+    {
         var metricsDef = entry["metrics"] as JsonObject ?? spec.Manifest["metrics"] as JsonObject ?? [];
         var collector = new MetricCollector(metricsDef, s => Template.Render(s, spec.Resolve, RenderMode.Raw));
         var train = new TrainProgress(entry["progress"] as JsonObject);
@@ -62,13 +96,18 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         collector.EpochToStep = e => train.Steps > 0 ? (e + 1) * train.Steps : null;
         collector.CurrentStep = () => train.GlobalStep;
         collector.OnInvalid = (key, step) => log.WriteLine($"[mlp-shim] metric {key} is not a finite number at step {step} — not recorded");
-        _failures = (spec.Manifest["failures"] as JsonArray)?.OfType<JsonObject>()
+        return (collector, train);
+    }
+
+    private List<(Regex Rx, string Reason, string Message)> LoadFailurePatterns() =>
+        (spec.Manifest["failures"] as JsonArray)?.OfType<JsonObject>()
             .Where(f => f["pattern"] is not null && f["retry"]?.GetValue<bool>() != true)
             .Select(f => (new Regex(f["pattern"]!.GetValue<string>(), RegexOptions.Compiled, TimeSpan.FromMilliseconds(50)),
                 f["reason"]?.GetValue<string>() ?? "recipe_failure", f["message"]?.GetValue<string>() ?? "")).ToList() ?? [];
-        _failure = null;
-        await using var metricsOut = new StreamWriter(Path.Combine(_mlpDir, "metrics.jsonl"), append: true);
 
+    private Process StartRecipeProcess(string command, string? workdir, Dictionary<string, string> env, JsonObject? extra,
+        MetricCollector collector)
+    {
         var psi = new ProcessStartInfo("/bin/sh")
         {
             RedirectStandardOutput = true, RedirectStandardError = true,
@@ -80,18 +119,23 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         psi.Environment["MLP_OUTPUT"] = spec.Output;
         if (extra is { Count: > 0 }) psi.Environment["MLP_EXTRA_JSON"] = extra.ToJsonString();
 
-        using var proc = Process.Start(psi) ?? throw new ShimException(3, "process_start_failed", "Could not start the process");
+        var proc = Process.Start(psi) ?? throw new ShimException(3, "process_start_failed", "Could not start the process");
         proc.OutputDataReceived += (_, e) => OnLine("stdout", e.Data, collector);
         proc.ErrorDataReceived += (_, e) => OnLine("stderr", e.Data, collector);
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
+        return proc;
+    }
 
-        using var reg = ct.Register(() =>
+    private static CancellationTokenRegistration RegisterTermination(Process proc, CancellationToken ct) =>
+        ct.Register(() =>
         {
             try { Process.Start("kill", ["-TERM", proc.Id.ToString()])?.WaitForExit(2000); } catch { }
             if (!proc.WaitForExit(60_000)) proc.Kill(entireProcessTree: true);
         });
 
+    private ProgressSettings ReadProgressSettings(JsonObject entry, OpsReporter? ops)
+    {
         var progressDef = entry["progress"] as JsonObject;
         var progressMetric = progressDef?["metric"]?.GetValue<string>();
         double progressTotal = 0;
@@ -99,46 +143,40 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
             double.TryParse(Template.Render(tot.ToString(), spec.Resolve, RenderMode.Raw), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out progressTotal);
         var unit = progressDef?["unit"]?.GetValue<string>() ?? progressMetric ?? "";
         if (ops is not null && progressDef?["stallAfterMin"] is JsonValue sa && sa.TryGetValue<int>(out var stall)) ops.StallAfterMin = stall;
+        return new ProgressSettings(progressMetric, progressTotal, unit);
+    }
+
+    private CheckpointWatcher? CreateCheckpointWatcher(JsonObject entry, OpsReporter? ops)
+    {
         var ckGlobs = CheckpointGlobs(entry);
-        CheckpointWatcher? watcher = spec.Entrypoint == "train" && ckGlobs.Count > 0 && ops is not null
+        return spec.Entrypoint == "train" && ckGlobs.Count > 0 && ops is not null
             ? new CheckpointWatcher(spec.Output, ckGlobs, Path.Combine(_mlpDir, "state.json"))
             : null;
-        var phases = spec.Manifest["canvas"]?["phases"] as JsonArray;
-        var configPath = (entry["progress"] as JsonObject)?["config"]?.GetValue<string>() is { } cfgT ? Template.Render(cfgT, spec.Resolve, RenderMode.Raw) : null;
-        if (ops is not null) await ops.ProgressAsync("running", 0, progressTotal, unit, spec.Checkpoint is null ? "" : "resuming from checkpoint");
+    }
 
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        var wait = proc.WaitForExitAsync(CancellationToken.None);
-        while (!wait.IsCompleted)
+    private async Task ReportTickAsync(OpsReporter ops, TrainProgress train, ProgressSettings progressSettings, JsonArray? phases,
+        string? configPath, CheckpointWatcher? watcher, Process proc, CancellationToken ct)
+    {
+        if (train.Known)
         {
-            await Task.WhenAny(wait, timer.WaitForNextTickAsync().AsTask());
-            await Flush(collector, metricsOut, sink);
-            if (ops is null) continue;
-            if (train.Known)
-            {
-                train.Stages ??= TrainProgress.ReadStages(phases, configPath, train.Epochs);
-                await ops.ProgressAsync("running", train.GlobalStep, train.Epochs * train.Steps, "step", "", train.EtaSeconds(), train.Detail().ToJsonString());
-            }
-            else
-            {
-                double current = progressMetric is "step" or "epoch" ? _maxStep + 1 : progressMetric is not null && _lastValue.TryGetValue(progressMetric, out var v) ? v : 0;
-                await ops.ProgressAsync("running", Math.Max(0, current), progressTotal, unit);
-            }
-            await ops.HeartbeatAsync();
-            if (watcher is not null)
-                foreach (var f in watcher.Ready())
-                    if (await ops.UploadCheckpointAsync(spec.Output, f, ct, train.Known ? train.CompletedEpochs : null)) watcher.MarkDone(f);
-            if (ops.Fenced)
-            {
-                try { proc.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
-                throw new ShimException(1, "attempt_fenced", "This run was superseded by a newer run");
-            }
+            train.Stages ??= TrainProgress.ReadStages(phases, configPath, train.Epochs);
+            await ops.ProgressAsync("running", train.GlobalStep, train.Epochs * train.Steps, "step", "", train.EtaSeconds(), train.Detail().ToJsonString());
         }
-        await Flush(collector, metricsOut, sink);
-
-        var code = proc.ExitCode;
-        log.WriteLine($"[mlp-shim] process exited {code}");
-        return code;
+        else
+        {
+            var progressMetric = progressSettings.Metric;
+            double current = progressMetric is "step" or "epoch" ? _maxStep + 1 : progressMetric is not null && _lastValue.TryGetValue(progressMetric, out var v) ? v : 0;
+            await ops.ProgressAsync("running", Math.Max(0, current), progressSettings.Total, progressSettings.Unit);
+        }
+        await ops.HeartbeatAsync();
+        if (watcher is not null)
+            foreach (var f in watcher.Ready())
+                if (await ops.UploadCheckpointAsync(spec.Output, f, ct, train.Known ? train.CompletedEpochs : null)) watcher.MarkDone(f);
+        if (ops.Fenced)
+        {
+            try { proc.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
+            throw new ShimException(1, "attempt_fenced", "This run was superseded by a newer run");
+        }
     }
 
     /// <summary>Exit code of the recipe process → model folder and upload (train), export list, or the failure class
@@ -202,14 +240,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         if (spec.Data is null) return;
         using var http = new HttpClient { Timeout = TimeSpan.FromHours(2) };
         var list = spec.DataFiles;
-        if (list.Count == 0 && spec.DataFilesUrl is { } listUrl)
-        {
-            try { list = JsonNode.Parse(await http.GetStringAsync(listUrl, ct)) as JsonArray ?? []; }
-            catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException)
-            {
-                throw new ShimException(1, "data_download_failed", $"Could not read the dataset file list: {e.Message}");
-            }
-        }
+        if (list.Count == 0 && spec.DataFilesUrl is { } listUrl) list = await ReadDataFileListAsync(http, listUrl, ct);
         if (list.Count == 0) return;
         if (spec.DataCache is { } cache && Directory.Exists(cache))
         {
@@ -220,70 +251,86 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         if (Directory.Exists(spec.Output)) spec.Data = Path.Combine(_mlpDir, "data");
         var files = list.OfType<JsonObject>().Select(f => (Path: f["path"]!.GetValue<string>(), Url: f["url"]!.GetValue<string>())).ToList();
         var root = Path.GetFullPath(spec.Data);
-        long total = 0;
-        var done = 0;
-        var cached = 0;
-        long pauseUntil = 0;
+        var counters = new DownloadCounters();
         using var progress = new CancellationTokenSource();
-        var reporter = Task.Run(async () =>
-        {
-            while (!progress.IsCancellationRequested && _ops is not null)
-            {
-                var wait = Interlocked.Read(ref pauseUntil) - Environment.TickCount64;
-                await _ops.ProgressAsync("preparing_data", Volatile.Read(ref done), files.Count, "file",
-                    wait > 0 ? $"rate limited by the source — waiting {wait / 1000} s" : "downloading dataset");
-                try { await Task.Delay(3000, progress.Token); } catch (OperationCanceledException) { break; }
-            }
-        }, CancellationToken.None);
+        var reporter = StartDownloadReporter(counters, files.Count, progress);
         try
         {
             await Parallel.ForEachAsync(files, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct }, async (f, token) =>
-            {
-                var target = Path.GetFullPath(Path.Combine(root, f.Path));
-                if (!target.StartsWith(root, StringComparison.Ordinal))
-                    throw new ShimException(2, "data_path_invalid", $"File path is outside the data folder: {f.Path}");
-                if (File.Exists(target)) { Interlocked.Increment(ref cached); Interlocked.Increment(ref done); return; }
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                for (var attempt = 1; ; attempt++)
-                {
-                    var wait = Interlocked.Read(ref pauseUntil) - Environment.TickCount64;
-                    if (wait > 0) await Task.Delay(TimeSpan.FromMilliseconds(wait), token);
-                    TimeSpan? backoff = null;
-                    try
-                    {
-                        using var res = await http.GetAsync(f.Url, HttpCompletionOption.ResponseHeadersRead, token);
-                        if ((int)res.StatusCode is 429 or 503)
-                        {
-                            backoff = res.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(Math.Min(300, 15 * Math.Pow(2, Math.Min(attempt, 5) - 1)));
-                            var until = Environment.TickCount64 + (long)backoff.Value.TotalMilliseconds;
-                            long seen;
-                            do { seen = Interlocked.Read(ref pauseUntil); } while (until > seen && Interlocked.CompareExchange(ref pauseUntil, until, seen) != seen);
-                            throw new HttpRequestException($"HTTP {(int)res.StatusCode} (rate limited)");
-                        }
-                        if (!res.IsSuccessStatusCode) throw new HttpRequestException($"HTTP {(int)res.StatusCode}");
-                        await using (var fs = File.Create(target + ".part"))
-                        {
-                            await res.Content.CopyToAsync(fs, token);
-                            Interlocked.Add(ref total, fs.Length);
-                        }
-                        File.Move(target + ".part", target, overwrite: true);
-                        break;
-                    }
-                    catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException && !token.IsCancellationRequested)
-                    {
-                        if (attempt >= 10) throw new ShimException(1, "data_download_failed", $"Downloading {f.Path} failed: {e.Message}");
-                        if (backoff is null) await Task.Delay(TimeSpan.FromSeconds(2 * attempt), token);
-                    }
-                }
-                Interlocked.Increment(ref done);
-            });
+                await DownloadDataFileAsync(http, root, f.Path, f.Url, counters, token));
         }
         finally
         {
             await progress.CancelAsync();
             await reporter;
         }
-        log.WriteLine($"[mlp-shim] dataset ready in {spec.Data}: {files.Count} file(s), {cached} already cached, {total} bytes downloaded");
+        log.WriteLine($"[mlp-shim] dataset ready in {spec.Data}: {files.Count} file(s), {counters.Cached} already cached, {counters.Total} bytes downloaded");
+    }
+
+    private sealed class DownloadCounters
+    {
+        public long Total, PauseUntil;
+        public int Done, Cached;
+    }
+
+    private static async Task<JsonArray> ReadDataFileListAsync(HttpClient http, string listUrl, CancellationToken ct)
+    {
+        try { return JsonNode.Parse(await http.GetStringAsync(listUrl, ct)) as JsonArray ?? []; }
+        catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            throw new ShimException(1, "data_download_failed", $"Could not read the dataset file list: {e.Message}");
+        }
+    }
+
+    private Task StartDownloadReporter(DownloadCounters counters, int fileCount, CancellationTokenSource progress) =>
+        Task.Run(async () =>
+        {
+            while (!progress.IsCancellationRequested && _ops is not null)
+            {
+                var wait = Interlocked.Read(ref counters.PauseUntil) - Environment.TickCount64;
+                await _ops.ProgressAsync("preparing_data", Volatile.Read(ref counters.Done), fileCount, "file",
+                    wait > 0 ? $"rate limited by the source — waiting {wait / 1000} s" : "downloading dataset");
+                try { await Task.Delay(3000, progress.Token); } catch (OperationCanceledException) { break; }
+            }
+        }, CancellationToken.None);
+
+    private static async Task DownloadDataFileAsync(HttpClient http, string root, string path, string url, DownloadCounters counters,
+        CancellationToken token)
+    {
+        var target = Path.GetFullPath(Path.Combine(root, path));
+        if (!target.StartsWith(root, StringComparison.Ordinal))
+            throw new ShimException(2, "data_path_invalid", $"File path is outside the data folder: {path}");
+        if (File.Exists(target)) { Interlocked.Increment(ref counters.Cached); Interlocked.Increment(ref counters.Done); return; }
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        for (var attempt = 1; ; attempt++)
+        {
+            var wait = Interlocked.Read(ref counters.PauseUntil) - Environment.TickCount64;
+            if (wait > 0) await Task.Delay(TimeSpan.FromMilliseconds(wait), token);
+            TimeSpan? backoff = null;
+            try
+            {
+                using var res = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
+                if ((int)res.StatusCode is 429 or 503)
+                {
+                    backoff = PauseForRetry(res, attempt, ref counters.PauseUntil);
+                    throw new HttpRequestException($"HTTP {(int)res.StatusCode} (rate limited)");
+                }
+                if (!res.IsSuccessStatusCode) throw new HttpRequestException($"HTTP {(int)res.StatusCode}");
+                await using (var fs = File.Create(target + ".part"))
+                {
+                    await res.Content.CopyToAsync(fs, token);
+                    Interlocked.Add(ref counters.Total, fs.Length);
+                }
+                File.Move(target + ".part", target, overwrite: true);
+                break;
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException && !token.IsCancellationRequested)
+            {
+                if (attempt >= 10) throw new ShimException(1, "data_download_failed", $"Downloading {path} failed: {e.Message}");
+                if (backoff is null) await Task.Delay(TimeSpan.FromSeconds(2 * attempt), token);
+            }
+        }
+        Interlocked.Increment(ref counters.Done);
     }
 
     /// <summary>Pretrained variant weights (fine-tuning): downloaded to {weights} when the file is not there yet.</summary>
@@ -361,28 +408,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
                 continue;
             }
             if (!e.StartsWith("url:", StringComparison.Ordinal)) continue;
-            var parts = e[4..].Split('|');
-            if (parts.Length < 2) continue;
-            var (url, name, sha) = (parts[0], parts[1], parts.Length > 2 ? parts[2] : "");
-            var target = Path.GetFullPath(Path.Combine(spec.Output, name));
-            if (!target.StartsWith(root, StringComparison.Ordinal)) throw new ShimException(1, "checkpoint_path_invalid", name);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            try
-            {
-                using var res = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-                if (!res.IsSuccessStatusCode) throw new ShimException(1, "checkpoint_download_failed", $"{name}: HTTP {(int)res.StatusCode}");
-                await using (var fs = File.Create(target + ".part")) await res.Content.CopyToAsync(fs, ct);
-            }
-            catch (HttpRequestException ex) { throw new ShimException(1, "checkpoint_download_failed", $"{name}: {ex.Message}"); }
-            if (sha.Length > 0)
-            {
-                string got;
-                await using (var fs = File.OpenRead(target + ".part")) got = Convert.ToHexStringLower(await System.Security.Cryptography.SHA256.HashDataAsync(fs, ct));
-                if (got != sha) throw new ShimException(1, "checkpoint_corrupt", $"{name}: sha256 {got[..12]}… does not match the recorded {sha[..Math.Min(12, sha.Length)]}…");
-                log.WriteLine($"[mlp-shim] checkpoint {name}: sha256 verified");
-            }
-            File.Move(target + ".part", target, overwrite: true);
-            restored.Add(target);
+            await RestoreFromUrlAsync(http, e, root, restored, ct);
         }
         if (restored.Count == 0) { log.WriteLine("[mlp-shim] no checkpoint could be restored; starting from scratch"); return; }
         var order = CheckpointGlobs(spec.Entry);
@@ -390,6 +416,32 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         spec.Checkpoint = primary;
         log.WriteLine($"[mlp-shim] resuming from checkpoint {Path.GetRelativePath(spec.Output, primary)}"
             + (restored.Count > 1 ? $" (also restored: {string.Join(", ", restored.Where(r => r != primary).Select(r => Path.GetRelativePath(spec.Output, r)))})" : ""));
+    }
+
+    private async Task RestoreFromUrlAsync(HttpClient http, string e, string root, List<string> restored, CancellationToken ct)
+    {
+        var parts = e[4..].Split('|');
+        if (parts.Length < 2) return;
+        var (url, name, sha) = (parts[0], parts[1], parts.Length > 2 ? parts[2] : "");
+        var target = Path.GetFullPath(Path.Combine(spec.Output, name));
+        if (!target.StartsWith(root, StringComparison.Ordinal)) throw new ShimException(1, "checkpoint_path_invalid", name);
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        try
+        {
+            using var res = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (!res.IsSuccessStatusCode) throw new ShimException(1, "checkpoint_download_failed", $"{name}: HTTP {(int)res.StatusCode}");
+            await using (var fs = File.Create(target + ".part")) await res.Content.CopyToAsync(fs, ct);
+        }
+        catch (HttpRequestException ex) { throw new ShimException(1, "checkpoint_download_failed", $"{name}: {ex.Message}"); }
+        if (sha.Length > 0)
+        {
+            string got;
+            await using (var fs = File.OpenRead(target + ".part")) got = Convert.ToHexStringLower(await System.Security.Cryptography.SHA256.HashDataAsync(fs, ct));
+            if (got != sha) throw new ShimException(1, "checkpoint_corrupt", $"{name}: sha256 {got[..12]}… does not match the recorded {sha[..Math.Min(12, sha.Length)]}…");
+            log.WriteLine($"[mlp-shim] checkpoint {name}: sha256 verified");
+        }
+        File.Move(target + ".part", target, overwrite: true);
+        restored.Add(target);
     }
 
     private int Fail(int code, string reason, string message)
@@ -485,18 +537,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
 
         var exclude = new List<string> { "model", ".mlp" };
         exclude.AddRange(CheckpointGlobs(spec.Entry));
-        var found = false;
-        foreach (var g in best["from"]!.AsArray().Select(x => x!.GetValue<string>()))
-        {
-            var match = Glob(spec.Output, g).FirstOrDefault();
-            if (match is null) continue;
-            var target = Path.Combine(model, "weights", asName);
-            if (Directory.Exists(match)) CopyDir(match, target, spec.Output, exclude);
-            else File.Copy(match, target, overwrite: true);
-            found = true;
-            break;
-        }
-        if (!found) throw new ShimException(3, "artifact_missing", $"Best file not found ({string.Join(", ", best["from"]!.AsArray())})");
+        CopyBestWeights(best, asName, model, exclude);
 
         foreach (var f in (art["files"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
@@ -512,6 +553,28 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
             File.WriteAllText(Path.Combine(model, "classes.json"), names);
         File.WriteAllText(Path.Combine(model, "signature.json"), new JsonObject { ["task"] = spec.Task }.ToJsonString());
 
+        WriteRecipeLock(art, model);
+        log.WriteLine($"[mlp-shim] model folder: {model}");
+    }
+
+    private void CopyBestWeights(JsonObject best, string asName, string model, List<string> exclude)
+    {
+        var found = false;
+        foreach (var g in best["from"]!.AsArray().Select(x => x!.GetValue<string>()))
+        {
+            var match = Glob(spec.Output, g).FirstOrDefault();
+            if (match is null) continue;
+            var target = Path.Combine(model, "weights", asName);
+            if (Directory.Exists(match)) CopyDir(match, target, spec.Output, exclude);
+            else File.Copy(match, target, overwrite: true);
+            found = true;
+            break;
+        }
+        if (!found) throw new ShimException(3, "artifact_missing", $"Best file not found ({string.Join(", ", best["from"]!.AsArray())})");
+    }
+
+    private void WriteRecipeLock(JsonObject art, string model)
+    {
         var lockDoc = new JsonObject
         {
             ["recipe"] = spec.Manifest["metadata"]?["name"]?.DeepClone(),
@@ -527,7 +590,6 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
             if (baseRef.Length > 0) lockDoc["baseWeights"] = new JsonObject { ["ref"] = baseRef };
         }
         File.WriteAllText(Path.Combine(model, "recipe.lock.json"), lockDoc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        log.WriteLine($"[mlp-shim] model folder: {model}");
     }
 
     private void RecordExportOutputs(JsonObject entry)
@@ -594,52 +656,68 @@ public sealed partial class Runner
             return (true, $"{trainImages} train and {valImages} val images ready");
         });
 
-        await StageAsync("stage1", async () =>
-        {
-            foreach (var f in BestNames().Append(checkpoint ?? "").Where(f => f.Length > 0))
-                foreach (var p in Glob(spec.Output, f)) if (File.Exists(p)) File.Delete(p);
-            spec.Checkpoint = null;
-            var code = await PassAsync(entry, trial["overrides"] as JsonObject, sink, pass1, ct);
-            if (code != 0) return (false, ExitDetail(code));
-            if (checkpoint is not null && !File.Exists(checkpoint)) return (false, $"no checkpoint {Path.GetFileName(checkpoint)} after stage 1");
-            if (BestNames().Count > 0 && !BestNames().Any(b => Glob(spec.Output, b).Any()))
-                return (false, $"no best checkpoint ({string.Join(", ", BestNames())}) after stage 1");
-            var primary = PrimaryMetric();
-            if (primary.Length > 0 && !(_lastValue.TryGetValue(primary, out var v) && double.IsFinite(v)))
-                return (false, $"metric {primary} was not reported");
-            return (true, primary.Length > 0 ? $"one epoch done, {primary} = {_lastValue[primary].ToString("0.####", CultureInfo.InvariantCulture)}" : "one epoch done");
-        });
+        await StageAsync("stage1", () => TrialStageOneAsync(entry, trial, checkpoint, sink, pass1, ct));
 
         if (pretrained)
-            await StageAsync("weights", () =>
-            {
-                var (loaded, created) = TrialLog.WeightsLoad(pass1);
-                if (created is null) return Task.FromResult((true, "skipped:the training did not print which layers it loaded"));
-                var classes = spec.Dataset["classes.count"]?.ToString();
-                var text = loaded is { } l ? $"{l} layers loaded, {created} created new" : $"{created} layers created new";
-                return Task.FromResult((true, classes is { Length: > 0 } ? $"{text} for {classes} classes" : text));
-            });
+            await StageAsync("weights", () => TrialWeightsStage(pass1));
         else TrialLine("weights", "skipped", 0, "starts from the backbone only: no pretrained weights to load");
 
-        await StageAsync("resume", async () =>
-        {
-            if (checkpoint is null || !File.Exists(checkpoint)) return (false, "no checkpoint to resume from");
-            spec.Checkpoint = checkpoint;
-            var code = await PassAsync(entry, trial["resumeOverrides"] as JsonObject, sink, pass2, ct);
-            if (code != 0) return (false, ExitDetail(code));
-            return (true, pass2.Any(l => l.Contains("Refresh EMA at epoch 1", StringComparison.Ordinal))
-                ? "resumed and went through stage 2" : "resumed; stage 2 branch not seen");
-        });
+        await StageAsync("resume", () => TrialResumeAsync(entry, trial, checkpoint, sink, pass2, ct));
 
-        await StageAsync("package", async () =>
-        {
-            BuildModelFolder();
-            if (sink is not null) await UploadWhenReachableAsync(() => sink.UploadModelFolderAsync(Path.Combine(spec.Output, "model"), ct), _ops, ct);
-            return (true, sink is null ? "model folder built (no upload: not connected)" : "model folder built and uploaded");
-        });
+        await StageAsync("package", () => TrialPackageAsync(sink, ct));
 
         await StageAsync("reload", () => SelfTestAsync(ct));
 
+        LogTrialMeasure(pass1, trainImages, valImages);
+        return await FinishTrialAsync();
+    }
+
+    private async Task<(bool, string)> TrialStageOneAsync(JsonObject entry, JsonObject trial, string? checkpoint, TrackingSink? sink,
+        List<string> pass1, CancellationToken ct)
+    {
+    foreach (var f in BestNames().Append(checkpoint ?? "").Where(f => f.Length > 0))
+        foreach (var p in Glob(spec.Output, f)) if (File.Exists(p)) File.Delete(p);
+    spec.Checkpoint = null;
+    var code = await PassAsync(entry, trial["overrides"] as JsonObject, sink, pass1, ct);
+    if (code != 0) return (false, ExitDetail(code));
+    if (checkpoint is not null && !File.Exists(checkpoint)) return (false, $"no checkpoint {Path.GetFileName(checkpoint)} after stage 1");
+    if (BestNames().Count > 0 && !BestNames().Any(b => Glob(spec.Output, b).Any()))
+        return (false, $"no best checkpoint ({string.Join(", ", BestNames())}) after stage 1");
+    var primary = PrimaryMetric();
+    if (primary.Length > 0 && !(_lastValue.TryGetValue(primary, out var v) && double.IsFinite(v)))
+        return (false, $"metric {primary} was not reported");
+    return (true, primary.Length > 0 ? $"one epoch done, {primary} = {_lastValue[primary].ToString("0.####", CultureInfo.InvariantCulture)}" : "one epoch done");
+    }
+
+    private Task<(bool, string)> TrialWeightsStage(List<string> pass1)
+    {
+            var (loaded, created) = TrialLog.WeightsLoad(pass1);
+            if (created is null) return Task.FromResult((true, "skipped:the training did not print which layers it loaded"));
+            var classes = spec.Dataset["classes.count"]?.ToString();
+            var text = loaded is { } l ? $"{l} layers loaded, {created} created new" : $"{created} layers created new";
+            return Task.FromResult((true, classes is { Length: > 0 } ? $"{text} for {classes} classes" : text));
+    }
+
+    private async Task<(bool, string)> TrialResumeAsync(JsonObject entry, JsonObject trial, string? checkpoint, TrackingSink? sink,
+        List<string> pass2, CancellationToken ct)
+    {
+    if (checkpoint is null || !File.Exists(checkpoint)) return (false, "no checkpoint to resume from");
+    spec.Checkpoint = checkpoint;
+    var code = await PassAsync(entry, trial["resumeOverrides"] as JsonObject, sink, pass2, ct);
+    if (code != 0) return (false, ExitDetail(code));
+    return (true, pass2.Any(l => l.Contains("Refresh EMA at epoch 1", StringComparison.Ordinal))
+        ? "resumed and went through stage 2" : "resumed; stage 2 branch not seen");
+    }
+
+    private async Task<(bool, string)> TrialPackageAsync(TrackingSink? sink, CancellationToken ct)
+    {
+    BuildModelFolder();
+    if (sink is not null) await UploadWhenReachableAsync(() => sink.UploadModelFolderAsync(Path.Combine(spec.Output, "model"), ct), _ops, ct);
+    return (true, sink is null ? "model folder built (no upload: not connected)" : "model folder built and uploaded");
+    }
+
+    private void LogTrialMeasure(List<string> pass1, int trainImages, int valImages)
+    {
         var m = TrialLog.Measure(pass1);
         var multiscale = spec.Resolve("params.multiscale", out var ms) && ms is JsonValue mv && mv.TryGetValue<bool>(out var on) && on;
         long? peak = m.PeakMb is { } pk ? (long)Math.Round(multiscale ? pk * 1.25 * 1.25 : pk) : null;
@@ -649,6 +727,10 @@ public sealed partial class Runner
             ["train_images"] = trainImages, ["val_images"] = valImages, ["val_s_per_batch"] = m.ValSecondsPerBatch,
         }.ToJsonString());
         log.Flush();
+    }
+
+    private async Task<int> FinishTrialAsync()
+    {
         if (!_trialFailed)
         {
             if (_ops is not null) await _ops.ProgressAsync("finishing", 1, 1);
@@ -730,12 +812,7 @@ public sealed partial class Runner
         if (string.IsNullOrEmpty(handler)) return (true, "skipped:the recipe has no serve handler");
         var images = spec.Data is null ? null : Path.Combine(spec.Data, "val");
         if (images is null || !Directory.Exists(images)) return (true, "skipped:no val images to predict");
-        var psi = new ProcessStartInfo("python") { RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = "/opt/recipe" };
-        if (!Directory.Exists(psi.WorkingDirectory)) psi.WorkingDirectory = spec.Output;
-        foreach (var a in new[] { "-m", "mlp_serve.selftest", "--model-dir", Path.Combine(spec.Output, "model"), "--images", images, "--limit", "8",
-                     "--handler", handler, "--task", spec.Task, "--params-json", spec.Params.ToJsonString() })
-            psi.ArgumentList.Add(a);
-        psi.Environment["MLP_DEVICE"] = spec.Hardware["device"]?.ToString() ?? "cpu";
+        var psi = CreateSelfTestStartInfo(handler, images);
         Process? proc;
         try { proc = Process.Start(psi); }
         catch (System.ComponentModel.Win32Exception) { return (true, "skipped:python is not available in the image"); }
@@ -765,5 +842,16 @@ public sealed partial class Runner
             return (true, $"reloaded and predicted {o["images"]} images ({o["objects"]} objects)");
         }
         catch (JsonException) { return (false, "self-test printed an unreadable result"); }
+    }
+
+    private ProcessStartInfo CreateSelfTestStartInfo(string handler, string images)
+    {
+        var psi = new ProcessStartInfo("python") { RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = "/opt/recipe" };
+        if (!Directory.Exists(psi.WorkingDirectory)) psi.WorkingDirectory = spec.Output;
+        foreach (var a in new[] { "-m", "mlp_serve.selftest", "--model-dir", Path.Combine(spec.Output, "model"), "--images", images, "--limit", "8",
+                     "--handler", handler, "--task", spec.Task, "--params-json", spec.Params.ToJsonString() })
+            psi.ArgumentList.Add(a);
+        psi.Environment["MLP_DEVICE"] = spec.Hardware["device"]?.ToString() ?? "cpu";
+        return psi;
     }
 }

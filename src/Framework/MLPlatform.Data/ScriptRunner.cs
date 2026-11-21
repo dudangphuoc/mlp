@@ -92,20 +92,25 @@ public sealed class ScriptRunner(NpgsqlDataSource dataSource, TextWriter log)
                 }
                 throw new InvalidOperationException($"Migration {s.Id} was already applied but its SQL has changed (checksum mismatch).");
             }
-            await using var tx = await conn.BeginTransactionAsync(ct);
-            await Exec(conn, tx, "SET LOCAL lock_timeout = '5s'", ct);
-            await Exec(conn, tx, s.Sql, ct);
-            await using (var ins = new NpgsqlCommand("INSERT INTO platform.migrations (id, checksum) VALUES (@id, @c)", conn, tx))
-            {
-                ins.Parameters.AddWithValue("id", s.Id);
-                ins.Parameters.AddWithValue("c", s.Checksum);
-                await ins.ExecuteNonQueryAsync(ct);
-            }
-            await tx.CommitAsync(ct);
-            log.WriteLine($"applied {s.Id}");
+            await ApplyOneAsync(conn, s, ct);
             count++;
         }
         return count;
+    }
+
+    private async Task ApplyOneAsync(NpgsqlConnection conn, Script s, CancellationToken ct)
+    {
+        await using var tx = await conn.BeginTransactionAsync(ct);
+        await Exec(conn, tx, "SET LOCAL lock_timeout = '5s'", ct);
+        await Exec(conn, tx, s.Sql, ct);
+        await using (var ins = new NpgsqlCommand("INSERT INTO platform.migrations (id, checksum) VALUES (@id, @c)", conn, tx))
+        {
+            ins.Parameters.AddWithValue("id", s.Id);
+            ins.Parameters.AddWithValue("c", s.Checksum);
+            await ins.ExecuteNonQueryAsync(ct);
+        }
+        await tx.CommitAsync(ct);
+        log.WriteLine($"applied {s.Id}");
     }
 
     private static async Task Exec(NpgsqlConnection c, NpgsqlTransaction? tx, string sql, CancellationToken ct)

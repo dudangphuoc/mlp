@@ -38,15 +38,7 @@ public sealed partial class Runner
         RemoveStaleViews(views, view);
 
         var st = new SyncState { Files = files.Count };
-        var fetch = new List<SyncFile>();
-        foreach (var f in files)
-        {
-            if (f.Id is null) { st.UncachedFiles++; fetch.Add(f); continue; }
-            var obj = ObjectPath(objects, f.Id);
-            var fi = new FileInfo(obj);
-            if (fi.Exists && (f.Size < 0 || fi.Length == f.Size) && fi.LastWriteTimeUtc == ObjectStamp) { st.ReusedFiles++; st.ReusedBytes += fi.Length; }
-            else fetch.Add(f);
-        }
+        var fetch = PlanFetch(objects, files, st);
         st.FetchFiles = fetch.Count;
         st.FetchBytes = fetch.Sum(f => Math.Max(0, f.Size));
         var free = new DriveInfo(cache).AvailableFreeSpace;
@@ -62,7 +54,33 @@ public sealed partial class Runner
         _ = KeepAliveAsync(view);
 
         using var progress = new CancellationTokenSource();
-        var reporter = Task.Run(async () =>
+        var reporter = StartSyncReporter(st, started, free, progress);
+        await FetchAllAsync(fetch, view, objects, st, progress, reporter, ct);
+
+        LinkCachedObjects(view, objects, files);
+        spec.Data = view;
+        var (cacheFiles, cacheBytes) = Usage(objects);
+        await ReportSyncAsync(st, started, new DriveInfo(cache).AvailableFreeSpace, final: true, cacheFiles, cacheBytes);
+        log.WriteLine($"[mlp-shim] dataset ready in {view}: {files.Count} file(s), {st.ReusedFiles} reused ({Bytes(st.ReusedBytes)}), " +
+                      $"{st.DoneFiles} downloaded ({Bytes(st.DoneBytes)}) in {TimeProvider.System.GetElapsedTime(started).TotalSeconds:0.0} s; cache {cacheFiles} file(s), {Bytes(cacheBytes)}");
+    }
+
+    private static List<SyncFile> PlanFetch(string objects, List<SyncFile> files, SyncState st)
+    {
+        var fetch = new List<SyncFile>();
+        foreach (var f in files)
+        {
+            if (f.Id is null) { st.UncachedFiles++; fetch.Add(f); continue; }
+            var obj = ObjectPath(objects, f.Id);
+            var fi = new FileInfo(obj);
+            if (fi.Exists && (f.Size < 0 || fi.Length == f.Size) && fi.LastWriteTimeUtc == ObjectStamp) { st.ReusedFiles++; st.ReusedBytes += fi.Length; }
+            else fetch.Add(f);
+        }
+        return fetch;
+    }
+
+    private Task StartSyncReporter(SyncState st, long started, long free, CancellationTokenSource progress) =>
+        Task.Run(async () =>
         {
             while (!progress.IsCancellationRequested && _ops is not null)
             {
@@ -70,6 +88,10 @@ public sealed partial class Runner
                 try { await Task.Delay(2000, progress.Token); } catch (OperationCanceledException) { break; }
             }
         }, CancellationToken.None);
+
+    private async Task FetchAllAsync(List<SyncFile> fetch, string view, string objects, SyncState st,
+        CancellationTokenSource progress, Task reporter, CancellationToken ct)
+    {
         using var http = new HttpClient { Timeout = TimeSpan.FromHours(2) };
         try
         {
@@ -85,18 +107,16 @@ public sealed partial class Runner
             await progress.CancelAsync();
             await reporter;
         }
+    }
 
+    private static void LinkCachedObjects(string view, string objects, List<SyncFile> files)
+    {
         foreach (var f in files.Where(f => f.Id is not null))
         {
             var dst = ViewPath(view, f.Path);
             Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
             if (Link(ObjectPath(objects, f.Id!), dst) != 0) File.Copy(ObjectPath(objects, f.Id!), dst, overwrite: true);
         }
-        spec.Data = view;
-        var (cacheFiles, cacheBytes) = Usage(objects);
-        await ReportSyncAsync(st, started, new DriveInfo(cache).AvailableFreeSpace, final: true, cacheFiles, cacheBytes);
-        log.WriteLine($"[mlp-shim] dataset ready in {view}: {files.Count} file(s), {st.ReusedFiles} reused ({Bytes(st.ReusedBytes)}), " +
-                      $"{st.DoneFiles} downloaded ({Bytes(st.DoneBytes)}) in {TimeProvider.System.GetElapsedTime(started).TotalSeconds:0.0} s; cache {cacheFiles} file(s), {Bytes(cacheBytes)}");
     }
 
     private async Task DownloadOneAsync(HttpClient http, SyncFile f, string target, SyncState st, CancellationToken token)
@@ -114,10 +134,7 @@ public sealed partial class Runner
                 using var res = await http.GetAsync(f.Url, HttpCompletionOption.ResponseHeadersRead, token);
                 if ((int)res.StatusCode is 429 or 503)
                 {
-                    backoff = res.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(Math.Min(300, 15 * Math.Pow(2, Math.Min(attempt, 5) - 1)));
-                    var until = Environment.TickCount64 + (long)backoff.Value.TotalMilliseconds;
-                    long seen;
-                    do { seen = Interlocked.Read(ref st.PauseUntil); } while (until > seen && Interlocked.CompareExchange(ref st.PauseUntil, until, seen) != seen);
+                    backoff = PauseForRetry(res, attempt, ref st.PauseUntil);
                     throw new HttpRequestException($"HTTP {(int)res.StatusCode}");
                 }
                 if (!res.IsSuccessStatusCode) throw new HttpRequestException($"HTTP {(int)res.StatusCode}");
@@ -133,22 +150,42 @@ public sealed partial class Runner
                         Interlocked.Add(ref st.DoneBytes, n);
                     }
                 }
-                if (f.Size >= 0 && got != f.Size) throw new IOException($"size {got} B, expected {f.Size} B");
-                File.Move(part, target, overwrite: true);
-                st.Failed.TryRemove(f.Path, out _);
-                Interlocked.Increment(ref st.DoneFiles);
+                CompleteDownload(f, part, target, got, st);
                 return;
             }
             catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException && !token.IsCancellationRequested)
             {
-                Interlocked.Add(ref st.DoneBytes, -got);
-                try { File.Delete(part); } catch (IOException) { }
-                st.Failed[f.Path] = (e.Message, attempt);
-                Interlocked.Increment(ref st.Retries);
-                if (attempt >= 10) throw new ShimException(1, "data_download_failed", $"Downloading {f.Path} failed: {e.Message}");
-                if (backoff is null) await Task.Delay(TimeSpan.FromSeconds(2 * attempt), token);
+                await RecordFailureAsync(e, f, part, st, attempt, got, backoff, token);
             }
         }
+    }
+
+    private static TimeSpan PauseForRetry(HttpResponseMessage res, int attempt, ref long pauseUntil)
+    {
+        var backoff = res.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(Math.Min(300, 15 * Math.Pow(2, Math.Min(attempt, 5) - 1)));
+        var until = Environment.TickCount64 + (long)backoff.TotalMilliseconds;
+        long seen;
+        do { seen = Interlocked.Read(ref pauseUntil); } while (until > seen && Interlocked.CompareExchange(ref pauseUntil, until, seen) != seen);
+        return backoff;
+    }
+
+    private static void CompleteDownload(SyncFile f, string part, string target, long got, SyncState st)
+    {
+        if (f.Size >= 0 && got != f.Size) throw new IOException($"size {got} B, expected {f.Size} B");
+        File.Move(part, target, overwrite: true);
+        st.Failed.TryRemove(f.Path, out _);
+        Interlocked.Increment(ref st.DoneFiles);
+    }
+
+    private static async Task RecordFailureAsync(Exception e, SyncFile f, string part, SyncState st, int attempt, long got,
+        TimeSpan? backoff, CancellationToken token)
+    {
+        Interlocked.Add(ref st.DoneBytes, -got);
+        try { File.Delete(part); } catch (IOException) { }
+        st.Failed[f.Path] = (e.Message, attempt);
+        Interlocked.Increment(ref st.Retries);
+        if (attempt >= 10) throw new ShimException(1, "data_download_failed", $"Downloading {f.Path} failed: {e.Message}");
+        if (backoff is null) await Task.Delay(TimeSpan.FromSeconds(2 * attempt), token);
     }
 
     private async Task ReportSyncAsync(SyncState st, long started, long free, bool final, long cacheFiles = -1, long cacheBytes = -1)

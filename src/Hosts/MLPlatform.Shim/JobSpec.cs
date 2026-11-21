@@ -68,6 +68,27 @@ public sealed class JobSpec
     /// <summary>Template resolver following the 20/08 §4.1 placeholder catalog.</summary>
     public bool Resolve(string name, out JsonNode? value)
     {
+        if (TryResolveFixed(name, out value)) return true;
+        if (name.StartsWith("params.", StringComparison.Ordinal)) return TryResolveParam(name[7..], out value);
+        if (name.StartsWith("variant.", StringComparison.Ordinal)) { value = Variant[name[8..]]?.DeepClone(); return true; }
+        if (name.StartsWith("input.", StringComparison.Ordinal))
+        {
+            if (Entry["inputs"]?[name[6..]] is null) return false;
+            value = Inputs[name[6..]]?.DeepClone(); return true;
+        }
+        if (name.StartsWith("zoo.", StringComparison.Ordinal)) { value = Zoo[name[4..]]?.DeepClone(); return true; }
+        if (name.StartsWith("dataset.", StringComparison.Ordinal)) { value = Dataset[name[8..]]?.DeepClone(); return true; }
+        if (name is "nnodes" or "node_rank" or "gpus_per_node" or "gpu_ids_csv" or "master_addr" or "master_port" or "device"
+            || name.StartsWith("gpu.", StringComparison.Ordinal))
+        {
+            value = Hardware[name]?.DeepClone() ?? DefaultHardware(name);
+            return true;
+        }
+        return false;
+    }
+
+    private bool TryResolveFixed(string name, out JsonNode? value)
+    {
         value = null;
         JsonNode? V(string? s) => s is null ? null : JsonValue.Create(s);
         var splitNames = Manifest["data"]?["splitNames"] as JsonObject;
@@ -93,32 +114,19 @@ public sealed class JobSpec
             case "converter.src": value = V(ConverterSrc); return true;
             case "converter.dst": value = V(ConverterDst); return true;
         }
-        if (name.StartsWith("params.", StringComparison.Ordinal))
-        {
-            var p = name[7..];
-            if (Params.ContainsKey(p)) { value = Params[p]?.DeepClone(); return true; }
-            var def = Manifest["params"]?[p];
-            if (def is null) return false;
-            if (def["required"]?.GetValue<bool>() == true)
-                throw new ShimException(2, "param_required", $"Missing required parameter {p}");
-            value = def["default"]?.DeepClone();
-            return true;
-        }
-        if (name.StartsWith("variant.", StringComparison.Ordinal)) { value = Variant[name[8..]]?.DeepClone(); return true; }
-        if (name.StartsWith("input.", StringComparison.Ordinal))
-        {
-            if (Entry["inputs"]?[name[6..]] is null) return false;
-            value = Inputs[name[6..]]?.DeepClone(); return true;
-        }
-        if (name.StartsWith("zoo.", StringComparison.Ordinal)) { value = Zoo[name[4..]]?.DeepClone(); return true; }
-        if (name.StartsWith("dataset.", StringComparison.Ordinal)) { value = Dataset[name[8..]]?.DeepClone(); return true; }
-        if (name is "nnodes" or "node_rank" or "gpus_per_node" or "gpu_ids_csv" or "master_addr" or "master_port" or "device"
-            || name.StartsWith("gpu.", StringComparison.Ordinal))
-        {
-            value = Hardware[name]?.DeepClone() ?? DefaultHardware(name);
-            return true;
-        }
         return false;
+    }
+
+    private bool TryResolveParam(string p, out JsonNode? value)
+    {
+        value = null;
+        if (Params.ContainsKey(p)) { value = Params[p]?.DeepClone(); return true; }
+        var def = Manifest["params"]?[p];
+        if (def is null) return false;
+        if (def["required"]?.GetValue<bool>() == true)
+            throw new ShimException(2, "param_required", $"Missing required parameter {p}");
+        value = def["default"]?.DeepClone();
+        return true;
     }
 
     private static JsonNode? DefaultHardware(string name) => name switch

@@ -172,6 +172,23 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         var sha = InspectionRules.ParamsHash(manifest, set);
         numClasses = Math.Max(0, numClasses);
 
+        var ready = await ReadyEnvironmentsAsync(m, ws, recipe, hostId, ct);
+        if (ready.Count == 0) return new Inspection { State = "no_environment" };
+        ready = [.. ready.OrderBy(r => r.Session is null)];
+
+        foreach (var tag in ready.Select(r => r.Tag).Distinct())
+        {
+            if (await m.Query(new GetInspectionRowQuery(new InspectionKey(ws, tag, variantName, sha, numClasses)), ct) is not { } row) continue;
+            var retry = start && row.State == "failed" && time.GetUtcNow() - row.CreatedAt > InspectionRules.RunLimit;
+            if (!retry) return ToProto(row, manifest);
+        }
+        if (!start) return new Inspection { State = "none", EnvTag = ready[0].Tag };
+        if (ready[0].Session is not { } target) throw new UnavailableException("FLEET_HOST_OFFLINE", "No machine with this environment is online");
+        return await StartInspectionAsync(m, ws, recipe, variantName, numClasses, manifest, variant, set, sha, ready[0].Tag, target, ct);
+    }
+
+    private async Task<List<(string Tag, AgentSession? Session)>> ReadyEnvironmentsAsync(IMediator m, Guid ws, string recipe, Guid? hostId, CancellationToken ct)
+    {
         var hosts = await m.Query(new ListWorkspaceHostsQuery(ws), ct);
         if (hostId is { } only)
         {
@@ -186,22 +203,16 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
             if (CurrentTag(recipe, Arch(session?.Info ?? Info(h))) is { } tag && envs.Any(e => e.HostId == h.Id && e.EnvTag == tag && e.State == "ready"))
                 ready.Add((tag, session));
         }
-        if (ready.Count == 0) return new Inspection { State = "no_environment" };
-        ready = [.. ready.OrderBy(r => r.Session is null)];
+        return ready;
+    }
 
-        foreach (var tag in ready.Select(r => r.Tag).Distinct())
-        {
-            if (await m.Query(new GetInspectionRowQuery(new InspectionKey(ws, tag, variantName, sha, numClasses)), ct) is not { } row) continue;
-            var retry = start && row.State == "failed" && time.GetUtcNow() - row.CreatedAt > InspectionRules.RunLimit;
-            if (!retry) return ToProto(row, manifest);
-        }
-        if (!start) return new Inspection { State = "none", EnvTag = ready[0].Tag };
-        if (ready[0].Session is not { } target) throw new UnavailableException("FLEET_HOST_OFFLINE", "No machine with this environment is online");
-
+    private async Task<Inspection> StartInspectionAsync(IMediator m, Guid ws, string recipe, string variantName, int numClasses, JsonObject manifest,
+        JsonObject variant, JsonObject set, string sha, string envTag, AgentSession target, CancellationToken ct)
+    {
         string command;
         try { command = InspectionRules.Command(manifest, variant, set, numClasses); }
         catch (TemplateException e) { throw new PreconditionException("CATALOG_INSPECT_TEMPLATE", $"canvas.inspect cannot be built ({e.Reason}): {e.Message}"); }
-        var key = new InspectionKey(ws, ready[0].Tag, variantName, sha, numClasses);
+        var key = new InspectionKey(ws, envTag, variantName, sha, numClasses);
         if (!_inspecting.TryAdd(key, 0))
             return await m.Query(new GetInspectionRowQuery(key), ct) is { } now ? ToProto(now, manifest) : new Inspection { State = "running", EnvTag = key.EnvTag };
         InspectionRow started;

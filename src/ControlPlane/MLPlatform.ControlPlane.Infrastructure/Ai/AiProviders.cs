@@ -97,60 +97,65 @@ public sealed class AiProviders(IHttpClientFactory http)
     {
         if (Protocol(c.ProviderType) == "systemone") throw new AiCallException("rejected", "A decision server cannot answer chat prompts");
         if (Protocol(c.ProviderType) == "anthropic")
+            return await AnthropicChatAsync(c, key, model, messages, maxTokens, ct);
+        return await CompletionsChatAsync(c, key, model, messages, maxTokens, ct);
+    }
+
+    private async Task<ChatReply> AnthropicChatAsync(AiConnectionRow c, string? key, string model, IReadOnlyList<AiMessage> messages, int maxTokens, CancellationToken ct)
+    {
+        var msgs = new JsonArray();
+        foreach (var m in messages.Where(m => m.Role != "system"))
         {
-            var msgs = new JsonArray();
-            foreach (var m in messages.Where(m => m.Role != "system"))
-            {
-                if (m.Images is not { Count: > 0 }) { msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = m.Content }); continue; }
-                var parts = new JsonArray();
-                foreach (var img in m.Images)
-                    parts.Add((JsonNode)new JsonObject { ["type"] = "image", ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = img.Mime, ["data"] = Convert.ToBase64String(img.Data) } });
-                parts.Add((JsonNode)new JsonObject { ["type"] = "text", ["text"] = m.Content });
-                msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = parts });
-            }
-            var body = new JsonObject { ["model"] = model, ["max_tokens"] = maxTokens, ["messages"] = msgs };
-            var sys = string.Join("\n\n", messages.Where(m => m.Role == "system").Select(m => m.Content));
-            if (sys.Length > 0) body["system"] = sys;
-            var (status, text) = await SendAsync(Request(HttpMethod.Post, AnthropicBase(c) + "/messages", c, key, body.ToJsonString()), ct);
-            try
-            {
-                var n = JsonNode.Parse(text)!;
-                var blocks = n["content"] as JsonArray ?? [];
-                var reply = string.Concat(blocks.Where(b => b?["type"]?.ToString() == "text").Select(b => b?["text"]?.ToString()));
-                var thinking = string.Concat(blocks.Where(b => b?["type"]?.ToString() == "thinking").Select(b => b?["thinking"]?.ToString()));
-                return new ChatReply(reply, thinking.Length > 0 ? thinking : null, n["stop_reason"]?.ToString(),
-                    n["usage"]?["input_tokens"]?.GetValue<int>() ?? 0, n["usage"]?["output_tokens"]?.GetValue<int>() ?? 0, status);
-            }
-            catch (Exception e) when (e is JsonException or InvalidOperationException or NullReferenceException)
-            {
-                throw new AiCallException("bad-response", "The answer is not valid Anthropic JSON: " + Clip(text, 200), status);
-            }
+            if (m.Images is not { Count: > 0 }) { msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = m.Content }); continue; }
+            var parts = new JsonArray();
+            foreach (var img in m.Images)
+                parts.Add((JsonNode)new JsonObject { ["type"] = "image", ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = img.Mime, ["data"] = Convert.ToBase64String(img.Data) } });
+            parts.Add((JsonNode)new JsonObject { ["type"] = "text", ["text"] = m.Content });
+            msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = parts });
         }
-        else
+        var body = new JsonObject { ["model"] = model, ["max_tokens"] = maxTokens, ["messages"] = msgs };
+        var sys = string.Join("\n\n", messages.Where(m => m.Role == "system").Select(m => m.Content));
+        if (sys.Length > 0) body["system"] = sys;
+        var (status, text) = await SendAsync(Request(HttpMethod.Post, AnthropicBase(c) + "/messages", c, key, body.ToJsonString()), ct);
+        try
         {
-            var msgs = new JsonArray();
-            foreach (var m in messages)
-            {
-                if (m.Images is not { Count: > 0 }) { msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = m.Content }); continue; }
-                var parts = new JsonArray { (JsonNode)new JsonObject { ["type"] = "text", ["text"] = m.Content } };
-                foreach (var img in m.Images)
-                    parts.Add((JsonNode)new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = $"data:{img.Mime};base64,{Convert.ToBase64String(img.Data)}" } });
-                msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = parts });
-            }
-            var body = new JsonObject { ["model"] = model, ["messages"] = msgs, ["max_tokens"] = maxTokens, ["temperature"] = 0, ["stream"] = false };
-            var (status, text) = await SendAsync(Request(HttpMethod.Post, Base(c) + "/chat/completions", c, key, body.ToJsonString()), ct);
-            try
-            {
-                var n = JsonNode.Parse(text)!;
-                var msg = n["choices"]?[0]?["message"] ?? throw new JsonException("choices[0].message missing");
-                var reasoning = msg["reasoning"]?.ToString() ?? msg["reasoning_content"]?.ToString();
-                return new ChatReply(msg["content"]?.ToString() ?? "", string.IsNullOrEmpty(reasoning) ? null : reasoning, n["choices"]?[0]?["finish_reason"]?.ToString(),
-                    n["usage"]?["prompt_tokens"]?.GetValue<int>() ?? 0, n["usage"]?["completion_tokens"]?.GetValue<int>() ?? 0, status);
-            }
-            catch (Exception e) when (e is JsonException or InvalidOperationException)
-            {
-                throw new AiCallException("bad-response", "The answer is not valid chat-completions JSON: " + Clip(text, 200), status);
-            }
+            var n = JsonNode.Parse(text)!;
+            var blocks = n["content"] as JsonArray ?? [];
+            var reply = string.Concat(blocks.Where(b => b?["type"]?.ToString() == "text").Select(b => b?["text"]?.ToString()));
+            var thinking = string.Concat(blocks.Where(b => b?["type"]?.ToString() == "thinking").Select(b => b?["thinking"]?.ToString()));
+            return new ChatReply(reply, thinking.Length > 0 ? thinking : null, n["stop_reason"]?.ToString(),
+                n["usage"]?["input_tokens"]?.GetValue<int>() ?? 0, n["usage"]?["output_tokens"]?.GetValue<int>() ?? 0, status);
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or NullReferenceException)
+        {
+            throw new AiCallException("bad-response", "The answer is not valid Anthropic JSON: " + Clip(text, 200), status);
+        }
+    }
+
+    private async Task<ChatReply> CompletionsChatAsync(AiConnectionRow c, string? key, string model, IReadOnlyList<AiMessage> messages, int maxTokens, CancellationToken ct)
+    {
+        var msgs = new JsonArray();
+        foreach (var m in messages)
+        {
+            if (m.Images is not { Count: > 0 }) { msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = m.Content }); continue; }
+            var parts = new JsonArray { (JsonNode)new JsonObject { ["type"] = "text", ["text"] = m.Content } };
+            foreach (var img in m.Images)
+                parts.Add((JsonNode)new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = $"data:{img.Mime};base64,{Convert.ToBase64String(img.Data)}" } });
+            msgs.Add((JsonNode)new JsonObject { ["role"] = m.Role, ["content"] = parts });
+        }
+        var body = new JsonObject { ["model"] = model, ["messages"] = msgs, ["max_tokens"] = maxTokens, ["temperature"] = 0, ["stream"] = false };
+        var (status, text) = await SendAsync(Request(HttpMethod.Post, Base(c) + "/chat/completions", c, key, body.ToJsonString()), ct);
+        try
+        {
+            var n = JsonNode.Parse(text)!;
+            var msg = n["choices"]?[0]?["message"] ?? throw new JsonException("choices[0].message missing");
+            var reasoning = msg["reasoning"]?.ToString() ?? msg["reasoning_content"]?.ToString();
+            return new ChatReply(msg["content"]?.ToString() ?? "", string.IsNullOrEmpty(reasoning) ? null : reasoning, n["choices"]?[0]?["finish_reason"]?.ToString(),
+                n["usage"]?["prompt_tokens"]?.GetValue<int>() ?? 0, n["usage"]?["completion_tokens"]?.GetValue<int>() ?? 0, status);
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
+        {
+            throw new AiCallException("bad-response", "The answer is not valid chat-completions JSON: " + Clip(text, 200), status);
         }
     }
 

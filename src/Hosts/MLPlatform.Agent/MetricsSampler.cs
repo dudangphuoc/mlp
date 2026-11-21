@@ -27,33 +27,41 @@ public static class MetricsSampler
         if (ids.Length > 0)
         {
             var (sc, stats, _) = await Docker.RunAsync(["stats", "--no-stream", "--format", "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}", .. ids], ct, TimeSpan.FromSeconds(20));
-            if (sc == 0)
-                foreach (var line in stats.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var p = line.Split('|');
-                    if (p.Length < 3) continue;
-                    m.Containers.Add(new ContainerSample
-                    {
-                        Name = p[0], State = "running",
-                        CpuPercent = double.TryParse(p[1].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var cpu) ? cpu : 0,
-                        MemoryBytes = Bytes(p[2].Split('/')[0].Trim()),
-                    });
-                }
+            if (sc == 0) AddContainers(m, stats);
         }
         try
         {
             var (gc, gout, _) = await RunAsync("nvidia-smi", ["--query-gpu=uuid,utilization.gpu,memory.used,temperature.gpu,power.draw", "--format=csv,noheader,nounits"], ct);
-            if (gc == 0)
-                foreach (var line in gout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var p = line.Split(',').Select(x => x.Trim()).ToArray();
-                    if (p.Length < 5) continue;
-                    double D(string x) => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0;
-                    m.Gpus.Add(new GpuSample { Uuid = p[0], UtilPercent = D(p[1]), MemoryUsedBytes = (ulong)(D(p[2]) * 1024 * 1024), TemperatureC = D(p[3]), PowerW = D(p[4]) });
-                }
+            if (gc == 0) AddGpus(m, gout);
         }
         catch (System.ComponentModel.Win32Exception) { }
         return m;
+    }
+
+    private static void AddContainers(HostMetrics m, string stats)
+    {
+        foreach (var line in stats.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var p = line.Split('|');
+            if (p.Length < 3) continue;
+            m.Containers.Add(new ContainerSample
+            {
+                Name = p[0], State = "running",
+                CpuPercent = double.TryParse(p[1].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var cpu) ? cpu : 0,
+                MemoryBytes = Bytes(p[2].Split('/')[0].Trim()),
+            });
+        }
+    }
+
+    private static void AddGpus(HostMetrics m, string gout)
+    {
+        foreach (var line in gout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var p = line.Split(',').Select(x => x.Trim()).ToArray();
+            if (p.Length < 5) continue;
+            double D(string x) => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0;
+            m.Gpus.Add(new GpuSample { Uuid = p[0], UtilPercent = D(p[1]), MemoryUsedBytes = (ulong)(D(p[2]) * 1024 * 1024), TemperatureC = D(p[3]), PowerW = D(p[4]) });
+        }
     }
 
     /// <summary>"12.3MiB" / "1.2GiB" / "512kB" → byte.</summary>

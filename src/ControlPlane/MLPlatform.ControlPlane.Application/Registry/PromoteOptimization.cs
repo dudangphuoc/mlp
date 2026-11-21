@@ -43,6 +43,20 @@ public sealed class PromoteOptimizationCommandHandler(IWriteSession db, S3Client
             (Buckets.Artifacts, run + "pipeline.py", "pipeline.py"),
         };
         if (await s3.HeadAsync(Buckets.Artifacts, srcPrefix + "classes.json", ct) is not null) copies.Add((Buckets.Artifacts, srcPrefix + "classes.json", "classes.json"));
+        var (sums, size) = await CopyWithChecksumsAsync(copies, prefix, cand, ct);
+        var sumsBytes = Encoding.UTF8.GetBytes(sums.ToString());
+        await s3.PutAsync(Buckets.Artifacts, prefix + "SHA256SUMS", sumsBytes, "text/plain", ct);
+        var lineage = Lineage(o, c.Candidate, src.Version, cand);
+        var id = Ids.New();
+        await db.InsertOptimizedVersionAsync(id, modelId, n, src.RunId, src.Task, prefix, copies.Count + 1, size + sumsBytes.Length, uid, clock.UtcNow,
+            $"optimization:{o.Id}#{c.Candidate}", src.Id, lineage.ToJsonString(), ct);
+        await db.SetOptimizationPromotedAsync(c.WorkspaceId, o.Id, c.Candidate, id, ct);
+        return (await db.GetModelVersionAsync(id, c.WorkspaceId, ct))!;
+    }
+
+    private async Task<(StringBuilder Sums, long Size)> CopyWithChecksumsAsync(List<(string Bucket, string From, string To)> copies, string prefix, JsonObject cand,
+        CancellationToken ct)
+    {
         var sums = new StringBuilder();
         long size = 0;
         foreach (var (bucket, from, to) in copies)
@@ -54,18 +68,14 @@ public sealed class PromoteOptimizationCommandHandler(IWriteSession db, S3Client
                 : await s3.GetAsync(Buckets.Artifacts, prefix + to, ct) is { } bytes ? Convert.ToHexStringLower(SHA256.HashData(bytes)) : null;
             if (sha is not null) sums.Append(sha).Append("  ").Append(to).Append('\n');
         }
-        var sumsBytes = Encoding.UTF8.GetBytes(sums.ToString());
-        await s3.PutAsync(Buckets.Artifacts, prefix + "SHA256SUMS", sumsBytes, "text/plain", ct);
-        var lineage = new JsonObject
+        return (sums, size);
+    }
+
+    private static JsonObject Lineage(OptimizationRow o, string candidate, int sourceVersion, JsonObject cand) =>
+        new JsonObject
         {
-            ["optimization_id"] = o.Id.ToString(), ["device"] = o.Device, ["precision"] = c.Candidate, ["host_id"] = o.HostId?.ToString(),
-            ["source_version"] = src.Version, ["latency"] = cand["latency"]?.DeepClone(), ["fidelity"] = cand["fidelity"]?.DeepClone(),
+            ["optimization_id"] = o.Id.ToString(), ["device"] = o.Device, ["precision"] = candidate, ["host_id"] = o.HostId?.ToString(),
+            ["source_version"] = sourceVersion, ["latency"] = cand["latency"]?.DeepClone(), ["fidelity"] = cand["fidelity"]?.DeepClone(),
             ["size_bytes"] = cand["size_bytes"]?.DeepClone(), ["sha256"] = cand["sha256"]?.DeepClone(),
         };
-        var id = Ids.New();
-        await db.InsertOptimizedVersionAsync(id, modelId, n, src.RunId, src.Task, prefix, copies.Count + 1, size + sumsBytes.Length, uid, clock.UtcNow,
-            $"optimization:{o.Id}#{c.Candidate}", src.Id, lineage.ToJsonString(), ct);
-        await db.SetOptimizationPromotedAsync(c.WorkspaceId, o.Id, c.Candidate, id, ct);
-        return (await db.GetModelVersionAsync(id, c.WorkspaceId, ct))!;
-    }
 }

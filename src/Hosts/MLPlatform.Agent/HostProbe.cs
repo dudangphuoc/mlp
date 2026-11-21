@@ -37,21 +37,23 @@ public static class HostProbe
         info.DockerVersion = (await RunAsync("docker", ["version", "--format", "{{.Server.Version}}"], ct))?.Trim() ?? "";
         var smi = await RunAsync("nvidia-smi", ["--query-gpu=index,uuid,name,memory.total,compute_cap,driver_version",
             "--format=csv,noheader,nounits"], ct);
-        if (smi is not null)
-        {
-            foreach (var line in smi.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var f = line.Split(',').Select(x => x.Trim()).ToArray();
-                if (f.Length < 6) continue;
-                info.Gpus.Add(new GpuInfo
-                {
-                    Index = int.Parse(f[0]), Uuid = f[1], Name = f[2],
-                    MemoryBytes = ulong.Parse(f[3]) * 1024 * 1024, ComputeCapability = f[4],
-                });
-                info.NvidiaDriver = f[5];
-            }
-        }
+        if (smi is not null) AddGpus(info, smi);
         return info;
+    }
+
+    private static void AddGpus(HostInfo info, string smi)
+    {
+        foreach (var line in smi.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var f = line.Split(',').Select(x => x.Trim()).ToArray();
+            if (f.Length < 6) continue;
+            info.Gpus.Add(new GpuInfo
+            {
+                Index = int.Parse(f[0]), Uuid = f[1], Name = f[2],
+                MemoryBytes = ulong.Parse(f[3]) * 1024 * 1024, ComputeCapability = f[4],
+            });
+            info.NvidiaDriver = f[5];
+        }
     }
 
     /// <summary>Run a command, return stdout; null if the command is missing / fails / exceeds 10 s.</summary>

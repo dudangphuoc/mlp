@@ -43,10 +43,29 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
         await GuardAsync(mediator, ws, pid, confirm, ct);
         var ctx = await mediator.Query(new GetHermesContextQuery(ws, pid, check.Path), ct);
         var p = ctx.Project;
-        var classes = new Dictionary<int, string>();
-        try { foreach (var c in JsonNode.Parse(ctx.Classes) as JsonArray ?? []) if (c?["id"]?.GetValue<int>() is { } id) classes[id] = c["name"]?.ToString() ?? ""; }
-        catch (System.Text.Json.JsonException) { }
+        var prompt = await ExplainPromptAsync(check, ctx, lang, ct);
 
+        var r = await ai.ChatAsync(new AiCallSpec("chat", "analyst", "Explain a label check", $"{p.Name} · {check.Path}", "manual", p.WorkspaceId, ctx.ActorId,
+            DeadlineMs: 90_000),
+            [new AiMessage("system", "You are Hermes, the labeling quality assistant of MLPlatform. Be brief, concrete and kind."), new AiMessage("user", prompt)], ct);
+        if (!r.Ok || string.IsNullOrWhiteSpace(r.Text))
+            throw new UnavailableException("AI_EXPLAIN_FAILED", $"The analyst model did not answer ({r.ErrorCode}): {r.Error}. The AI log has the full call.");
+        await mediator.Send(new SetHermesExplanationCommand(ws, check.Id, r.Text.Trim(), lang, r.RunId), CancellationToken.None);
+        return await mediator.Query(new GetHermesCheckQuery(ws, pid, check.Id), CancellationToken.None);
+    }
+
+    private static Dictionary<int, string> ClassNames(string json)
+    {
+        var classes = new Dictionary<int, string>();
+        try { foreach (var c in JsonNode.Parse(json) as JsonArray ?? []) if (c?["id"]?.GetValue<int>() is { } id) classes[id] = c["name"]?.ToString() ?? ""; }
+        catch (System.Text.Json.JsonException) { }
+        return classes;
+    }
+
+    private async Task<string> ExplainPromptAsync(HermesCheckRow check, HermesContext ctx, string lang, CancellationToken ct)
+    {
+        var p = ctx.Project;
+        var classes = ClassNames(ctx.Classes);
         var sb = new StringBuilder();
         sb.Append("Project: ").Append(p.Name).Append('\n');
         if (!string.IsNullOrWhiteSpace(p.GuidelineMd)) sb.Append("Guideline:\n").Append(AiProviders.Clip(p.GuidelineMd.Trim(), 1500)).Append('\n');
@@ -57,15 +76,28 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
             sb.Append("Item text:\n\"\"\"\n").Append(text ?? "(could not be read)").Append("\n\"\"\"\n");
         }
         else sb.Append("Item: ").Append(HermesLabelChecker.Media(check.Path)).Append(" file (its content is not sent; only the labels and the check steps are)\n");
+        AppendLabels(sb, ctx.Annotations, classes);
+        AppendCheck(sb, check);
+        sb.Append($"\nExplain to the annotator in {Language(lang)}, in at most 5 short bullet points, why the check concluded \"{check.Verdict}\" and exactly what to change ")
+          .Append("(or, if it passed, what makes the labels right). Only use the item, the labels and the steps above; do not invent facts.");
+        return sb.ToString();
+    }
+
+    private static void AppendLabels(StringBuilder sb, List<AnnotationRow> annotations, Dictionary<int, string> classes)
+    {
         sb.Append("Labels given by the annotator:\n");
-        foreach (var a in ctx.Annotations)
+        foreach (var a in annotations)
         {
             string? quote = null;
             try { quote = JsonNode.Parse(a.Geometry)?["text"]?.ToString(); } catch (System.Text.Json.JsonException) { }
             sb.Append("- ").Append(a.Kind).Append(": ").Append(classes.GetValueOrDefault(a.ClassId, a.ClassId.ToString(CultureInfo.InvariantCulture)))
               .Append(quote is null ? "" : $" (\"{AiProviders.Clip(quote, 120)}\")").Append(a.Source == "model" ? " [proposed by AI]" : "").Append('\n');
         }
-        if (ctx.Annotations.Count == 0) sb.Append("(none)\n");
+        if (annotations.Count == 0) sb.Append("(none)\n");
+    }
+
+    private static void AppendCheck(StringBuilder sb, HermesCheckRow check)
+    {
         sb.Append("Hermes check: verdict ").Append(check.Verdict).Append(check.Confidence is { } cf ? $", model confidence {cf:0.00}" : "").Append('\n');
         try
         {
@@ -74,16 +106,6 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
         }
         catch (System.Text.Json.JsonException) { }
         if (!string.IsNullOrEmpty(check.Suggestion)) sb.Append("Suggested class: ").Append(check.Suggestion).Append('\n');
-        sb.Append($"\nExplain to the annotator in {Language(lang)}, in at most 5 short bullet points, why the check concluded \"{check.Verdict}\" and exactly what to change ")
-          .Append("(or, if it passed, what makes the labels right). Only use the item, the labels and the steps above; do not invent facts.");
-
-        var r = await ai.ChatAsync(new AiCallSpec("chat", "analyst", "Explain a label check", $"{p.Name} · {check.Path}", "manual", p.WorkspaceId, ctx.ActorId,
-            DeadlineMs: 90_000),
-            [new AiMessage("system", "You are Hermes, the labeling quality assistant of MLPlatform. Be brief, concrete and kind."), new AiMessage("user", sb.ToString())], ct);
-        if (!r.Ok || string.IsNullOrWhiteSpace(r.Text))
-            throw new UnavailableException("AI_EXPLAIN_FAILED", $"The analyst model did not answer ({r.ErrorCode}): {r.Error}. The AI log has the full call.");
-        await mediator.Send(new SetHermesExplanationCommand(ws, check.Id, r.Text.Trim(), lang, r.RunId), CancellationToken.None);
-        return await mediator.Query(new GetHermesCheckQuery(ws, pid, check.Id), CancellationToken.None);
     }
 
     // ───────── calibration ─────────
@@ -140,6 +162,25 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
         await GuardAsync(mediator, ws, pid, confirm, ct);
         var cal = Calibrate(report.Calibration, report.Project.AutoAcceptThreshold);
         var legend = new Dictionary<string, string>();
+        var sent = SummaryData(report, cal, legend).ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var r = await ai.ChatAsync(new AiCallSpec("chat", "analyst", "Quality summary", report.Project.Name, "manual", ws, actor, DeadlineMs: 90_000),
+        [
+            new AiMessage("system", "You are Hermes, the labeling quality assistant of MLPlatform. You only use the numbers given; never guess missing ones."),
+            new AiMessage("user", $"Write a short quality report in {Language(lang)} for the project Lead: 3–6 bullet points on how labeling is going, " +
+                "which annotators (by their alias A1, A2…) need help and why, whether automatic acceptance is safe at the current threshold, and one concrete next step. " +
+                "Data (JSON):\n" + sent),
+        ], ct);
+        if (!r.Ok || string.IsNullOrWhiteSpace(r.Text))
+            throw new UnavailableException("AI_SUMMARY_FAILED", $"The analyst model did not answer ({r.ErrorCode}): {r.Error}. The AI log has the full call.");
+        var a2 = await AnalystAsync(ct);
+        var res = new QualitySummary { Text = r.Text.Trim(), AiRunId = r.RunId.ToString(), Model = r.ModelLabel ?? a2.Model, External = a2.External, SentJson = sent };
+        foreach (var (k, v) in legend) res.Legend[k] = v;
+        return res;
+    }
+
+    /// <summary>Builds the anonymized summary input; fills the alias legend as it goes.</summary>
+    private static JsonObject SummaryData(LabelQualityReport report, Calibration cal, Dictionary<string, string> legend)
+    {
         var people = new JsonArray();
         var i = 0;
         foreach (var a in report.Annotators)
@@ -164,19 +205,6 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
                 ["recommended_threshold"] = cal.Recommended < 0 ? null : cal.Recommended, ["recommendation"] = cal.Recommendation,
             },
         };
-        var sent = data.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        var r = await ai.ChatAsync(new AiCallSpec("chat", "analyst", "Quality summary", report.Project.Name, "manual", ws, actor, DeadlineMs: 90_000),
-        [
-            new AiMessage("system", "You are Hermes, the labeling quality assistant of MLPlatform. You only use the numbers given; never guess missing ones."),
-            new AiMessage("user", $"Write a short quality report in {Language(lang)} for the project Lead: 3–6 bullet points on how labeling is going, " +
-                "which annotators (by their alias A1, A2…) need help and why, whether automatic acceptance is safe at the current threshold, and one concrete next step. " +
-                "Data (JSON):\n" + sent),
-        ], ct);
-        if (!r.Ok || string.IsNullOrWhiteSpace(r.Text))
-            throw new UnavailableException("AI_SUMMARY_FAILED", $"The analyst model did not answer ({r.ErrorCode}): {r.Error}. The AI log has the full call.");
-        var a2 = await AnalystAsync(ct);
-        var res = new QualitySummary { Text = r.Text.Trim(), AiRunId = r.RunId.ToString(), Model = r.ModelLabel ?? a2.Model, External = a2.External, SentJson = sent };
-        foreach (var (k, v) in legend) res.Legend[k] = v;
-        return res;
+        return data;
     }
 }

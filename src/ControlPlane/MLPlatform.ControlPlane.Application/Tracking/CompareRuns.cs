@@ -25,21 +25,7 @@ public sealed class CompareRunsQueryHandler(IReadSession db, WorkspaceAuthorizer
 
         var items = new List<(RunRow Run, string Variant, JsonObject Params, JsonObject Schema, string Revision, string Axis)>();
         foreach (var r in runs)
-        {
-            var x = extras.GetValueOrDefault(r.Id);
-            var rev = x?.RevisionId is { } rid ? await db.GetRevisionAsync(rid, q.WorkspaceId, ct) : null;
-            JsonObject manifest = rev is not null ? JsonNode.Parse(rev.Manifest)!.AsObject()
-                : await db.GetProjectRecipeByNameAsync(r.ProjectId, q.WorkspaceId, r.Recipe, ct) is { } pr ? JsonNode.Parse(pr.OriginManifest)!.AsObject() : [];
-            var schema = RecipeDrafts.Schema(manifest);
-            var values = rev is not null ? RecipeDrafts.Parse(rev.Params) : RecipeDrafts.Normalise(RecipeDrafts.Parse(r.Params), schema);
-            var shown = new JsonObject();
-            foreach (var (k, def) in schema)
-                if (def?["from"] is null && RecipeDrafts.Value(values, schema, k) is { } v) shown[k] = v.DeepClone();
-            var epochs = RecipeDrafts.IntValue(values, schema, "epochs", 0);
-            var primary = (await db.MetricSummaryAsync(r.Id, ct)).FirstOrDefault(m => m.Key == r.PrimaryMetricKey);
-            var axis = primary is null ? "" : epochs > 0 && primary.LastStep <= epochs ? "epoch" : "step";
-            items.Add((r, rev?.Variant ?? r.Variant, shown, schema, rev is null ? "" : $"r{x!.RevisionNumber}", axis));
-        }
+            items.Add(await CompareItemAsync(r, extras.GetValueOrDefault(r.Id), q.WorkspaceId, ct));
 
         var rows = new List<CompareRow>();
         void Line(string field, string pane, Func<int, string> value)
@@ -64,6 +50,23 @@ public sealed class CompareRunsQueryHandler(IReadSession db, WorkspaceAuthorizer
         var axes = items.Select(x => x.Axis).ToList();
         var known = axes.Where(a => a.Length > 0).Distinct().Count();
         return new ComparisonView(runs.Select(r => r.DatasetVersionId).Distinct().Count() == 1 && runs[0].DatasetVersionId is not null, known <= 1, axes, rows);
+    }
+
+    private async Task<(RunRow Run, string Variant, JsonObject Params, JsonObject Schema, string Revision, string Axis)> CompareItemAsync(RunRow r, RunExtraRow? x,
+        Guid workspaceId, CancellationToken ct)
+    {
+        var rev = x?.RevisionId is { } rid ? await db.GetRevisionAsync(rid, workspaceId, ct) : null;
+        JsonObject manifest = rev is not null ? JsonNode.Parse(rev.Manifest)!.AsObject()
+            : await db.GetProjectRecipeByNameAsync(r.ProjectId, workspaceId, r.Recipe, ct) is { } pr ? JsonNode.Parse(pr.OriginManifest)!.AsObject() : [];
+        var schema = RecipeDrafts.Schema(manifest);
+        var values = rev is not null ? RecipeDrafts.Parse(rev.Params) : RecipeDrafts.Normalise(RecipeDrafts.Parse(r.Params), schema);
+        var shown = new JsonObject();
+        foreach (var (k, def) in schema)
+            if (def?["from"] is null && RecipeDrafts.Value(values, schema, k) is { } v) shown[k] = v.DeepClone();
+        var epochs = RecipeDrafts.IntValue(values, schema, "epochs", 0);
+        var primary = (await db.MetricSummaryAsync(r.Id, ct)).FirstOrDefault(m => m.Key == r.PrimaryMetricKey);
+        var axis = primary is null ? "" : epochs > 0 && primary.LastStep <= epochs ? "epoch" : "step";
+        return (r, rev?.Variant ?? r.Variant, shown, schema, rev is null ? "" : $"r{x!.RevisionNumber}", axis);
     }
 
     private static string Show(JsonNode? v) => v is null ? "" : v is JsonValue jv && jv.TryGetValue<string>(out var s) ? s : v.ToJsonString();

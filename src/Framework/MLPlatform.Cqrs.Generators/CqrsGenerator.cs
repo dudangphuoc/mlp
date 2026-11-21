@@ -100,6 +100,20 @@ public sealed class CqrsGenerator : IIncrementalGenerator
         sb.AppendLine("using MLPlatform.Cqrs;");
         sb.AppendLine($"namespace {ns};");
         sb.AppendLine();
+        EmitRegistration(sb, list);
+        sb.AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"MLPlatform.Cqrs.Generators\", \"1.0\")]");
+        sb.AppendLine("internal sealed class GeneratedMediator(global::System.IServiceProvider sp, global::System.Collections.Generic.IEnumerable<IRequestBehavior> behaviors) : IMediator");
+        sb.AppendLine("{");
+        sb.AppendLine("    private readonly IRequestBehavior[] _behaviors = global::System.Linq.Enumerable.ToArray(behaviors);");
+        sb.AppendLine();
+        EmitDispatch(sb, list.Where(h => h.IsCommand).ToList(), "Send", "ICommand");
+        EmitDispatch(sb, list.Where(h => !h.IsCommand).ToList(), "Query", "IQuery");
+        sb.AppendLine("}");
+        spc.AddSource("Cqrs.g.cs", sb.ToString());
+    }
+
+    private static void EmitRegistration(StringBuilder sb, List<HandlerInfo> list)
+    {
         sb.AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"MLPlatform.Cqrs.Generators\", \"1.0\")]");
         sb.AppendLine("public static class CqrsRegistration");
         sb.AppendLine("{");
@@ -124,15 +138,6 @@ public sealed class CqrsGenerator : IIncrementalGenerator
         sb.AppendLine("    ];");
         sb.AppendLine("}");
         sb.AppendLine();
-        sb.AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"MLPlatform.Cqrs.Generators\", \"1.0\")]");
-        sb.AppendLine("internal sealed class GeneratedMediator(global::System.IServiceProvider sp, global::System.Collections.Generic.IEnumerable<IRequestBehavior> behaviors) : IMediator");
-        sb.AppendLine("{");
-        sb.AppendLine("    private readonly IRequestBehavior[] _behaviors = global::System.Linq.Enumerable.ToArray(behaviors);");
-        sb.AppendLine();
-        EmitDispatch(sb, list.Where(h => h.IsCommand).ToList(), "Send", "ICommand");
-        EmitDispatch(sb, list.Where(h => !h.IsCommand).ToList(), "Query", "IQuery");
-        sb.AppendLine("}");
-        spc.AddSource("Cqrs.g.cs", sb.ToString());
     }
 
     private static void EmitDispatch(StringBuilder sb, List<HandlerInfo> hs, string method, string iface)

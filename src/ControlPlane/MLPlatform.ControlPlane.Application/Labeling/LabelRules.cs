@@ -64,47 +64,58 @@ public static class LabelRules
             using var _ = JsonDocument.Parse(string.IsNullOrEmpty(a.Attributes) ? "{}" : a.Attributes);
             var r = g.RootElement;
             if (r.ValueKind != JsonValueKind.Object) return "geometry must be an object";
-            switch (a.Kind)
-            {
-                case "bbox":
-                    if (!Num(r, "x", out var x) || !Num(r, "y", out var y) || !Num(r, "w", out var w) || !Num(r, "h", out var h))
-                        return "bbox requires x, y, w, h";
-                    const double eps = 1e-6;
-                    if (x < -eps || y < -eps || w <= 0 || h <= 0 || x + w > 1 + eps || y + h > 1 + eps) return "bbox is outside the image";
-                    break;
-                case "polygon":
-                    if (!r.TryGetProperty("points", out var pts) || pts.ValueKind != JsonValueKind.Array || pts.GetArrayLength() < 3)
-                        return "polygon requires ≥ 3 points";
-                    foreach (var p in pts.EnumerateArray())
-                        if (p.ValueKind != JsonValueKind.Array || p.GetArrayLength() < 2 || p[0].GetDouble() is < 0 or > 1 || p[1].GetDouble() is < 0 or > 1)
-                            return "polygon point is outside the image";
-                    break;
-                case "span":
-                    if (!Num(r, "start", out var s) || !Num(r, "end", out var e) || s < 0 || e <= s) return "span requires start < end";
-                    break;
-                case "segment":
-                    if (!Num(r, "start", out var ss) || !Num(r, "end", out var se) || ss < 0 || se <= ss) return "segment requires start < end (seconds)";
-                    break;
-                case "keypoints":
-                    if (!r.TryGetProperty("points", out var kps) || kps.ValueKind != JsonValueKind.Array || kps.GetArrayLength() == 0)
-                        return "keypoints requires points";
-                    foreach (var p in kps.EnumerateArray())
-                        if (p.ValueKind != JsonValueKind.Array || p.GetArrayLength() < 2 || p[0].GetDouble() is < 0 or > 1 || p[1].GetDouble() is < 0 or > 1)
-                            return "keypoint is outside the image";
-                    break;
-                case "mask":
-                    if (!r.TryGetProperty("rle", out var rle) || !rle.TryGetProperty("size", out var size) || size.GetArrayLength() != 2
-                        || !rle.TryGetProperty("counts", out var counts) || counts.ValueKind != JsonValueKind.Array)
-                        return "mask requires rle.size [h, w] and rle.counts";
-                    long cells = (long)size[0].GetInt32() * size[1].GetInt32(), sum = 0;
-                    foreach (var n in counts.EnumerateArray()) sum += n.GetInt64();
-                    if (cells <= 0 || sum != cells) return "mask counts do not cover the image";
-                    break;
-            }
+            if (CheckGeometry(a.Kind, r) is { } geometryError) return geometryError;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return "geometry/attributes is not valid JSON"; }
         if (a.Confidence is < 0 or > 1) return "confidence is outside [0, 1]";
         return a.Source is "human" or "model" or "import" or "ai" ? null : "source must be human/model/import/ai";
+    }
+
+    private static string? CheckGeometry(string kind, JsonElement r)
+    {
+        switch (kind)
+        {
+            case "bbox":
+                if (!Num(r, "x", out var x) || !Num(r, "y", out var y) || !Num(r, "w", out var w) || !Num(r, "h", out var h))
+                    return "bbox requires x, y, w, h";
+                const double eps = 1e-6;
+                if (x < -eps || y < -eps || w <= 0 || h <= 0 || x + w > 1 + eps || y + h > 1 + eps) return "bbox is outside the image";
+                break;
+            case "polygon":
+                if (!r.TryGetProperty("points", out var pts) || pts.ValueKind != JsonValueKind.Array || pts.GetArrayLength() < 3)
+                    return "polygon requires ≥ 3 points";
+                foreach (var p in pts.EnumerateArray())
+                    if (p.ValueKind != JsonValueKind.Array || p.GetArrayLength() < 2 || p[0].GetDouble() is < 0 or > 1 || p[1].GetDouble() is < 0 or > 1)
+                        return "polygon point is outside the image";
+                break;
+            case "span":
+                if (!Num(r, "start", out var s) || !Num(r, "end", out var e) || s < 0 || e <= s) return "span requires start < end";
+                break;
+            case "segment":
+                if (!Num(r, "start", out var ss) || !Num(r, "end", out var se) || ss < 0 || se <= ss) return "segment requires start < end (seconds)";
+                break;
+            case "keypoints":
+                if (!r.TryGetProperty("points", out var kps) || kps.ValueKind != JsonValueKind.Array || kps.GetArrayLength() == 0)
+                    return "keypoints requires points";
+                foreach (var p in kps.EnumerateArray())
+                    if (p.ValueKind != JsonValueKind.Array || p.GetArrayLength() < 2 || p[0].GetDouble() is < 0 or > 1 || p[1].GetDouble() is < 0 or > 1)
+                        return "keypoint is outside the image";
+                break;
+            case "mask":
+                return CheckMask(r);
+        }
+        return null;
+    }
+
+    private static string? CheckMask(JsonElement r)
+    {
+        if (!r.TryGetProperty("rle", out var rle) || !rle.TryGetProperty("size", out var size) || size.GetArrayLength() != 2
+            || !rle.TryGetProperty("counts", out var counts) || counts.ValueKind != JsonValueKind.Array)
+            return "mask requires rle.size [h, w] and rle.counts";
+        long cells = (long)size[0].GetInt32() * size[1].GetInt32(), sum = 0;
+        foreach (var n in counts.EnumerateArray()) sum += n.GetInt64();
+        if (cells <= 0 || sum != cells) return "mask counts do not cover the image";
+        return null;
     }
 
     private static bool Num(JsonElement o, string name, out double v)

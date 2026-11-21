@@ -20,6 +20,12 @@ if (options.CommentInventoryOutput is { } inventoryPath)
 }
 
 List<Finding> findings = [.. MigrationRules.Check(repo), .. SqlRules.Check(repo), .. ArchitectureRules.Check(repo), .. ApiPlacementRules.Check(repo), .. FileLayoutRules.Check(repo), .. MethodLengthRules.Check(repo), .. CommentRules.Check(repo)];
+if (Array.IndexOf(args, "--list") is var li and >= 0 && li + 1 < args.Length)
+{
+    foreach (var f in findings.Where(f => f.Rule == args[li + 1])) Console.WriteLine($"{f.Location} {f.Message}");
+    return 0;
+}
+
 var baseline = new Baseline(Path.Combine(options.Root, "gates", "baseline.txt"));
 
 if (options.UpdateBaseline)

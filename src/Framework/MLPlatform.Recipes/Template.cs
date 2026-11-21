@@ -38,58 +38,66 @@ public static class Template
             if (c == '}') throw new TemplateException("template_syntax", "", $"Unmatched '}}' at position {i}");
             if (c != '{') { sb.Append(c); i++; continue; }
 
-            i++;
-            var start = i;
-            while (i < t.Length && (char.IsLetterOrDigit(t[i]) || t[i] is '_' or '.' or '-')) i++;
-            var name = t[start..i];
-            if (name.Length == 0 || i >= t.Length)
-                throw new TemplateException("template_syntax", name, $"Invalid placeholder syntax at position {start}");
-            var op = t[i];
-            if (!resolve(name, out var value))
-                throw new TemplateException("placeholder_missing", name, $"Placeholder does not exist: {name}");
-
-            if (op == '}')
-            {
-                i++;
-                var text = Show(value);
-                if (text.Length == 0)
-                    throw new TemplateException("placeholder_empty", name, $"Placeholder is empty in bare form: {{{name}}}; use {{{name}?…}}");
-                sb.Append(mode == RenderMode.Shell ? Quote(text) : text);
-            }
-            else if (op == '?')
-            {
-                i++;
-                var inner = new StringBuilder();
-                RenderInto(inner, t, ref i, Truthy(value) ? resolve : SkipResolver(resolve), mode, true, false);
-                Expect(t, ref i, name);
-                if (Truthy(value)) sb.Append(inner);
-            }
-            else if (op == '|')
-            {
-                var key = Show(value);
-                string? chosen = null, fallback = null;
-                var matched = false;
-                while (i < t.Length && t[i] == '|')
-                {
-                    i++;
-                    var eq = t.IndexOf('=', i);
-                    if (eq < 0) throw new TemplateException("template_syntax", name, $"Choice is missing '=' in {{{name}|…}}");
-                    var label = t[i..eq];
-                    i = eq + 1;
-                    var isMatch = label == key || (label == "*" && !matched);
-                    var inner = new StringBuilder();
-                    RenderInto(inner, t, ref i, isMatch ? resolve : SkipResolver(resolve), mode, true, true);
-                    if (label == key) { chosen = inner.ToString(); matched = true; }
-                    else if (label == "*") fallback = inner.ToString();
-                }
-                Expect(t, ref i, name);
-                var result = chosen ?? fallback
-                    ?? throw new TemplateException("choice_missing", name, $"{{{name}|…}}: no choice for value '{key}' and no '*'");
-                sb.Append(result);
-            }
-            else throw new TemplateException("template_syntax", name, $"Invalid character '{op}' after {{{name}");
+            RenderPlaceholder(sb, t, ref i, resolve, mode);
         }
         if (stopAtClose) throw new TemplateException("template_syntax", "", "Missing closing '}'");
+    }
+
+    private static void RenderPlaceholder(StringBuilder sb, string t, ref int i, Resolver resolve, RenderMode mode)
+    {
+        i++;
+        var start = i;
+        while (i < t.Length && (char.IsLetterOrDigit(t[i]) || t[i] is '_' or '.' or '-')) i++;
+        var name = t[start..i];
+        if (name.Length == 0 || i >= t.Length)
+            throw new TemplateException("template_syntax", name, $"Invalid placeholder syntax at position {start}");
+        var op = t[i];
+        if (!resolve(name, out var value))
+            throw new TemplateException("placeholder_missing", name, $"Placeholder does not exist: {name}");
+
+        if (op == '}')
+        {
+            i++;
+            var text = Show(value);
+            if (text.Length == 0)
+                throw new TemplateException("placeholder_empty", name, $"Placeholder is empty in bare form: {{{name}}}; use {{{name}?…}}");
+            sb.Append(mode == RenderMode.Shell ? Quote(text) : text);
+        }
+        else if (op == '?')
+        {
+            i++;
+            var inner = new StringBuilder();
+            RenderInto(inner, t, ref i, Truthy(value) ? resolve : SkipResolver(resolve), mode, true, false);
+            Expect(t, ref i, name);
+            if (Truthy(value)) sb.Append(inner);
+        }
+        else if (op == '|') RenderChoice(sb, t, ref i, resolve, mode, name, value);
+        else throw new TemplateException("template_syntax", name, $"Invalid character '{op}' after {{{name}");
+    }
+
+    private static void RenderChoice(StringBuilder sb, string t, ref int i, Resolver resolve, RenderMode mode,
+        string name, JsonNode? value)
+    {
+        var key = Show(value);
+        string? chosen = null, fallback = null;
+        var matched = false;
+        while (i < t.Length && t[i] == '|')
+        {
+            i++;
+            var eq = t.IndexOf('=', i);
+            if (eq < 0) throw new TemplateException("template_syntax", name, $"Choice is missing '=' in {{{name}|…}}");
+            var label = t[i..eq];
+            i = eq + 1;
+            var isMatch = label == key || (label == "*" && !matched);
+            var inner = new StringBuilder();
+            RenderInto(inner, t, ref i, isMatch ? resolve : SkipResolver(resolve), mode, true, true);
+            if (label == key) { chosen = inner.ToString(); matched = true; }
+            else if (label == "*") fallback = inner.ToString();
+        }
+        Expect(t, ref i, name);
+        var result = chosen ?? fallback
+            ?? throw new TemplateException("choice_missing", name, $"{{{name}|…}}: no choice for value '{key}' and no '*'");
+        sb.Append(result);
     }
 
     private static bool IsChoiceStart(string t, int j)

@@ -66,28 +66,42 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
                 if (unread != lastUnread) { u.UnreadNotifications = unread; lastUnread = unread; changed = true; }
                 if (job is { } jid)
                 {
-                    var evs = await mediator.Query(new JobEventsAfterQuery(ws, jid, eventsAfter), ctx.CancellationToken);
-                    if (evs.Count > 0) { u.Events.AddRange(evs.Select(SchedulerGrpcMap.Event)); eventsAfter = time.GetUtcNow().AddSeconds(-2); changed = true; }
-                    var seen = u.Events.Select(e => e.Id).ToHashSet();
-                    foreach (var aid in await mediator.Query(new JobAttemptIdsQuery(ws, jid), ctx.CancellationToken))
-                    {
-                        var after = logAfter.GetValueOrDefault(aid, 0);
-                        var lines = logs.Tail(aid, after, 500);
-                        if (lines.Count == 0) continue;
-                        u.Logs.AddRange(lines.Select(l => new LogLine { TsMs = l.Ts, Text = l.Text, AttemptId = aid.ToString() }));
-                        logAfter[aid] = lines[^1].Ts;
-                        changed = true;
-                    }
-                    _ = seen;
+                    var (jobChanged, nextEventsAfter) = await AddJobUpdatesAsync(u, ws, jid, eventsAfter, logAfter, ctx.CancellationToken);
+                    eventsAfter = nextEventsAfter;
+                    if (jobChanged) changed = true;
                 }
                 if (changed) await stream.WriteAsync(u, ctx.CancellationToken);
-                if (job is not null)
-                    foreach (var aid in logAfter.Keys.Concat(await mediator.Query(new JobAttemptIdsQuery(ws, job.Value), ctx.CancellationToken)).Distinct())
-                        if (!keys.Contains(StreamBroker.Attempt(aid))) keys.Add(StreamBroker.Attempt(aid));
+                if (job is not null) await AddAttemptKeysAsync(ws, job.Value, logAfter, keys, ctx.CancellationToken);
                 await broker.WaitAsync(keys, TimeSpan.FromSeconds(5), ctx.CancellationToken);
             }
         }
         catch (OperationCanceledException) { }
+    }
+
+    private async Task<(bool Changed, DateTimeOffset EventsAfter)> AddJobUpdatesAsync(WorkspaceUpdate u, Guid ws, Guid jid,
+        DateTimeOffset eventsAfter, Dictionary<Guid, long> logAfter, CancellationToken ct)
+    {
+        var changed = false;
+        var evs = await mediator.Query(new JobEventsAfterQuery(ws, jid, eventsAfter), ct);
+        if (evs.Count > 0) { u.Events.AddRange(evs.Select(SchedulerGrpcMap.Event)); eventsAfter = time.GetUtcNow().AddSeconds(-2); changed = true; }
+        var seen = u.Events.Select(e => e.Id).ToHashSet();
+        foreach (var aid in await mediator.Query(new JobAttemptIdsQuery(ws, jid), ct))
+        {
+            var after = logAfter.GetValueOrDefault(aid, 0);
+            var lines = logs.Tail(aid, after, 500);
+            if (lines.Count == 0) continue;
+            u.Logs.AddRange(lines.Select(l => new LogLine { TsMs = l.Ts, Text = l.Text, AttemptId = aid.ToString() }));
+            logAfter[aid] = lines[^1].Ts;
+            changed = true;
+        }
+        _ = seen;
+        return (changed, eventsAfter);
+    }
+
+    private async Task AddAttemptKeysAsync(Guid ws, Guid job, Dictionary<Guid, long> logAfter, List<string> keys, CancellationToken ct)
+    {
+        foreach (var aid in logAfter.Keys.Concat(await mediator.Query(new JobAttemptIdsQuery(ws, job), ct)).Distinct())
+            if (!keys.Contains(StreamBroker.Attempt(aid))) keys.Add(StreamBroker.Attempt(aid));
     }
 
     private static ActiveJob ToActive(ActiveJobRow j)
@@ -124,25 +138,9 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
         res.Reachable = true;
         res.RayVersion = version["ray_version"]?.ToString() ?? "";
         var usage = (await ray.GetJsonAsync("api/cluster_status?format=0", ct))?["data"]?["clusterStatus"]?["loadMetricsReport"];
-        double U(string node, string key, int i) => usage?["usageByNode"]?[node]?[key] is JsonArray a && a.Count > i && a[i] is JsonValue v && v.TryGetValue<double>(out var x) ? x : 0;
         var nodes = (await ray.GetJsonAsync("api/v0/nodes?detail=1&limit=500", ct))?["data"]?["result"]?["result"] as JsonArray ?? [];
         foreach (var n in nodes.OfType<JsonObject>())
-        {
-            var id = n["node_id"]?.ToString() ?? "";
-            var hostId = n["labels"]?["mlp.io/host-id"]?.ToString() ?? "";
-            long Ms(string k) => n[k] is JsonValue v && v.TryGetValue<long>(out var x) ? x : 0;
-            var rn = new RayNode
-            {
-                NodeId = id, Ip = n["node_ip"]?.ToString() ?? "", HostId = hostId, HostName = names.GetValueOrDefault(hostId, ""), IsHead = n["is_head_node"]?.GetValue<bool>() == true,
-                State = n["state"]?.ToString() ?? "", StateMessage = n["state_message"]?.ToString() ?? "",
-                CpuUsed = U(id, "CPU", 0), CpuTotal = U(id, "CPU", 1), GpuUsed = U(id, "GPU", 0), GpuTotal = U(id, "GPU", 1),
-                MemoryUsed = U(id, "memory", 0), MemoryTotal = U(id, "memory", 1), ObjectStoreUsed = U(id, "objectStoreMemory", 0), ObjectStoreTotal = U(id, "objectStoreMemory", 1),
-                IdleSeconds = usage?["idleTimeMap"]?[id] is JsonValue iv && iv.TryGetValue<double>(out var idle) ? idle / 1000 : 0,
-            };
-            if (Ms("start_time_ms") > 0) rn.StartedAt = Timestamp.FromDateTimeOffset(DateTimeOffset.FromUnixTimeMilliseconds(Ms("start_time_ms")));
-            if (Ms("end_time_ms") > 0) rn.EndedAt = Timestamp.FromDateTimeOffset(DateTimeOffset.FromUnixTimeMilliseconds(Ms("end_time_ms")));
-            res.Nodes.Add(rn);
-        }
+            res.Nodes.Add(ToRayNode(n, names, usage));
         var pgs = (await ray.GetJsonAsync("api/v0/placement_groups?detail=1&limit=200", ct))?["data"]?["result"]?["result"] as JsonArray ?? [];
         foreach (var g in pgs.OfType<JsonObject>())
             res.PlacementGroups.Add(new RayPlacementGroup
@@ -153,6 +151,25 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
         var pending = new JsonObject { ["resources"] = usage?["resourceDemand"]?.DeepClone(), ["placement_groups"] = usage?["pgDemand"]?.DeepClone() };
         res.PendingJson = pending.ToJsonString();
         return res;
+    }
+
+    private static RayNode ToRayNode(JsonObject n, Dictionary<string, string> names, JsonNode? usage)
+    {
+        double U(string node, string key, int i) => usage?["usageByNode"]?[node]?[key] is JsonArray a && a.Count > i && a[i] is JsonValue v && v.TryGetValue<double>(out var x) ? x : 0;
+        var id = n["node_id"]?.ToString() ?? "";
+        var hostId = n["labels"]?["mlp.io/host-id"]?.ToString() ?? "";
+        long Ms(string k) => n[k] is JsonValue v && v.TryGetValue<long>(out var x) ? x : 0;
+        var rn = new RayNode
+        {
+            NodeId = id, Ip = n["node_ip"]?.ToString() ?? "", HostId = hostId, HostName = names.GetValueOrDefault(hostId, ""), IsHead = n["is_head_node"]?.GetValue<bool>() == true,
+            State = n["state"]?.ToString() ?? "", StateMessage = n["state_message"]?.ToString() ?? "",
+            CpuUsed = U(id, "CPU", 0), CpuTotal = U(id, "CPU", 1), GpuUsed = U(id, "GPU", 0), GpuTotal = U(id, "GPU", 1),
+            MemoryUsed = U(id, "memory", 0), MemoryTotal = U(id, "memory", 1), ObjectStoreUsed = U(id, "objectStoreMemory", 0), ObjectStoreTotal = U(id, "objectStoreMemory", 1),
+            IdleSeconds = usage?["idleTimeMap"]?[id] is JsonValue iv && iv.TryGetValue<double>(out var idle) ? idle / 1000 : 0,
+        };
+        if (Ms("start_time_ms") > 0) rn.StartedAt = Timestamp.FromDateTimeOffset(DateTimeOffset.FromUnixTimeMilliseconds(Ms("start_time_ms")));
+        if (Ms("end_time_ms") > 0) rn.EndedAt = Timestamp.FromDateTimeOffset(DateTimeOffset.FromUnixTimeMilliseconds(Ms("end_time_ms")));
+        return rn;
     }
 
     public override async Task<ClusterMap> GetClusterMap(ClusterMapRequest r, ServerCallContext ctx)

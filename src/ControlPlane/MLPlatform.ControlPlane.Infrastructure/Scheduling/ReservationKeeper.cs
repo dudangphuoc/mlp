@@ -14,6 +14,7 @@ public sealed class ReservationKeeper(IServiceScopeFactory scopes, RayJobsClient
     private readonly Dictionary<Guid, int> _tries = [];
     private long _checkedAt, _settleFrom;
     private bool _ok;
+    private const int MaxReholdTries = 5;
 
     /// <summary>True when new jobs may be placed.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct)
@@ -31,31 +32,7 @@ public sealed class ReservationKeeper(IServiceScopeFactory scopes, RayJobsClient
             foreach (var gone in _tries.Keys.Where(k => active.All(a => a.Id != k)).ToList()) _tries.Remove(gone);
             var reheld = false;
             foreach (var a in active)
-            {
-                var info = await ray.GetAsync(a.Id.ToString(), ct);
-                if (info?.Status is "PENDING" or "RUNNING") continue;
-                var n = _tries.GetValueOrDefault(a.Id);
-                if (n >= 5) continue;
-                _tries[a.Id] = n + 1;
-                if (info is not null) await ray.DeleteAsync(a.Id.ToString(), ct);
-                var spec = JobSpecDto.Parse(a.Spec);
-                var online = await m.Query(new ListOnlineHostsQuery(a.WorkspaceId), ct);
-                var needMb = GpuNeed.Mb(spec);
-                var held = (await m.Query(new ListAttemptAllocationsQuery(a.Id), ct))
-                    .Select(x => new HeldBundleDto
-                    {
-                        HostId = x.HostId, Cpus = spec.Cpus, MemoryBytes = spec.MemoryBytes, GpuUuids = x.GpuUuids,
-                        GpuFraction = GpuNeed.Fraction(needMb, SchedulerLoop.GpuTotalMb(online.FirstOrDefault(h => h.Id == x.HostId))),
-                    }).ToList();
-                if (held.Count == 0) continue;
-                var entry = string.Join(' ', "python", cfg["Scheduler:HolderPath"] ?? "/opt/mlp/mlp_holder/holder.py", "--rehold", "--attempt", a.Id.ToString(),
-                    "--bundles", "'" + JsonSerializer.Serialize(held, SchedJson.Default.ListHeldBundleDto) + "'");
-                await ray.SubmitAsync(a.Id.ToString(), entry, new Dictionary<string, string> { ["mlp_job"] = a.JobId.ToString(), ["mlp_rehold"] = "1" }, ct);
-                await m.Send(new EmitAttemptEventCommand(a.WorkspaceId, a.Id, "attempt.reheld", "warning",
-                    "The cluster head restarted and lost this reservation — CPU, memory and GPU reserved again"), ct);
-                log.LogWarning("Attempt {Attempt}: reservation missing in Ray ({Status}) → re-held", a.Id, info?.Status ?? "unknown job");
-                reheld = true;
-            }
+                if (await RecheckAsync(m, a, ct)) reheld = true;
             if (reheld) { _settleFrom = time.GetTimestamp(); return _ok = false; }
             return _ok = true;
         }
@@ -64,5 +41,33 @@ public sealed class ReservationKeeper(IServiceScopeFactory scopes, RayJobsClient
             log.LogWarning("Ray is unreachable — scheduling paused: {Msg}", e.Message);
             return _ok = false;
         }
+    }
+
+    /// <summary>Re-holds the attempt's reservation when Ray lost it; true when a re-hold was submitted.</summary>
+    private async Task<bool> RecheckAsync(IMediator m, AttemptRow a, CancellationToken ct)
+    {
+        var info = await ray.GetAsync(a.Id.ToString(), ct);
+        if (info?.Status is "PENDING" or "RUNNING") return false;
+        var n = _tries.GetValueOrDefault(a.Id);
+        if (n >= MaxReholdTries) return false;
+        _tries[a.Id] = n + 1;
+        if (info is not null) await ray.DeleteAsync(a.Id.ToString(), ct);
+        var spec = JobSpecDto.Parse(a.Spec);
+        var online = await m.Query(new ListOnlineHostsQuery(a.WorkspaceId), ct);
+        var needMb = GpuNeed.Mb(spec);
+        var held = (await m.Query(new ListAttemptAllocationsQuery(a.Id), ct))
+            .Select(x => new HeldBundleDto
+            {
+                HostId = x.HostId, Cpus = spec.Cpus, MemoryBytes = spec.MemoryBytes, GpuUuids = x.GpuUuids,
+                GpuFraction = GpuNeed.Fraction(needMb, SchedulerLoop.GpuTotalMb(online.FirstOrDefault(h => h.Id == x.HostId))),
+            }).ToList();
+        if (held.Count == 0) return false;
+        var entry = string.Join(' ', "python", cfg["Scheduler:HolderPath"] ?? "/opt/mlp/mlp_holder/holder.py", "--rehold", "--attempt", a.Id.ToString(),
+            "--bundles", "'" + JsonSerializer.Serialize(held, SchedJson.Default.ListHeldBundleDto) + "'");
+        await ray.SubmitAsync(a.Id.ToString(), entry, new Dictionary<string, string> { ["mlp_job"] = a.JobId.ToString(), ["mlp_rehold"] = "1" }, ct);
+        await m.Send(new EmitAttemptEventCommand(a.WorkspaceId, a.Id, "attempt.reheld", "warning",
+            "The cluster head restarted and lost this reservation — CPU, memory and GPU reserved again"), ct);
+        log.LogWarning("Attempt {Attempt}: reservation missing in Ray ({Status}) → re-held", a.Id, info?.Status ?? "unknown job");
+        return true;
     }
 }

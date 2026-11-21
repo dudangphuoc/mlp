@@ -59,6 +59,12 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
                 }
             }
         }
+        await FinishIfDoneAsync(run, ct);
+        return true;
+    }
+
+    private async Task FinishIfDoneAsync(PipelineRunRow run, CancellationToken ct)
+    {
         var final = await db.ListStepsAsync(run.Id, ct);
         if (final.All(s => s.State is "succeeded" or "failed" or "skipped" or "gated"))
         {
@@ -70,7 +76,6 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
                 $"Pipeline \"{run.PipelineName}\" #{run.Number} {(state switch { "succeeded" => "finished", "gated" => "stopped at gate", _ => "failed" })}",
                 $"#/pipelines/runs/{run.Id}", $"pipeline/{run.PipelineId}", ok ? "success" : "error", ct);
         }
-        return true;
     }
 
     private async Task StartAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject runParams, IReadOnlyDictionary<string, JsonObject> outputs, int attempt, CancellationToken ct)
@@ -87,69 +92,12 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         {
             switch (def.Kind)
             {
-                case "dataset":
-                {
-                    var (dsId, versionId, importId, note) = await StartDatasetAsync(run, cfg, ct);
-                    var output = new JsonObject { ["dataset_id"] = dsId.ToString(), ["note"] = note };
-                    if (versionId is { } vid)
-                    {
-                        output["dataset_version_id"] = vid.ToString();
-                        output["result"] = vid.ToString();
-                        await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, vid, output.ToJsonString(), null, now, ct);
-                    }
-                    else await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, importId, output.ToJsonString(), null, now, ct);
-                    break;
-                }
-                case "train":
-                {
-                    var projectId = cfg["project_id"] is not null ? G(cfg, "project_id") : await ProjectAsync(run.WorkspaceId, S(cfg, "project_name"), cfg["task"]?.ToString() ?? "", ct);
-                    var r = await mediator.Send(new StartTrainingCommand(run.WorkspaceId, projectId, cfg["name"]?.ToString() ?? $"{run.PipelineName}-{run.Number}-{def.Id}",
-                        S(cfg, "recipe"), S(cfg, "variant"), cfg["task"]?.ToString() ?? "", ParamsJson(cfg["params"]), cfg["from_scratch"] is JsonValue fs && fs.TryGetValue<bool>(out var fsb) && fsb,
-                        cfg["cpus"]?.GetValue<double>() ?? 1, cfg["gpus"]?.GetValue<int>() ?? 0, cfg["image_override"]?.ToString(), cfg["network"]?.ToString(),
-                        cfg["dataset_version_id"] is { } dv && Guid.TryParse(dv.ToString(), out var dvId) ? dvId : null), ct);
-                    await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, r.Id, new JsonObject { ["run_id"] = r.Id.ToString(), ["job_id"] = r.JobId?.ToString(), ["project_id"] = r.ProjectId.ToString() }.ToJsonString(), null, now, ct);
-                    break;
-                }
-                case "job":
-                {
-                    var spec = new JobSpecDto
-                    {
-                        Image = S(cfg, "image"), Command = (cfg["command"] as JsonArray ?? []).Select(x => x!.ToString()).ToList(),
-                        Cpus = cfg["cpus"]?.GetValue<double>() ?? 1, Network = cfg["network"]?.ToString(),
-                    };
-                    var job = await mediator.Send(new SubmitJobCommand(run.WorkspaceId, "pipeline", $"{run.PipelineName}-{run.Number}-{def.Id}", spec), ct);
-                    await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, job, new JsonObject { ["job_id"] = job.ToString() }.ToJsonString(), null, now, ct);
-                    break;
-                }
-                case "gate":
-                {
-                    var left = Num(cfg["left"]);
-                    var right = Num(cfg["right"]);
-                    var pass = cfg["op"]!.ToString() switch
-                    {
-                        ">" => left > right, ">=" => left >= right, "<" => left < right, "<=" => left <= right, "==" => left == right, _ => left != right,
-                    };
-                    var output = new JsonObject { ["passed"] = pass, ["left"] = left, ["right"] = right, ["result"] = pass };
-                    await db.UpdateStepAsync(run.Id, def.Id, pass ? "succeeded" : "gated", attempt, null, output.ToJsonString(),
-                        pass ? null : $"{left.ToString(CultureInfo.InvariantCulture)} {cfg["op"]} {right.ToString(CultureInfo.InvariantCulture)} not satisfied", now, ct);
-                    break;
-                }
-                case "register":
-                {
-                    var v = await mediator.Send(new RegisterFromRunCommand(run.WorkspaceId, G(cfg, "run_id"), S(cfg, "model_name"),
-                        cfg["description"]?.ToString() ?? $"Pipeline {run.PipelineName} #{run.Number}"), ct);
-                    await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, v.Id, new JsonObject
-                        { ["version_id"] = v.Id.ToString(), ["version"] = v.Version, ["model"] = v.ModelName, ["result"] = v.Id.ToString() }.ToJsonString(), null, now, ct);
-                    break;
-                }
-                case "promote":
-                {
-                    var v = await mediator.Send(new TransitionStageCommand(run.WorkspaceId, G(cfg, "version_id"), S(cfg, "stage"),
-                        cfg["reason"]?.ToString() ?? $"Pipeline {run.PipelineName} #{run.Number}"), ct);
-                    await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, v.Id, new JsonObject
-                        { ["version_id"] = v.Id.ToString(), ["stage"] = v.Stage, ["result"] = v.Stage }.ToJsonString(), null, now, ct);
-                    break;
-                }
+                case "dataset": await StartDatasetStepAsync(run, def, cfg, attempt, now, ct); break;
+                case "train": await StartTrainStepAsync(run, def, cfg, attempt, now, ct); break;
+                case "job": await StartJobStepAsync(run, def, cfg, attempt, now, ct); break;
+                case "gate": await EvaluateGateStepAsync(run, def, cfg, attempt, now, ct); break;
+                case "register": await RegisterStepAsync(run, def, cfg, attempt, now, ct); break;
+                case "promote": await PromoteStepAsync(run, def, cfg, attempt, now, ct); break;
             }
         }
         catch (AppException e)
@@ -158,40 +106,75 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         }
     }
 
+    private async Task StartDatasetStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var (dsId, versionId, importId, note) = await StartDatasetAsync(run, cfg, ct);
+        var output = new JsonObject { ["dataset_id"] = dsId.ToString(), ["note"] = note };
+        if (versionId is { } vid)
+        {
+            output["dataset_version_id"] = vid.ToString();
+            output["result"] = vid.ToString();
+            await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, vid, output.ToJsonString(), null, now, ct);
+        }
+        else await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, importId, output.ToJsonString(), null, now, ct);
+    }
+
+    private async Task StartTrainStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var projectId = cfg["project_id"] is not null ? G(cfg, "project_id") : await ProjectAsync(run.WorkspaceId, S(cfg, "project_name"), cfg["task"]?.ToString() ?? "", ct);
+        var r = await mediator.Send(new StartTrainingCommand(run.WorkspaceId, projectId, cfg["name"]?.ToString() ?? $"{run.PipelineName}-{run.Number}-{def.Id}",
+            S(cfg, "recipe"), S(cfg, "variant"), cfg["task"]?.ToString() ?? "", ParamsJson(cfg["params"]), cfg["from_scratch"] is JsonValue fs && fs.TryGetValue<bool>(out var fsb) && fsb,
+            cfg["cpus"]?.GetValue<double>() ?? 1, cfg["gpus"]?.GetValue<int>() ?? 0, cfg["image_override"]?.ToString(), cfg["network"]?.ToString(),
+            cfg["dataset_version_id"] is { } dv && Guid.TryParse(dv.ToString(), out var dvId) ? dvId : null), ct);
+        await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, r.Id, new JsonObject { ["run_id"] = r.Id.ToString(), ["job_id"] = r.JobId?.ToString(), ["project_id"] = r.ProjectId.ToString() }.ToJsonString(), null, now, ct);
+    }
+
+    private async Task StartJobStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var spec = new JobSpecDto
+        {
+            Image = S(cfg, "image"), Command = (cfg["command"] as JsonArray ?? []).Select(x => x!.ToString()).ToList(),
+            Cpus = cfg["cpus"]?.GetValue<double>() ?? 1, Network = cfg["network"]?.ToString(),
+        };
+        var job = await mediator.Send(new SubmitJobCommand(run.WorkspaceId, "pipeline", $"{run.PipelineName}-{run.Number}-{def.Id}", spec), ct);
+        await db.UpdateStepAsync(run.Id, def.Id, "running", attempt, job, new JsonObject { ["job_id"] = job.ToString() }.ToJsonString(), null, now, ct);
+    }
+
+    private async Task EvaluateGateStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var left = Num(cfg["left"]);
+        var right = Num(cfg["right"]);
+        var pass = cfg["op"]!.ToString() switch
+        {
+            ">" => left > right, ">=" => left >= right, "<" => left < right, "<=" => left <= right, "==" => left == right, _ => left != right,
+        };
+        var output = new JsonObject { ["passed"] = pass, ["left"] = left, ["right"] = right, ["result"] = pass };
+        await db.UpdateStepAsync(run.Id, def.Id, pass ? "succeeded" : "gated", attempt, null, output.ToJsonString(),
+            pass ? null : $"{left.ToString(CultureInfo.InvariantCulture)} {cfg["op"]} {right.ToString(CultureInfo.InvariantCulture)} not satisfied", now, ct);
+    }
+
+    private async Task RegisterStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var v = await mediator.Send(new RegisterFromRunCommand(run.WorkspaceId, G(cfg, "run_id"), S(cfg, "model_name"),
+            cfg["description"]?.ToString() ?? $"Pipeline {run.PipelineName} #{run.Number}"), ct);
+        await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, v.Id, new JsonObject
+            { ["version_id"] = v.Id.ToString(), ["version"] = v.Version, ["model"] = v.ModelName, ["result"] = v.Id.ToString() }.ToJsonString(), null, now, ct);
+    }
+
+    private async Task PromoteStepAsync(PipelineRunRow run, PipelineDef.Step def, JsonObject cfg, int attempt, DateTimeOffset now, CancellationToken ct)
+    {
+        var v = await mediator.Send(new TransitionStageCommand(run.WorkspaceId, G(cfg, "version_id"), S(cfg, "stage"),
+            cfg["reason"]?.ToString() ?? $"Pipeline {run.PipelineName} #{run.Number}"), ct);
+        await db.UpdateStepAsync(run.Id, def.Id, "succeeded", attempt, v.Id, new JsonObject
+            { ["version_id"] = v.Id.ToString(), ["stage"] = v.Stage, ["result"] = v.Stage }.ToJsonString(), null, now, ct);
+    }
+
     /// <summary>Asynchronous step: tracks the M09 run / M03 job; failed with retries left → rerun the step.</summary>
     private async Task<bool> PollAsync(PipelineRunRow run, PipelineDef.Step def, StepRow s, CancellationToken ct)
     {
         if (s.RefId is not { } refId) return false;
-        string state;
         var output = JsonNode.Parse(s.Output) as JsonObject ?? [];
-        if (def.Kind == "dataset")
-        {
-            var imp = (await mediator.Query(new ListHubImportsQuery(run.WorkspaceId), ct)).FirstOrDefault(x => x.Id == refId);
-            state = imp?.State switch { "succeeded" => "succeeded", "failed" or null => "failed", _ => "running" };
-            if (imp?.State == "queued") imports.Enqueue(refId);
-            output["progress"] = imp is null ? "" : $"{imp.FilesDone}/{imp.FilesTotal} files · {imp.Message}";
-            if (state == "succeeded" && imp!.TargetId is { } dsId)
-            {
-                var latest = (await db.ListVersionsAsync(dsId, ct)).OrderByDescending(v => v.Number).FirstOrDefault();
-                if (latest is null) state = "failed";
-                else { output["dataset_version_id"] = latest.Id.ToString(); output["result"] = latest.Id.ToString(); }
-            }
-            if (state == "failed") output["error"] = imp?.Message ?? "Import not found";
-        }
-        else if (def.Kind == "train")
-        {
-            var r = await mediator.Query(new GetRunQuery(run.WorkspaceId, refId), ct);
-            state = r.State;
-            output["metric"] = r.PrimaryMetricValue;
-            output["metric_key"] = r.PrimaryMetricKey;
-            output["result"] = r.Id.ToString();
-        }
-        else
-        {
-            var j = await mediator.Query(new GetJobQuery(run.WorkspaceId, refId), ct);
-            state = j.State;
-            output["result"] = j.State;
-        }
+        var state = await ReadStepStateAsync(run, def, refId, output, ct);
         if (state == "succeeded")
         {
             await db.UpdateStepAsync(run.Id, def.Id, "succeeded", s.Attempt, refId, output.ToJsonString(), null, clock.UtcNow, ct);
@@ -213,6 +196,43 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
     }
 
     private HashSet<string>? RetriedNow;
+
+    private async Task<string> ReadStepStateAsync(PipelineRunRow run, PipelineDef.Step def, Guid refId, JsonObject output, CancellationToken ct)
+    {
+        string state;
+        if (def.Kind == "dataset") state = await ReadImportStateAsync(run, refId, output, ct);
+        else if (def.Kind == "train")
+        {
+            var r = await mediator.Query(new GetRunQuery(run.WorkspaceId, refId), ct);
+            state = r.State;
+            output["metric"] = r.PrimaryMetricValue;
+            output["metric_key"] = r.PrimaryMetricKey;
+            output["result"] = r.Id.ToString();
+        }
+        else
+        {
+            var j = await mediator.Query(new GetJobQuery(run.WorkspaceId, refId), ct);
+            state = j.State;
+            output["result"] = j.State;
+        }
+        return state;
+    }
+
+    private async Task<string> ReadImportStateAsync(PipelineRunRow run, Guid refId, JsonObject output, CancellationToken ct)
+    {
+        var imp = (await mediator.Query(new ListHubImportsQuery(run.WorkspaceId), ct)).FirstOrDefault(x => x.Id == refId);
+        var state = imp?.State switch { "succeeded" => "succeeded", "failed" or null => "failed", _ => "running" };
+        if (imp?.State == "queued") imports.Enqueue(refId);
+        output["progress"] = imp is null ? "" : $"{imp.FilesDone}/{imp.FilesTotal} files · {imp.Message}";
+        if (state == "succeeded" && imp!.TargetId is { } dsId)
+        {
+            var latest = (await db.ListVersionsAsync(dsId, ct)).OrderByDescending(v => v.Number).FirstOrDefault();
+            if (latest is null) state = "failed";
+            else { output["dataset_version_id"] = latest.Id.ToString(); output["result"] = latest.Id.ToString(); }
+        }
+        if (state == "failed") output["error"] = imp?.Message ?? "Import not found";
+        return state;
+    }
 
     /// <summary>`dataset` step: the dataset named in config (slug from the name) is reused when it already has a
     /// version (reuse: false → import again); otherwise an import starts (default: Hugging Face.</summary>

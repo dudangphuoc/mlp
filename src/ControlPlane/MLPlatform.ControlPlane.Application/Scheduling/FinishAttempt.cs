@@ -36,10 +36,7 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
             return new FinishResult(a.JobId, "cancelled", false);
         }
         await db.SetAttemptStateAsync(a.Id, state, c.ExitCode, reason, c.Message, now, ct);
-        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, reason is "node_lost" or "container_lost" ? "scheduler" : "agent", "attempt", a.Id,
-            state == "succeeded" ? "attempt.succeeded" : "attempt." + reason, state == "succeeded" ? "success" : reason is "node_lost" or "container_lost" ? "warning" : "error",
-            state == "succeeded" ? "Attempt finished" : $"Attempt failed: {reason} (code {c.ExitCode}){(string.IsNullOrEmpty(c.Message) ? "" : " — " + c.Message)}",
-            new System.Text.Json.Nodes.JsonObject { ["exit_code"] = c.ExitCode }, ct: ct);
+        await EmitAttemptFinishedAsync(a, c, state, reason, ct);
         var retryable = state == "failed" && reason is "node_lost" or "container_lost" or "signal_lost" or "head_lost" or "timeout" or "failed";
         var job = await db.GetJobAsync(a.JobId, a.WorkspaceId, ct);
         if (retryable && job is not null && job.AttemptCount < 3)
@@ -49,6 +46,19 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
                 $"Retrying from the latest checkpoint (attempt {job.AttemptCount + 1}/3)", ct: ct);
             return new FinishResult(a.JobId, "queued", true);
         }
+        return await FinishJobAsync(a, c, state, reason, now, ct);
+    }
+
+    private async Task EmitAttemptFinishedAsync(AttemptRow a, FinishAttemptCommand c, string state, string reason, CancellationToken ct)
+    {
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, reason is "node_lost" or "container_lost" ? "scheduler" : "agent", "attempt", a.Id,
+            state == "succeeded" ? "attempt.succeeded" : "attempt." + reason, state == "succeeded" ? "success" : reason is "node_lost" or "container_lost" ? "warning" : "error",
+            state == "succeeded" ? "Attempt finished" : $"Attempt failed: {reason} (code {c.ExitCode}){(string.IsNullOrEmpty(c.Message) ? "" : " — " + c.Message)}",
+            new System.Text.Json.Nodes.JsonObject { ["exit_code"] = c.ExitCode }, ct: ct);
+    }
+
+    private async Task<FinishResult> FinishJobAsync(AttemptRow a, FinishAttemptCommand c, string state, string reason, DateTimeOffset now, CancellationToken ct)
+    {
         var jobState = state == "succeeded" ? "succeeded" : "failed";
         var detail = string.IsNullOrWhiteSpace(c.Message) ? $"The process exited with code {c.ExitCode} — open the job log for details" : c.Message;
         await db.SetJobStateAsync(a.JobId, jobState, state == "succeeded" ? null : reason is "failed" ? detail : $"{reason}: {detail}", now, ct);

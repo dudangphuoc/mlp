@@ -35,14 +35,7 @@ internal static class Materializer
                 if (key.Length == 0) throw new FormatException($"Row {r + 2}: missing {v.JoinKey}");
                 if (!DateTimeOffset.TryParse(row.ElementAtOrDefault(tsCol), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var ts))
                     throw new FormatException($"Row {r + 2}: '{row.ElementAtOrDefault(tsCol)}' is not a timestamp (ISO 8601)");
-                var o = new JsonObject();
-                foreach (var f in feats)
-                {
-                    var raw = row.ElementAtOrDefault(f.Index) ?? "";
-                    o[f.Name] = raw.Length == 0 ? null
-                        : f.Type == "number" ? double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? JsonValue.Create(d) : throw new FormatException($"Row {r + 2}: {f.Name}='{raw}' is not a number")
-                        : JsonValue.Create(raw);
-                }
+                var o = ParseFeatureValues(row, r, feats);
                 keys.Add(key); times.Add(ts); vals.Add(o.ToJsonString());
                 if (keys.Count == 5000) { await db.InsertOfflineAsync(v.Id, [.. keys], [.. times], [.. vals], ct); keys.Clear(); times.Clear(); vals.Clear(); }
             }
@@ -56,6 +49,19 @@ internal static class Materializer
             await db.FinishMaterializeAsync(v.Id, "failed", e.Message, 0, 0, now, ct);
         }
         return (await db.GetViewAsync(v.Id, v.WorkspaceId, ct))!;
+    }
+
+    private static JsonObject ParseFeatureValues(string[] row, int r, List<(string Name, string Type, int Index)> feats)
+    {
+        var o = new JsonObject();
+        foreach (var f in feats)
+        {
+            var raw = row.ElementAtOrDefault(f.Index) ?? "";
+            o[f.Name] = raw.Length == 0 ? null
+                : f.Type == "number" ? double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? JsonValue.Create(d) : throw new FormatException($"Row {r + 2}: {f.Name}='{raw}' is not a number")
+                : JsonValue.Create(raw);
+        }
+        return o;
     }
 
     public static async Task<(string[] Header, List<string[]> Rows)> LoadSourceAsync(IReadSession db, S3Client s3, Guid ws, Guid versionId, CancellationToken ct)

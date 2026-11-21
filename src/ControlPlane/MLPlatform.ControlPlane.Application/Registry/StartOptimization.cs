@@ -27,31 +27,16 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
     {
         var uid = await auth.RequireAsync(c.WorkspaceId, "model.write", ct);
         var v = await db.GetModelVersionAsync(c.SourceVersionId, c.WorkspaceId, ct) ?? throw new NotFoundException("REGISTRY_VERSION_NOT_FOUND", "Model version not found");
-        if (!OptimizationRules.Tasks.Contains(v.Task)) throw new PreconditionException("OPT_TASK", $"Task {v.Task} cannot be optimized yet (detect, classify)");
-        if (!OptimizationRules.Allowed.TryGetValue(c.Device, out var allowed)) throw new ValidationException(new Dictionary<string, string> { ["device"] = "cpu | cuda" });
-        var cands = c.Candidates.Distinct().ToList();
-        if (cands.Count == 0 || cands.Any(x => !allowed.Contains(x)))
-            throw new ValidationException(new Dictionary<string, string> { ["candidates"] = $"{c.Device}: {string.Join(", ", allowed)}" });
-        if (c.CheckImages is < 10 or > 1000) throw new ValidationException(new Dictionary<string, string> { ["check_images"] = "10–1000" });
+        var cands = ValidateCandidates(c, v.Task);
         var export = (await db.ListReadyOnnxExportsAsync(c.WorkspaceId, v.Id, ct)).FirstOrDefault()
                      ?? throw new PreconditionException("OPT_NEEDS_ONNX", "Convert this version to ONNX first");
-
         var id = Ids.New();
         var seed = id.ToString();
         var check = await Images(c.WorkspaceId, c.CheckDatasetVersionId, ["val", "test"], c.CheckImages, seed, ct);
         if (check.Count == 0) throw new PreconditionException("OPT_NO_IMAGES", "The check dataset version has no images");
-        var calib = new List<OptImage>();
-        if (cands.Contains("int8"))
-        {
-            if (c.CalibDatasetVersionId is not { } cv) throw new ValidationException(new Dictionary<string, string> { ["calib_dataset_version_id"] = "INT8 needs calibration images" });
-            if (c.CalibImages is < 20 or > 2000) throw new ValidationException(new Dictionary<string, string> { ["calib_images"] = "20–2000" });
-            calib = await Images(c.WorkspaceId, cv, ["train"], c.CalibImages, seed, ct);
-            if (calib.Count == 0) throw new PreconditionException("OPT_NO_IMAGES", "The calibration dataset version has no train images");
-        }
-
+        var calib = cands.Contains("int8") ? await CalibrationImagesAsync(c, seed, ct) : [];
         var prefix = OptimizationRules.Prefix(c.WorkspaceId, id);
-        string Put(string rel) => s3.Presign(HttpMethod.Put, Buckets.Artifacts, prefix + rel, TimeSpan.FromHours(24), Audience.Workload);
-        string Get(string bucket, string key) => s3.Presign(HttpMethod.Get, bucket, key, TimeSpan.FromHours(24), Audience.Workload);
+        string Put(string rel) => PresignPut(prefix + rel);
         var uploads = new JsonObject { ["report.json"] = Put("report.json"), ["config/onnx.json"] = Put("config/onnx.json"), ["signature.json"] = Put("signature.json") };
         foreach (var x in cands) uploads[$"{x}/model.onnx"] = Put($"{x}/model.onnx");
         for (var i = 0; i < OptimizationRules.WorstImages; i++) uploads[$"worst/{i}.jpg"] = Put($"worst/{i}.jpg");
@@ -64,13 +49,45 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
             ["task"] = v.Task, ["device"] = c.Device, ["candidates"] = new JsonArray(cands.Select(x => (JsonNode)x).ToArray()),
             ["conf"] = c.Conf <= 0 ? 0.5 : c.Conf, ["threads"] = 4, ["warmup"] = 20, ["iters"] = 200,
             ["calib_method"] = c.CalibMethod == "percentile" ? "percentile" : "minmax", ["seed"] = seed,
-            ["model_url"] = Get(Buckets.Artifacts, ExportRules.Prefix(c.WorkspaceId, export.Id) + export.FileName),
-            ["classes_url"] = hasClasses ? Get(Buckets.Artifacts, srcPrefix + "classes.json") : null,
+            ["model_url"] = PresignGet(Buckets.Artifacts, ExportRules.Prefix(c.WorkspaceId, export.Id) + export.FileName),
+            ["classes_url"] = hasClasses ? PresignGet(Buckets.Artifacts, srcPrefix + "classes.json") : null,
             ["calib"] = Files(calib), ["check"] = Files(check), ["uploads"] = uploads,
         };
         await s3.PutAsync(Buckets.Artifacts, prefix + "spec.json", Encoding.UTF8.GetBytes(spec.ToJsonString()), "application/json", ct);
         await s3.PutAsync(Buckets.Artifacts, prefix + "pipeline.py", Encoding.UTF8.GetBytes(OptimizationRules.Script()), "text/x-python", ct);
-        var job = new JobSpecDto
+        var job = BuildJob(c, prefix, check, calib);
+        var jobId = await mediator.Send(new SubmitJobCommand(c.WorkspaceId, "optimize", $"optimize-{v.ModelName}-v{v.Version}-{c.Device}", job), ct);
+        await db.InsertOptimizationAsync(id, c.WorkspaceId, v.Id, export.Id, c.Device, string.Join(',', cands), c.HostId,
+            cands.Contains("int8") ? c.CalibDatasetVersionId : null, c.CheckDatasetVersionId, c.Conf <= 0 ? 0.5 : c.Conf, jobId, uid, clock.UtcNow, ct);
+        return (await db.GetOptimizationAsync(c.WorkspaceId, id, ct))!;
+    }
+
+    private static List<string> ValidateCandidates(StartOptimizationCommand c, string task)
+    {
+        if (!OptimizationRules.Tasks.Contains(task)) throw new PreconditionException("OPT_TASK", $"Task {task} cannot be optimized yet (detect, classify)");
+        if (!OptimizationRules.Allowed.TryGetValue(c.Device, out var allowed)) throw new ValidationException(new Dictionary<string, string> { ["device"] = "cpu | cuda" });
+        var cands = c.Candidates.Distinct().ToList();
+        if (cands.Count == 0 || cands.Any(x => !allowed.Contains(x)))
+            throw new ValidationException(new Dictionary<string, string> { ["candidates"] = $"{c.Device}: {string.Join(", ", allowed)}" });
+        if (c.CheckImages is < 10 or > 1000) throw new ValidationException(new Dictionary<string, string> { ["check_images"] = "10–1000" });
+        return cands;
+    }
+
+    private async Task<List<OptImage>> CalibrationImagesAsync(StartOptimizationCommand c, string seed, CancellationToken ct)
+    {
+        if (c.CalibDatasetVersionId is not { } cv) throw new ValidationException(new Dictionary<string, string> { ["calib_dataset_version_id"] = "INT8 needs calibration images" });
+        if (c.CalibImages is < 20 or > 2000) throw new ValidationException(new Dictionary<string, string> { ["calib_images"] = "20–2000" });
+        var calib = await Images(c.WorkspaceId, cv, ["train"], c.CalibImages, seed, ct);
+        if (calib.Count == 0) throw new PreconditionException("OPT_NO_IMAGES", "The calibration dataset version has no train images");
+        return calib;
+    }
+
+    private string PresignPut(string key) => s3.Presign(HttpMethod.Put, Buckets.Artifacts, key, TimeSpan.FromHours(24), Audience.Workload);
+
+    private string PresignGet(string bucket, string key) => s3.Presign(HttpMethod.Get, bucket, key, TimeSpan.FromHours(24), Audience.Workload);
+
+    private JobSpecDto BuildJob(StartOptimizationCommand c, string prefix, List<OptImage> check, List<OptImage> calib) =>
+        new JobSpecDto
         {
             Image = "recipes/generic-onnx:current",
             Command = ["python3", "-c", "import os,urllib.request;exec(compile(urllib.request.urlopen(os.environ['MLP_OPT_SCRIPT_URL']).read(),'pipeline.py','exec'))"],
@@ -78,16 +95,11 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
             Hosts = c.HostId is { } h ? [h] : [],
             Env = new Dictionary<string, string>
             {
-                ["MLP_OPT_SPEC_URL"] = Get(Buckets.Artifacts, prefix + "spec.json"), ["MLP_OPT_SCRIPT_URL"] = Get(Buckets.Artifacts, prefix + "pipeline.py"),
+                ["MLP_OPT_SPEC_URL"] = PresignGet(Buckets.Artifacts, prefix + "spec.json"), ["MLP_OPT_SCRIPT_URL"] = PresignGet(Buckets.Artifacts, prefix + "pipeline.py"),
                 ["OMP_NUM_THREADS"] = "4",
                 ["MLP_DATA_CACHES"] = string.Join(',', check.Concat(calib).Where(f => f.Id is not null).Select(f => f.DatasetId.ToString("N")).Distinct()),
             },
         };
-        var jobId = await mediator.Send(new SubmitJobCommand(c.WorkspaceId, "optimize", $"optimize-{v.ModelName}-v{v.Version}-{c.Device}", job), ct);
-        await db.InsertOptimizationAsync(id, c.WorkspaceId, v.Id, export.Id, c.Device, string.Join(',', cands), c.HostId,
-            cands.Contains("int8") ? c.CalibDatasetVersionId : null, c.CheckDatasetVersionId, c.Conf <= 0 ? 0.5 : c.Conf, jobId, uid, clock.UtcNow, ct);
-        return (await db.GetOptimizationAsync(c.WorkspaceId, id, ct))!;
-    }
 
     /// <summary>Images of a dataset version in the wanted splits (folders or the version's mlp-split.json), else any
     /// image; deterministic pick.</summary>

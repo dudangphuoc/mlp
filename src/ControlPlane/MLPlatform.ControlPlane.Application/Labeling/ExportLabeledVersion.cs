@@ -27,21 +27,11 @@ public sealed class ExportLabeledVersionCommandHandler(IWriteSession db, IClock 
     {
         var uid = await auth.RequireAsync(c.WorkspaceId, "dataset.write", ct);
         var (_, p, _) = await access.LoadAsync(c.WorkspaceId, c.ProjectId, "dataset.read", ct);
-        var paths = (await db.ExportItemsAsync(p.Id, c.AllLabeled, ct)).Select(i => i.Path).ToList();
-        if (paths.Count == 0)
-            throw new PreconditionException("LABEL_EXPORT_EMPTY", c.AllLabeled ? "No submitted items yet" : "No accepted items yet — accept items in review, or include items still in review");
-        if (paths.Count > 50_000) throw new PreconditionException("LABEL_EXPORT_TOO_LARGE", "More than 50,000 items — export in parts");
+        var paths = await LoadExportPathsAsync(p.Id, c.AllLabeled, ct);
         var schema = await db.GetSchemaVersionAsync(p.DatasetId, p.SchemaVersion, ct) ?? throw new PreconditionException("LABEL_SCHEMA_REQUIRED", "Dataset has no label schema yet");
         var (classIndex, classNames) = Classes(schema.Classes);
-
-        VersionRow? src = p.VersionId is { } vid ? await db.GetVersionAsync(vid, c.WorkspaceId, ct) : null;
-        var sizes = src is not null
-            ? (await db.ListVersionFilesAsync(src.Id, ct)).ToDictionary(f => f.Path, f => (f.SizeBytes, f.Url))
-            : (await db.ListFilesAsync(p.DatasetId, ct)).ToDictionary(f => f.Path, f => (f.SizeBytes, (string?)null));
-        var srcPrefix = src?.Prefix ?? Buckets.Raw(c.WorkspaceId, p.DatasetId);
-        paths = paths.Where(sizes.ContainsKey).ToList();
-        if (paths.Count == 0) throw new PreconditionException("LABEL_EXPORT_EMPTY", "The labeled files are no longer in the dataset");
-
+        var (sizes, srcPrefix) = await LoadSourceFilesAsync(c.WorkspaceId, p.VersionId, p.DatasetId, ct);
+        paths = KeepPresent(paths, sizes);
         var rows = await db.ExportAnnotationsAsync(p.DatasetId, p.Id, c.AllLabeled, ct);
         var byPath = rows.ToLookup(r => r.Path);
         var n = await db.NextVersionNumberAsync(p.DatasetId, c.WorkspaceId, ct);
@@ -56,38 +46,81 @@ public sealed class ExportLabeledVersionCommandHandler(IWriteSession db, IClock 
             var (size, url) = sizes[path];
             if (url is null) await s3.CopyAsync(Buckets.Datasets, srcPrefix + path, Buckets.Datasets, prefix + path, ct);
             files.Add((path, size, url));
-            var yolo = new StringBuilder();
-            foreach (var a in byPath[path])
-            {
-                using (var w = new Utf8JsonWriter(jsonl)) LabelRules.WriteOne(w, a.Path, a.Kind, a.ClassId, a.Geometry, a.Attributes, a.Source);
-                jsonl.WriteByte((byte)'\n');
-                if (a.Kind == "bbox" && classIndex.TryGetValue(a.ClassId, out var ci) && Box(a.Geometry) is { } b)
-                {
-                    yolo.Append(CultureInfo.InvariantCulture, $"{ci} {b.X + b.W / 2:0.######} {b.Y + b.H / 2:0.######} {b.W:0.######} {b.H:0.######}\n");
-                    boxes++;
-                }
-                else other++;
-            }
+            var (yolo, pathBoxes, pathOther) = WriteAnnotations(byPath[path], jsonl, classIndex);
+            boxes += pathBoxes;
+            other += pathOther;
             var ext = Path.GetExtension(path).ToLowerInvariant();
             var txt = Path.ChangeExtension(path, ".txt");
-            if (ImageExt.Contains(ext) && taken.Add(txt)) files.Add(await PutAsync(prefix, txt, Encoding.UTF8.GetBytes(yolo.ToString()), "text/plain", ct));
+            if (ImageExt.Contains(ext) && taken.Add(txt)) files.Add(await PutAsync(prefix, txt, Encoding.UTF8.GetBytes(yolo), "text/plain", ct));
         }
         if (taken.Add("labels.jsonl")) files.Add(await PutAsync(prefix, "labels.jsonl", jsonl.ToArray(), "application/x-ndjson", ct));
-        if (boxes > 0)
-        {
-            var names = JsonSerializer.Serialize(classNames, LabelExportJson.Default.ListString);
-            if (taken.Add("data.yaml"))
-                files.Add(await PutAsync(prefix, "data.yaml", Encoding.UTF8.GetBytes($"# Labels of labeling project \"{p.Name.Replace('"', ' ')}\"\nnc: {classNames.Count}\nnames: {names}\n"), "text/yaml", ct));
-            if (taken.Add("classes.txt")) files.Add(await PutAsync(prefix, "classes.txt", Encoding.UTF8.GetBytes(string.Join('\n', classNames) + "\n"), "text/plain", ct));
-        }
+        if (boxes > 0) await PutClassFilesAsync(prefix, p.Name, classNames, taken, files, ct);
         var now = clock.UtcNow;
         var note = string.IsNullOrWhiteSpace(c.Note) ? $"Labels of project {p.Name}: {paths.Count} items" : c.Note.Trim();
         var total = files.Sum(f => f.Size);
         await db.InsertVersionAsync(id, p.DatasetId, n, prefix, files.Count, total, note, uid, now, ct);
-        foreach (var f in files)
-            if (f.Url is null) await db.InsertVersionFileAsync(id, f.Path, f.Size, ct);
-            else await db.InsertVersionFileUrlAsync(id, f.Path, f.Size, f.Url, ct);
+        await InsertVersionFilesAsync(id, files, ct);
         return new LabelExport(new VersionRow(id, p.DatasetId, n, prefix, files.Count, total, note, now, "copied", null), paths.Count, boxes, other);
+    }
+
+    private async Task<List<string>> LoadExportPathsAsync(Guid projectId, bool allLabeled, CancellationToken ct)
+    {
+        var paths = (await db.ExportItemsAsync(projectId, allLabeled, ct)).Select(i => i.Path).ToList();
+        if (paths.Count == 0)
+            throw new PreconditionException("LABEL_EXPORT_EMPTY", allLabeled ? "No submitted items yet" : "No accepted items yet — accept items in review, or include items still in review");
+        if (paths.Count > 50_000) throw new PreconditionException("LABEL_EXPORT_TOO_LARGE", "More than 50,000 items — export in parts");
+        return paths;
+    }
+
+    private async Task<(Dictionary<string, (long SizeBytes, string? Url)> Sizes, string SrcPrefix)> LoadSourceFilesAsync(Guid workspaceId, Guid? versionId,
+        Guid datasetId, CancellationToken ct)
+    {
+        VersionRow? src = versionId is { } vid ? await db.GetVersionAsync(vid, workspaceId, ct) : null;
+        var sizes = src is not null
+            ? (await db.ListVersionFilesAsync(src.Id, ct)).ToDictionary(f => f.Path, f => (f.SizeBytes, f.Url))
+            : (await db.ListFilesAsync(datasetId, ct)).ToDictionary(f => f.Path, f => (f.SizeBytes, (string?)null));
+        return (sizes, src?.Prefix ?? Buckets.Raw(workspaceId, datasetId));
+    }
+
+    private static List<string> KeepPresent(List<string> paths, Dictionary<string, (long SizeBytes, string? Url)> sizes)
+    {
+        var present = paths.Where(sizes.ContainsKey).ToList();
+        if (present.Count == 0) throw new PreconditionException("LABEL_EXPORT_EMPTY", "The labeled files are no longer in the dataset");
+        return present;
+    }
+
+    private static (string Yolo, long Boxes, long Other) WriteAnnotations(IEnumerable<LabelSetSourceRow> annotations, MemoryStream jsonl, Dictionary<int, int> classIndex)
+    {
+        var yolo = new StringBuilder();
+        long boxes = 0, other = 0;
+        foreach (var a in annotations)
+        {
+            using (var w = new Utf8JsonWriter(jsonl)) LabelRules.WriteOne(w, a.Path, a.Kind, a.ClassId, a.Geometry, a.Attributes, a.Source);
+            jsonl.WriteByte((byte)'\n');
+            if (a.Kind == "bbox" && classIndex.TryGetValue(a.ClassId, out var ci) && Box(a.Geometry) is { } b)
+            {
+                yolo.Append(CultureInfo.InvariantCulture, $"{ci} {b.X + b.W / 2:0.######} {b.Y + b.H / 2:0.######} {b.W:0.######} {b.H:0.######}\n");
+                boxes++;
+            }
+            else other++;
+        }
+        return (yolo.ToString(), boxes, other);
+    }
+
+    private async Task PutClassFilesAsync(string prefix, string projectName, List<string> classNames, HashSet<string> taken,
+        List<(string Path, long Size, string? Url)> files, CancellationToken ct)
+    {
+        var names = JsonSerializer.Serialize(classNames, LabelExportJson.Default.ListString);
+        if (taken.Add("data.yaml"))
+            files.Add(await PutAsync(prefix, "data.yaml", Encoding.UTF8.GetBytes($"# Labels of labeling project \"{projectName.Replace('"', ' ')}\"\nnc: {classNames.Count}\nnames: {names}\n"), "text/yaml", ct));
+        if (taken.Add("classes.txt")) files.Add(await PutAsync(prefix, "classes.txt", Encoding.UTF8.GetBytes(string.Join('\n', classNames) + "\n"), "text/plain", ct));
+    }
+
+    private async Task InsertVersionFilesAsync(Guid versionId, List<(string Path, long Size, string? Url)> files, CancellationToken ct)
+    {
+        foreach (var f in files)
+            if (f.Url is null) await db.InsertVersionFileAsync(versionId, f.Path, f.Size, ct);
+            else await db.InsertVersionFileUrlAsync(versionId, f.Path, f.Size, f.Url, ct);
     }
 
     private async Task<(string Path, long Size, string? Url)> PutAsync(string prefix, string path, byte[] body, string type, CancellationToken ct)

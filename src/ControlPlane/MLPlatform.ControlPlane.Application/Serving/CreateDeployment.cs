@@ -36,22 +36,9 @@ public sealed class CreateDeploymentCommandHandler(IWriteSession db, S3Client s3
             : recipe.State != "invalid" ? $"recipes/{recipe.Name}:current"
             : throw new PreconditionException("CATALOG_RECIPE_NOT_VERIFIED", $"Recipe {recipe.Name} is not valid ({recipe.State})");
         var modelFiles = await ModelFiles.BuildAsync(db, s3, v.Id, c.WorkspaceId, ct);
-        var gpus = c.Gpus >= 0 ? c.Gpus : await db.GetVersionDeviceAsync(v.Id, c.WorkspaceId, ct) switch
-        {
-            "cuda" => 1,
-            "cpu" => 0,
-            _ => manifest["environment"]?["gpu"]?.ToString() == "required" ? 1 : 0,
-        };
+        var gpus = c.Gpus >= 0 ? c.Gpus : await DefaultGpusAsync(v.Id, c.WorkspaceId, manifest, ct);
         var cpus = c.Cpus <= 0 ? 1 : c.Cpus;
-        var spec = new JobSpecDto
-        {
-            Image = image, Command = ["mlp-serve"], Cpus = cpus, Gpus = gpus, TimeoutSeconds = int.MaxValue,
-            Env = new Dictionary<string, string>
-            {
-                ["MLP_HANDLER"] = handler, ["MLP_TASK"] = v.Task, ["MLP_MODEL_FILES"] = modelFiles, ["MLP_DEPLOYMENT"] = c.Slug,
-                ["MLP_MODEL_VERSION"] = v.Id.ToString(),
-            },
-        };
+        var spec = ServeSpec(image, cpus, gpus, handler, v, modelFiles, c.Slug);
         if (await db.GetDeploymentBySlugAsync(c.WorkspaceId, c.Slug, ct) is { } old)
         {
             if (old.State is not ("stopped" or "failed")) throw new ConflictException("SERVE_SLUG_TAKEN", "Deployment name is already in use");
@@ -73,4 +60,23 @@ public sealed class CreateDeploymentCommandHandler(IWriteSession db, S3Client s3
         }
         return (await db.GetDeploymentAsync(id, c.WorkspaceId, ct))!;
     }
+
+    private async Task<int> DefaultGpusAsync(Guid versionId, Guid workspaceId, JsonObject manifest, CancellationToken ct) =>
+        await db.GetVersionDeviceAsync(versionId, workspaceId, ct) switch
+        {
+            "cuda" => 1,
+            "cpu" => 0,
+            _ => manifest["environment"]?["gpu"]?.ToString() == "required" ? 1 : 0,
+        };
+
+    private static JobSpecDto ServeSpec(string image, double cpus, int gpus, string handler, ModelVersionRow v, string modelFiles, string slug) =>
+        new JobSpecDto
+        {
+            Image = image, Command = ["mlp-serve"], Cpus = cpus, Gpus = gpus, TimeoutSeconds = int.MaxValue,
+            Env = new Dictionary<string, string>
+            {
+                ["MLP_HANDLER"] = handler, ["MLP_TASK"] = v.Task, ["MLP_MODEL_FILES"] = modelFiles, ["MLP_DEPLOYMENT"] = slug,
+                ["MLP_MODEL_VERSION"] = v.Id.ToString(),
+            },
+        };
 }
