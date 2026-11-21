@@ -2,8 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.CodeGate.Architecture;
 
-public sealed record ModuleReference(string From, string To, string File, string Kind, string Target);
-
 /// <summary>Cross-module references in Application: namespace imports, qualified names and calls to another module's SQL methods.</summary>
 public static partial class ModuleGraph
 {

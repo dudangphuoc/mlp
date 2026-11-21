@@ -548,22 +548,22 @@ Project này chỉ cần `Microsoft.Extensions.Hosting` và `Http`, cùng kiểu
 
 | Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
 |---|---|---|---|---|
-| 1.1 | `Application/modules.json`, project mới `src/Framework/MLPlatform.Analyzers` | manifest: module → tầng, các cạnh cùng tầng được phép, thư mục SQL/schema, file spec trong cookbook. Analyzer `MLPARCH001` (cạnh cấm) và `MLPARCH002` (SQL của module khác) chạy dưới dạng cảnh báo có baseline. Ban ASP.NET và Npgsql thô trong Application. | analyzer làm build chậm | analyzer liệt kê đúng 13 cặp hai chiều ở 1.5 |
-| 1.2 | `Common`, `Api/Infrastructure/Auth.cs`, 4 chỗ giả danh | đưa nơi giữ người dùng hiện tại vào Application: `IUserScopes.RunAsAsync(userId, …)`; `CurrentUser` đứng sau interface đó. Sửa `PipelineGrpc.cs:99`, `TuningGrpc.cs:83`, `EvaluationRunner.cs:45`, `HuggingFace.cs:281`. | đổi cách loop chạy dưới danh nghĩa người tạo | scenario sweep, pipeline, eval, import HF |
-| 1.3 | `Notebooks.cs`, `AgentBuilds.cs`, `HuggingFace.cs`, `Services/*Grpc.cs` | tách các file trộn trước khi chuyển: `NotebookProxy` / `DataChannelBroker` / `NotebookReaper`; endpoint / `AgentBuildStore`; `SecretBox` → Security; 4 loop và `RuntimeGrpc` ra khỏi file gRPC | ít | snapshot giống hệt |
-| 1.4 | project mới `ControlPlane.Infrastructure` | chuyển nguyên file (sau 1.3); thêm `AddControlPlaneInfrastructure(cfg)` và giữ thứ tự đăng ký hosted service. `Buckets` đang là static bị gán từ `Program.cs` → options `StorageBuckets` (đây là thay đổi logic nhỏ, có khai báo). | mất đăng ký DI | snapshot DI và hosted service giống hệt |
-| 1.5 | `Common`, `Identity`, `Ops`, SQL | sửa Kernel một cách máy móc: truy vấn role → `Common/Access` (hết vòng Common↔Identity); `OpsEvents` + `ListEvents` + `JobWorkspace` → module `Timeline` (hết vòng Fleet→Ops và một phần Scheduling↔Ops); đổi tên 9 method SQL trùng (`InsertProjectAsync`, `GetProjectAsync`, `ListProjectsAsync`, `ProjectStatsAsync`, `InsertRunAsync`, `InsertEventAsync`, `ListEventsAsync`, `InsertTrialAsync`, `DeleteDeploymentDataAsync`) theo module | đổi namespace ở các chỗ gọi | build; analyzer bớt cạnh |
+| 1.1 ✅ | `Application/modules.json`, project mới `src/Framework/MLPlatform.Analyzers` | manifest: module → tầng, các cạnh cùng tầng được phép, thư mục SQL/schema, file spec trong cookbook. Analyzer `MLPARCH001` (cạnh cấm) và `MLPARCH002` (SQL của module khác) chạy dưới dạng cảnh báo có baseline. Ban ASP.NET và Npgsql thô trong Application. | analyzer làm build chậm | analyzer liệt kê đúng 13 cặp hai chiều ở 1.5 |
+| 1.2 ✅ | `Common`, `Api/Infrastructure/Auth.cs`, 4 chỗ giả danh | đưa nơi giữ người dùng hiện tại vào Application: `IUserScopes.RunAsAsync(userId, …)`; `CurrentUser` đứng sau interface đó. Sửa `PipelineGrpc.cs:99`, `TuningGrpc.cs:83`, `EvaluationRunner.cs:45`, `HuggingFace.cs:281`. | đổi cách loop chạy dưới danh nghĩa người tạo | scenario sweep, pipeline, eval, import HF |
+| 1.3 ✅ | `Notebooks.cs`, `AgentBuilds.cs`, `HuggingFace.cs`, `Services/*Grpc.cs` | tách các file trộn trước khi chuyển: `NotebookProxy` / `DataChannelBroker` / `NotebookReaper`; endpoint / `AgentBuildStore`; `SecretBox` → Security; 4 loop và `RuntimeGrpc` ra khỏi file gRPC | ít | snapshot giống hệt |
+| 1.4 ✅ | project mới `ControlPlane.Infrastructure` | chuyển nguyên file (sau 1.3); thêm `AddControlPlaneInfrastructure(cfg)` và giữ thứ tự đăng ký hosted service. `Buckets` đang là static bị gán từ `Program.cs` → options `StorageBuckets` (đây là thay đổi logic nhỏ, có khai báo). | mất đăng ký DI | snapshot DI và hosted service giống hệt |
+| 1.5 ✅ | `Common`, `Identity`, `Ops`, SQL | sửa Kernel một cách máy móc: truy vấn role → `Common/Access` (hết vòng Common↔Identity); `OpsEvents` + `ListEvents` + `JobWorkspace` → module `Timeline` (hết vòng Fleet→Ops và một phần Scheduling↔Ops); đổi tên 9 method SQL trùng (`InsertProjectAsync`, `GetProjectAsync`, `ListProjectsAsync`, `ProjectStatsAsync`, `InsertRunAsync`, `InsertEventAsync`, `ListEventsAsync`, `InsertTrialAsync`, `DeleteDeploymentDataAsync`) theo module | đổi namespace ở các chỗ gọi | build; analyzer bớt cạnh |
 
 ### Phase 2 — Tách file (L)
 
 | Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
 |---|---|---|---|---|
-| 2.0 | `tools/MLPlatform.Refactor` (tạm, xoá sau Phase 5) | tool Roslyn chỉ làm việc ở mức cú pháp, không dùng MSBuildWorkspace vì nặng. Lệnh `inventory` đề xuất ánh xạ type → file đích (CSV để duyệt). Lệnh `split --map` cắt type/slice giữ nguyên từng byte và chép `using` của file gốc. | tool lỗi | chạy thử trên Audit và Platform |
-| 2.1 | Kernel và Foundation | tách theo 3.3, **trong thư mục module hiện tại**; type chỉ một slice dùng thì nằm trong file của slice đó | ít | build + snapshot |
-| 2.2 | Scheduling, Serving, Registry | như trên | ít | build + snapshot |
-| 2.3 | Tracking, Labeling (hai module lớn nhất) | như trên | ít | build + snapshot |
-| 2.4 | Ops (tách thành `Recovery`, `Telemetry`; dữ liệu attempt → Scheduling), Notebooks, Monitoring, Features, LlmOps, Hub, Ai, Pipelines, Tuning | như trên; tên `Ops`/`Ops2` biến mất | ít | build + snapshot + scenario |
-| 2.5 | ControlPlane.Infrastructure | một type một file (`Scheduler.cs`, `AiRuntime.cs`, `HuggingFace.cs`, `LabelProposer.cs`, `Observability.cs`, `Email.cs`, `AgentListener.cs`, …) | ít | snapshot DI |
+| 2.0 ✅ | `tools/MLPlatform.Refactor` (tạm, xoá sau Phase 5) | tool Roslyn chỉ làm việc ở mức cú pháp, không dùng MSBuildWorkspace vì nặng. Lệnh `inventory` đề xuất ánh xạ type → file đích (CSV để duyệt). Lệnh `split --map` cắt type/slice giữ nguyên từng byte và chép `using` của file gốc. | tool lỗi | chạy thử trên Audit và Platform |
+| 2.1 ✅ | Kernel và Foundation | tách theo 3.3, **trong thư mục module hiện tại**; type chỉ một slice dùng thì nằm trong file của slice đó | ít | build + snapshot |
+| 2.2 ✅ | Scheduling, Serving, Registry | như trên | ít | build + snapshot |
+| 2.3 ✅ | Tracking, Labeling (hai module lớn nhất) | như trên | ít | build + snapshot |
+| 2.4 ✅ | Ops (tách thành `Recovery`, `Telemetry`; dữ liệu attempt → Scheduling), Notebooks, Monitoring, Features, LlmOps, Hub, Ai, Pipelines, Tuning | như trên; tên `Ops`/`Ops2` biến mất | ít | build + snapshot + scenario |
+| 2.5 ✅ | ControlPlane.Infrastructure | một type một file (`Scheduler.cs`, `AiRuntime.cs`, `HuggingFace.cs`, `LabelProposer.cs`, `Observability.cs`, `Email.cs`, `AgentListener.cs`, …) | ít | snapshot DI |
 | 2.6 | Agent, Shim, Scenarios | `CommandHandler.cs`, `Runner.cs` (chỉ di chuyển); `Scenarios/Program.cs` → mỗi module một file | ít | scenario |
 | 2.7 | toàn bộ | dọn `using` thừa một lần (`dotnet format` chỉ với IDE0005, `nice`). CodeGate `MLPCODE002` (mỗi file một type top-level hoặc một slice) chuyển thành lỗi cứng. | | gate xanh |
 
@@ -571,10 +571,16 @@ Project này chỉ cần `Microsoft.Extensions.Hosting` và `Http`, cùng kiểu
 
 | Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
 |---|---|---|---|---|
-| 3.1 | `Api/Services/*` | chuyển sang `Api/Grpc/<Service>/`; mapper `ToProto` → `<Service>ProtoMapping.cs`; helper `G()` → `Grpc/Shared/RequestIds.cs`; tách `IamServices.cs` và `SchedulerGrpc.cs` theo service | ít | snapshot gRPC giống hệt |
-| 3.2 | REST trong `Program.cs`, `Gateway.cs`, `AgentBuildEndpoints`, `McpServer.cs`, `NotebookProxy` | chuyển sang `Api/Http/<Area>/`; mỗi area một `MapGroup` có `WithName`, `WithTags`, `Produces`, `Accepts` | thứ tự middleware | snapshot route giống hệt; gọi thử `/health/ready`, predict thật, `/install/agent.sh` |
-| 3.3 | `Program.cs` | tách ra `Composition/`, `Commands/`, `Startup/`; `IStartupTask` chạy tuần tự trước `app.Run()` | thứ tự khởi động | log khởi động giống bản trước |
-| 3.4 | Analyzer | `MLPAPI001`: `Map*` và `MapGrpcService` chỉ được gọi trong `Api/Grpc` và `Api/Http`; class `*GrpcService` chỉ được nằm trong `Api/Grpc` | | build xanh |
+| 3.1 ✅ | `Api/Services/*` | chuyển sang `Api/Grpc/<Service>/`; mapper `ToProto` → `<Service>ProtoMapping.cs`; helper `G()` → `Grpc/Shared/RequestIds.cs`; tách `IamServices.cs` và `SchedulerGrpc.cs` theo service | ít | snapshot gRPC giống hệt |
+| 3.2 ✅ | REST trong `Program.cs`, `Gateway.cs`, `AgentBuildEndpoints`, `McpServer.cs`, `NotebookProxy` | chuyển sang `Api/Http/<Area>/`; mỗi area một `MapGroup` có `WithName`, `WithTags`, `Produces`, `Accepts` | thứ tự middleware | snapshot route giống hệt; gọi thử `/health/ready`, predict thật, `/install/agent.sh` |
+| 3.3 ✅ | `Program.cs` | tách ra `Composition/`, `Commands/`, `Startup/`; `IStartupTask` chạy tuần tự trước `app.Run()` | thứ tự khởi động | log khởi động giống bản trước |
+| 3.4 ✅ | Analyzer | `MLPAPI001`: `Map*` và `MapGrpcService` chỉ được gọi trong `Api/Grpc` và `Api/Http`; class `*GrpcService` chỉ được nằm trong `Api/Grpc` | | build xanh |
+
+Ghi chú thực hiện Phase 1–3 (2026-11-22):
+- Luật kiến trúc (`MLPARCH001/002`), bố cục file (`MLPCODE002`) và vị trí API (`MLPAPI001`) nằm trong CodeGate (Roslyn cú pháp + `modules.json`), không phải analyzer trong build: nhanh hơn và có baseline theo symbol.
+- `Api/Pipeline` đổi thành `Api/Middleware` vì trùng tên message proto `Pipeline`.
+- Sửa thêm lỗi có từ trước: agent gắn nhãn `mlp.agent` cho container của mình (hai agent chung Docker daemon không còn báo nhầm container của nhau).
+- Còn lại của Phase 2: 2.6 (tách `Scenarios/Program.cs`), 2.7 (dọn `using` thừa).
 
 ### Phase 4 — Phân tầng: gỡ vòng module (L, đổi logic)
 
