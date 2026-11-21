@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Stop a run that is waiting or training: marks it cancelled and returns its job so the host stops the
 /// container (WorkloadLauncher.StopJobAsync).</summary>
+[Access(AccessKind.ScopedPermission, "job.submit")]
 public sealed record StopRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<Guid?>;
 
 /// <summary>Marks the run cancelled; the host then stops the job.</summary>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ListHermesChecksQuery(Guid WorkspaceId, Guid ProjectId, string Verdict, string Path, int Limit) : IQuery<List<HermesCheckRow>>;
 
 public sealed class ListHermesChecksQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<ListHermesChecksQuery, List<HermesCheckRow>>

@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.ScopedPermission, "audit.read")]
 public sealed record GetAiRunQuery(Guid Id) : IQuery<AiRunRow>;
 
 public sealed class GetAiRunQueryHandler(IReadSession db, WorkspaceAuthorizer auth, ICurrentUser user) : IQueryHandler<GetAiRunQuery, AiRunRow>

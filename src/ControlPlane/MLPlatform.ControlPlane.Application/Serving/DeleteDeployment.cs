@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Delete a stopped deployment with its keys and monitoring history; the name becomes free.</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record DeleteDeploymentCommand(Guid WorkspaceId, Guid DeploymentId) : ICommand<bool>;
 
 /// <summary>Refuses while running; otherwise removes the deployment's rows in every module.</summary>

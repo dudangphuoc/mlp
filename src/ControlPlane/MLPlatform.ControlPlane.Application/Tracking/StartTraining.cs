@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Train from the UI (M09 §5.1): recipe + variant + task + params → run + job running `mlp-shim` in the
 /// recipe's image.</summary>
+[RequiresPermission("job.submit")]
 public sealed record StartTrainingCommand(Guid WorkspaceId, Guid ProjectId, string Name, string Recipe, string Variant, string Task,
     string ParamsJson, bool FromScratch, double Cpus, int Gpus, string? ImageOverride, string? Network, Guid? DatasetVersionId = null,
     string? ManifestOverride = null, Guid? HostId = null, TrialSpec? Trial = null, int GpuMemoryMb = 0) : ICommand<RunRow>;

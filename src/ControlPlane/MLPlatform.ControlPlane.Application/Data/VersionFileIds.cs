@@ -9,6 +9,7 @@ using MLPlatform.Data;
 namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Cache ids and sizes of a version's files.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record VersionFileIdsQuery(Guid WorkspaceId, Guid VersionId) : IQuery<(Guid DatasetId, IReadOnlyList<(string? Id, long Size)> Files)>;
 
 /// <summary>A version's files as cache ids and sizes (no links) — for transfer estimates.</summary>

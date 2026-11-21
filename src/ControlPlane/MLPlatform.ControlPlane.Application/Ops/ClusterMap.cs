@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("fleet.read")]
 public sealed record ClusterMapQuery(Guid WorkspaceId) : IQuery<(IReadOnlyList<HostMapRow> Hosts, IReadOnlyList<HostAttemptJobRow> Attempts)>;
 
 public sealed class ClusterMapQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ClusterMapQuery, (IReadOnlyList<HostMapRow> Hosts, IReadOnlyList<HostAttemptJobRow> Attempts)>

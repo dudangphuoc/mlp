@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Identity;
 
+[Access(AccessKind.Authenticated)]
 public sealed record ListWorkspacesQuery : IQuery<IReadOnlyList<MembershipRow>>;
 
 public sealed class ListWorkspacesQueryHandler(IReadSession db, ICurrentUser user)

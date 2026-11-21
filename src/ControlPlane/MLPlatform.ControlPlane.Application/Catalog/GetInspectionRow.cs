@@ -11,6 +11,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Internal: the cached inspection for a key, or null.</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetInspectionRowQuery(InspectionKey Key) : IQuery<InspectionRow?>;
 
 /// <summary>An inspection that has been running longer than its limit was lost and reads as failed.</summary>

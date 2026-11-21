@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[Access(AccessKind.Internal)]
 public sealed record SetDeploymentHealthCommand(Guid DeploymentId, string State, string? Reason) : ICommand<bool>;
 
 public sealed class SetDeploymentHealthCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SetDeploymentHealthCommand, bool>

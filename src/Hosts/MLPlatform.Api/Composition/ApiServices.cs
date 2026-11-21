@@ -57,6 +57,7 @@ public static class ApiServices
         s.AddScoped<MLPlatform.Cqrs.IAfterCommit>(sp => sp.GetRequiredService<AfterCommitQueue>());
         s.AddScoped<IRequestBehavior, UnitOfWorkBehavior>();
         s.AddScoped<IRequestBehavior, MLPlatform.ControlPlane.Application.Audit.AuditBehavior>();
+        s.AddScoped<IRequestBehavior, AuthorizationBehavior>();
         s.AddGeneratedHandlers();
         s.AddScoped<WorkspaceAuthorizer>();
         s.AddScoped<MLPlatform.ControlPlane.Application.Labeling.LabelAccess>();

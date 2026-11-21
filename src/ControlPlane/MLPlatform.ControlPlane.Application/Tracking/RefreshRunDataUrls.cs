@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>R30: the data links in a training's job spec are signed when the job is submitted and expire after 24
 /// hours.</summary>
+[Access(AccessKind.Internal)]
 public sealed record RefreshRunDataUrlsCommand(Guid WorkspaceId, Guid RunId, string SpecJson) : ICommand<string>, IInternalCommand;
 
 /// <summary>Re-signs the data links of a run's job spec from the dataset version, keeping the same file set.</summary>

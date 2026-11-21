@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[Access(AccessKind.WorkloadToken)]
 public sealed record RegisterCheckpointCommand(string Token, string Name, long Step, string Location, string? Key, long SizeBytes, string Sha256)
     : ICommand<bool>, IInternalCommand;
 

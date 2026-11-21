@@ -16,6 +16,7 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>"Test model": reuse a running replica of the model version, or start a test replica that stops itself after
 /// IdleStopMin minutes without calls.</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record StartTestDeploymentCommand(Guid WorkspaceId, Guid ModelVersionId, int Gpus, string? ImageOverride) : ICommand<DeploymentRow>;
 
 public sealed class StartTestDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IMediator mediator)

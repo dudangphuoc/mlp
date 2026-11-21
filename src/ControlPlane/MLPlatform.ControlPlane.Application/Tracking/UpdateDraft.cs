@@ -14,6 +14,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Saves the caller's draft.</summary>
+[RequiresPermission("job.submit")]
 public sealed record UpdateDraftCommand(Guid WorkspaceId, DraftInput Draft, int Etag) : ICommand<DraftView>;
 
 /// <summary>Checks the shape of the values (unknown parameters, kinds, limits); whether they can train is the gate's

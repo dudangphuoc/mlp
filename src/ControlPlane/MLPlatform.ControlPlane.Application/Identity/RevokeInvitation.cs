@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Revoke a pending invitation.</summary>
+[RequiresPermission("member.manage")]
 public sealed record RevokeInvitationCommand(Guid WorkspaceId, Guid Id) : ICommand<bool>;
 
 /// <summary>Handles <see cref="RevokeInvitationCommand"/>.</summary>

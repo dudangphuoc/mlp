@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.Internal)]
 public sealed record RecordSuggestionSetCommand(Guid Id, Guid WorkspaceId, Guid ProjectId, string Path, int Revision, string SourceKind, Guid SourceId,
     string SourceLabel, bool External, string State, string Detail, string ItemsJson, string UnmappedJson, Guid? AiRunId, int LatencyMs, Guid? JobId, Guid CreatedBy)
     : ICommand<bool>, IInternalCommand;

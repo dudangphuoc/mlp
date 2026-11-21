@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Issues a token to the container at launch (the shim uses it to log metrics/progress).</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record MintWorkloadTokenCommand(Guid AttemptId) : ICommand<string>;
 
 public sealed class MintWorkloadTokenCommandHandler(IWriteSession db, TokenService tokens) : ICommandHandler<MintWorkloadTokenCommand, string>

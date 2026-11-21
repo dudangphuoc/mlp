@@ -16,6 +16,7 @@ namespace MLPlatform.ControlPlane.Application.Features;
 
 /// <summary>Binds features to a deployment: the gateway receives `{"entity":"c1"}` → fetches exactly these features
 /// from the online store (same definitions as at training time).</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record BindDeploymentFeaturesCommand(Guid WorkspaceId, Guid DeploymentId, string Entity, IReadOnlyList<string> Refs) : ICommand<BindingRow>;
 
 public sealed class BindDeploymentFeaturesCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<BindDeploymentFeaturesCommand, BindingRow>

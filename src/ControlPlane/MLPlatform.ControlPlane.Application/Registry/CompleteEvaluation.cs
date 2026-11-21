@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Computes the metrics from the stored samples, merges test/* into the model version, notifies the
 /// requester.</summary>
+[Access(AccessKind.Internal)]
 public sealed record CompleteEvaluationCommand(Guid EvaluationId) : ICommand<bool>, IInternalCommand;
 
 public sealed class CompleteEvaluationCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<CompleteEvaluationCommand, bool>

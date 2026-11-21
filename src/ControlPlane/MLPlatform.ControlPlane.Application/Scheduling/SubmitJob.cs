@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 // ---- Submit job (M03 §5.1) ----
+[RequiresPermission("job.submit")]
 public sealed record SubmitJobCommand(Guid WorkspaceId, string Kind, string Name, JobSpecDto Spec, int Priority = 50) : ICommand<Guid>;
 
 public sealed class SubmitJobCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<SubmitJobCommand, Guid>

@@ -18,6 +18,7 @@ namespace MLPlatform.ControlPlane.Application.Pipelines;
 
 // ───────────── RPC ─────────────
 
+[RequiresPermission("job.submit")]
 public sealed record CreatePipelineCommand(Guid WorkspaceId, string Name, string DefinitionJson, string TriggerJson) : ICommand<PipelineRow>;
 
 public sealed class CreatePipelineCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreatePipelineCommand, PipelineRow>

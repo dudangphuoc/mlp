@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Revoke one of my API keys.</summary>
+[Access(AccessKind.Authenticated)]
 public sealed record RevokeApiKeyCommand(Guid Id) : ICommand<bool>;
 
 /// <summary>Handles <see cref="RevokeApiKeyCommand"/>.</summary>

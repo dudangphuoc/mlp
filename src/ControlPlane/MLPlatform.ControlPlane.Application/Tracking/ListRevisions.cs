@@ -14,6 +14,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Frozen revisions of a project recipe, newest first.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListRevisionsQuery(Guid WorkspaceId, Guid ProjectRecipeId) : IQuery<(IReadOnlyList<RevisionListRow> Rows, IReadOnlyDictionary<Guid, string> Names)>;
 
 /// <summary>Lists revisions and resolves who froze them in one lookup.</summary>

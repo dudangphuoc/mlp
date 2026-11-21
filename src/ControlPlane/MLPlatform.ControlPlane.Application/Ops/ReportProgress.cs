@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 // ───────────── Shim → control plane ─────────────
 
 /// <summary>Standard progress (20/10 §2.2): phase change → `progress.phase` event.</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record ReportProgressCommand(string Token, string Phase, double Current, double Total, string Unit, double Percent, double Rate, double EtaSeconds,
     string Message, int StallAfterMin = 0, string DetailJson = "") : ICommand<bool>, IInternalCommand;
 

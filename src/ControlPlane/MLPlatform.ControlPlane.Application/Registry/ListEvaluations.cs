@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
+[RequiresPermission("run.read")]
 public sealed record ListEvaluationsQuery(Guid WorkspaceId, Guid ModelVersionId) : IQuery<IReadOnlyList<EvaluationRow>>;
 
 public sealed class ListEvaluationsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListEvaluationsQuery, IReadOnlyList<EvaluationRow>>

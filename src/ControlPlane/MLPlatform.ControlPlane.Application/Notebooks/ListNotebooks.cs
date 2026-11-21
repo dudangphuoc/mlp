@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
+[RequiresPermission("notebook.use")]
 public sealed record ListNotebooksQuery(Guid WorkspaceId, bool All) : IQuery<IReadOnlyList<ServerRow>>;
 
 public sealed class ListNotebooksQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListNotebooksQuery, IReadOnlyList<ServerRow>>

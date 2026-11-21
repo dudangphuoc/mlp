@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 // ───────── background runner (internal) ─────────
 
+[Access(AccessKind.Internal)]
 public sealed record ListOpenPrelabelJobsQuery : IQuery<List<OpenPrelabelJobRow>>;
 
 public sealed class ListOpenPrelabelJobsQueryHandler(IReadSession db) : IQueryHandler<ListOpenPrelabelJobsQuery, List<OpenPrelabelJobRow>>

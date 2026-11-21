@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Paths of the latest version that leave with the next one.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record ListPendingRemovalsQuery(Guid WorkspaceId, Guid DatasetId) : IQuery<IReadOnlyList<string>>;
 
 /// <summary>Reads the removal marks.</summary>

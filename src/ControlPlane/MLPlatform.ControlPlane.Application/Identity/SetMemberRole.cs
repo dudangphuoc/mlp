@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-3: change a member's role (not the Owner; not yourself).</summary>
+[RequiresPermission("member.manage")]
 public sealed record SetMemberRoleCommand(Guid WorkspaceId, Guid UserId, string Role) : ICommand<bool>;
 
 /// <summary>Handles <see cref="SetMemberRoleCommand"/>.</summary>

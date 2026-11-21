@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Create a connection (the api encrypted the key).</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record CreateAiConnectionCommand(string Name, string ProviderType, string Endpoint, string? SecretEnc, int MaxConcurrency, int RpmLimit, int TimeoutMs,
     bool? IsExternal = null)
     : ICommand<AiConnectionRow>;

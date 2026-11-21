@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SaveAssistSettingsCommand(Guid WorkspaceId, Guid ProjectId, string SourcesJson, string ClassMappingJson, bool AllowExternal, double MinConfidence)
     : ICommand<ProjectAssistSettings>;
 

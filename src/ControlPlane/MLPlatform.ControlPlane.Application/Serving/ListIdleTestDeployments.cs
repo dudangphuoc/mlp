@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Test replicas idle past their limit; the prober stops them (state + job).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListIdleTestDeploymentsQuery : IQuery<IReadOnlyList<DeploymentRow>>;
 
 public sealed class ListIdleTestDeploymentsQueryHandler(IReadSession db, IClock clock) : IQueryHandler<ListIdleTestDeploymentsQuery, IReadOnlyList<DeploymentRow>>

@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Where the label file paired with an item lives (null = none, or labels were already made or imported for
 /// it).</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ResolveItemLabelFileQuery(Guid WorkspaceId, Guid ProjectId, string Path) : IQuery<string?>;
 
 /// <summary>Only for items without platform labels that were never imported, in a project that labels a

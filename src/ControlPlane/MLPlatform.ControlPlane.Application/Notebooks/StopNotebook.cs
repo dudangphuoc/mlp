@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>Marks it stopping and returns the job so the host stops the container + Ray job
 /// (WorkloadLauncher.StopJobAsync).</summary>
+[Access(AccessKind.Internal)]
 public sealed record StopNotebookCommand(Guid WorkspaceId, Guid ServerId) : ICommand<ServerRow>;
 
 public sealed class StopNotebookCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopNotebookCommand, ServerRow>

@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Per-sample results for the gallery, worst first, with a browser-loadable image URL.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListEvalSamplesQuery(Guid WorkspaceId, Guid EvaluationId, bool ErrorsOnly, int Offset, int Limit)
     : IQuery<IReadOnlyList<(EvalSampleRow Sample, string ImageUrl)>>;
 

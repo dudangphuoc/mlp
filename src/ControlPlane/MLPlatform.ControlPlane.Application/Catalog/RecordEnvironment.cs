@@ -11,6 +11,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Internal (launcher, environment builds): records the state of an image on a machine.</summary>
+[Access(AccessKind.Internal)]
 public sealed record RecordEnvironmentCommand(Guid WorkspaceId, string RecipeName, string EnvTag, Guid HostId, string State, string Error) : ICommand<bool>;
 
 /// <summary>Upserts on (workspace, tag, machine); finishing a build keeps its start time.</summary>

@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>Container exited / failed to start → finalize the attempt + job by exit code (20/08 §12, M03 R4).</summary>
+[Access(AccessKind.Internal)]
 public sealed record FinishAttemptCommand(Guid AttemptId, int ExitCode, string? Reason, string? Message) : ICommand<FinishResult>;
 
 public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<FinishAttemptCommand, FinishResult>

@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Features;
 
 // ───────────── Entity + view ─────────────
 
+[RequiresPermission("dataset.write")]
 public sealed record CreateEntityCommand(Guid WorkspaceId, string Name, string JoinKey, string Description) : ICommand<EntityRow>;
 
 public sealed class CreateEntityCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreateEntityCommand, EntityRow>

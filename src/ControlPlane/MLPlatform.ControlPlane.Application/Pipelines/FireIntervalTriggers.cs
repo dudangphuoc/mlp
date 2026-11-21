@@ -16,6 +16,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
+[Access(AccessKind.Internal)]
 public sealed record FireIntervalTriggersCommand : ICommand<int>, IInternalCommand;
 
 public sealed class FireIntervalTriggersCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<FireIntervalTriggersCommand, int>

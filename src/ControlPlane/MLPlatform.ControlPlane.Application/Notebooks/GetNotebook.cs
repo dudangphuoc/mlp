@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>Owner or Admin; anyone else → NOT_FOUND (existence is not revealed).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetNotebookQuery(Guid WorkspaceId, Guid ServerId) : IQuery<ServerRow>;
 
 public sealed class GetNotebookQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetNotebookQuery, ServerRow>

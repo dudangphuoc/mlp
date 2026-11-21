@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Delete a dataset version that nothing uses (no run trained on it, no labeling project, draft or evaluation
 /// points at it).</summary>
+[RequiresPermission("dataset.write")]
 public sealed record DeleteVersionCommand(Guid WorkspaceId, Guid VersionId) : ICommand<bool>;
 
 /// <summary>Refuses with what still uses the version.</summary>

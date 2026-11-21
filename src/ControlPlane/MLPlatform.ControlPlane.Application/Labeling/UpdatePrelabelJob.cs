@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.Internal)]
 public sealed record UpdatePrelabelJobCommand(Guid Id, int Done, int Failed, string State, string? Error) : ICommand<bool>, IInternalCommand;
 
 public sealed class UpdatePrelabelJobCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<UpdatePrelabelJobCommand, bool>

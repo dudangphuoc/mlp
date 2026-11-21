@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ListSuggestionSetsQuery(Guid WorkspaceId, Guid ProjectId, string Path, Guid? JobId, int Limit) : IQuery<List<SuggestionSetRow>>;
 
 public sealed class ListSuggestionSetsQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<ListSuggestionSetsQuery, List<SuggestionSetRow>>

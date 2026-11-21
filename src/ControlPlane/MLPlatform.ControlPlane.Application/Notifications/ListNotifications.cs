@@ -7,6 +7,7 @@ namespace MLPlatform.ControlPlane.Application.Notifications;
 
 // ───────────── RPC ─────────────
 
+[RequiresPermission("dataset.read")]
 public sealed record ListNotificationsQuery(Guid WorkspaceId, bool UnreadOnly) : IQuery<(IReadOnlyList<NotificationRow> Items, long Unread)>;
 
 public sealed class ListNotificationsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListNotificationsQuery, (IReadOnlyList<NotificationRow> Items, long Unread)>

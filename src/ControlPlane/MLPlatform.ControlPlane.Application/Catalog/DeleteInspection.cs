@@ -11,6 +11,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Internal: forgets an inspection that could not run because the image is gone from the machine.</summary>
+[Access(AccessKind.Internal)]
 public sealed record DeleteInspectionCommand(InspectionKey Key) : ICommand<bool>;
 
 /// <summary>Removes the row so the next request starts from the environment again.</summary>

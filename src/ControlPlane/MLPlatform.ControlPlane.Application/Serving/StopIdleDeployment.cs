@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[Access(AccessKind.Internal)]
 public sealed record StopIdleDeploymentCommand(Guid DeploymentId, int IdleMinutes) : ICommand<bool>, IInternalCommand;
 
 public sealed class StopIdleDeploymentCommandHandler(IWriteSession db) : ICommandHandler<StopIdleDeploymentCommand, bool>

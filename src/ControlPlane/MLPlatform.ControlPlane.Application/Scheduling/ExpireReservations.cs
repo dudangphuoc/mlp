@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>Attempt stuck in "reserving" longer than Timeout (Ray has no suitable node, holder lost, machine out of
 /// resources…) → mark it failed and requeue the job (not counted as a retry).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ExpireReservationsCommand(TimeSpan Timeout) : ICommand<IReadOnlyList<Guid>>, IInternalCommand;
 
 public sealed class ExpireReservationsCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<ExpireReservationsCommand, IReadOnlyList<Guid>>

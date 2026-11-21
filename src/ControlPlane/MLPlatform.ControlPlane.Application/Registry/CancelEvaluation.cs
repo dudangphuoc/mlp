@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
+[RequiresPermission("deployment.manage")]
 public sealed record CancelEvaluationCommand(Guid WorkspaceId, Guid EvaluationId) : ICommand<bool>;
 
 public sealed class CancelEvaluationCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CancelEvaluationCommand, bool>

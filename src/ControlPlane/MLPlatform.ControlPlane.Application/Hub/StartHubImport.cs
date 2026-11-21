@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Starts an import from HF Hub.</summary>
+[Access(AccessKind.ScopedPermission, "model.write")]
 public sealed record StartHubImportCommand(Guid WorkspaceId, string Kind, string Repo, string Revision, string[] Include, Guid? DatasetId,
     string TargetName, string Task, string Source = "hf", string Mode = "copy") : ICommand<Guid>;
 

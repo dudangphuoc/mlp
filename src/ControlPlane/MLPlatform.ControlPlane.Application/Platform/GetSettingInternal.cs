@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Platform;
 
 /// <summary>Reads one setting for internal services (email sending, Telegram) — not exposed over RPC.</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetSettingInternalQuery(string Key) : IQuery<SettingRow?>;
 
 /// <summary>Handles <see cref="GetSettingInternalQuery"/>.</summary>

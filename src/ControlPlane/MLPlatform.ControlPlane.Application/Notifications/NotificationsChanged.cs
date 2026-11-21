@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
 /// <summary>For WatchNotifications: records changed after `since` + unread count.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record NotificationsChangedQuery(Guid WorkspaceId, DateTimeOffset Since) : IQuery<(IReadOnlyList<NotificationRow> Items, long Unread)>;
 
 public sealed class NotificationsChangedQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<NotificationsChangedQuery, (IReadOnlyList<NotificationRow> Items, long Unread)>

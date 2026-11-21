@@ -7,6 +7,7 @@ namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>M01 §5.3: invite to a workspace with a role; one-time `mlpi_` token valid for 7 days (the invitation email
 /// is queued in identity.email_outbox.</summary>
+[RequiresPermission("member.manage")]
 public sealed record CreateInvitationCommand(Guid WorkspaceId, string Email, string Role) : ICommand<(string Token, DateTimeOffset ExpiresAt)>;
 
 public sealed class CreateInvitationCommandHandler(IWriteSession db, IClock clock, TokenService tokens, WorkspaceAuthorizer auth)

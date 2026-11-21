@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Change stage (M11 R2, R3): production requires Owner/Admin + a reason; the previous version in the same
 /// stage → archived.</summary>
+[RequiresPermission("model.write")]
 public sealed record TransitionStageCommand(Guid WorkspaceId, Guid VersionId, string Stage, string Reason) : ICommand<ModelVersionRow>;
 
 public sealed class TransitionStageCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth)

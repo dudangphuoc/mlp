@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- Workspace ----
+[Access(AccessKind.Authenticated)]
 public sealed record CreateWorkspaceCommand(string Slug, string Name) : ICommand<MembershipRow>;
 
 public sealed class CreateWorkspaceCommandHandler(IWriteSession db, IClock clock, ICurrentUser user)

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[Access(AccessKind.Internal)]
 public sealed record RequeueJobCommand(Guid JobId, string Reason) : ICommand<bool>;
 
 public sealed class RequeueJobCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<RequeueJobCommand, bool>

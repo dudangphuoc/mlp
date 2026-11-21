@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[RequiresPermission("job.submit")]
 public sealed record ListJobsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<JobRow>>;
 
 public sealed class ListJobsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListJobsQuery, IReadOnlyList<JobRow>>

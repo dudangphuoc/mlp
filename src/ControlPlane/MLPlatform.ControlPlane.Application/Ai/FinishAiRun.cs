@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.Internal)]
 public sealed record FinishAiRunCommand(Guid Id, string State, string? Fallback, Guid? ModelRef, string? ModelLabel, string OutputJson, string? DecidedBy,
     double? Confidence, int? LatencyMs, int? TokensIn, int? TokensOut, double? CostUsd, string AttemptsJson, string? ErrorCode, string? Error,
     bool UpdateHealth, string? HealthReason) : ICommand<bool>, IInternalCommand;

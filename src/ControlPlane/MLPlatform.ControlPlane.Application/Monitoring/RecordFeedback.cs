@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 
 /// <summary>POST /feedback: attaches a late-arriving ground-truth label to a prediction (only predictions of that same
 /// deployment).</summary>
+[Access(AccessKind.Internal)]
 public sealed record RecordFeedbackCommand(Guid DeploymentId, IReadOnlyList<(Guid PredictionId, string GroundTruth)> Items) : ICommand<long>, IInternalCommand;
 
 public sealed class RecordFeedbackCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<RecordFeedbackCommand, long>

@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Gateway (no user): mlpd_ key → deployment by slug; returns the replica endpoint if healthy.</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record ResolveEndpointQuery(string Key, Guid WorkspaceId, string Slug, bool RequireHealthy = true) : IQuery<DeploymentRow>;
 
 public sealed class ResolveEndpointQueryHandler(IReadSession db, TokenService tokens) : IQueryHandler<ResolveEndpointQuery, DeploymentRow>

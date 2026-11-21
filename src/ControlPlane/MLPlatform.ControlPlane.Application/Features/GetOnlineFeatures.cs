@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Features;
 
 /// <summary>Online: latest value per entity; past TTL counts as missing (stale values are never returned
 /// silently).</summary>
+[RequiresPermission("dataset.read")]
 public sealed record GetOnlineFeaturesQuery(Guid WorkspaceId, IReadOnlyList<string> Keys, IReadOnlyList<string> Refs) : IQuery<IReadOnlyList<OnlineValue>>;
 
 public sealed class GetOnlineFeaturesQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<GetOnlineFeaturesQuery, IReadOnlyList<OnlineValue>>

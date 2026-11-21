@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Import job by id (worker).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetHubImportJobQuery(Guid Id) : IQuery<HubImportJob?>;
 
 /// <summary>Handles <see cref="GetHubImportJobQuery"/>.</summary>

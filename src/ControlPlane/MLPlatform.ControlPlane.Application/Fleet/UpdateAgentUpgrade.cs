@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Orchestration loop updates job state (internal, individual steps are not audited).</summary>
+[Access(AccessKind.Internal)]
 public sealed record UpdateAgentUpgradeCommand(Guid Id, string State, string Phase, string Message) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="UpdateAgentUpgradeCommand"/>.</summary>

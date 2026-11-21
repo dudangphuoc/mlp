@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[RequiresPermission("run.read")]
 public sealed record ListDeploymentsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<DeploymentRow>>;
 
 public sealed class ListDeploymentsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListDeploymentsQuery, IReadOnlyList<DeploymentRow>>

@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>The hidden run's job finished (called next to SyncRunStateCommand): records the stages and measurements
 /// from the attempt's [mlp-trial] lines, the machine it ran on, and passed / failed.</summary>
+[Access(AccessKind.Internal)]
 public sealed record FinishTrialCommand(Guid JobId, Guid? AttemptId, string JobState, IReadOnlyList<string> Lines, string? Headline) : ICommand<bool>;
 
 /// <summary>Passed = the job succeeded and no stage failed.</summary>

@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>One optimization run (settled first).</summary>
+[RequiresPermission("run.read")]
 public sealed record GetOptimizationCommand(Guid WorkspaceId, Guid Id) : ICommand<OptimizationRow>;
 
 /// <summary>Reads, settles if running, reads again.</summary>

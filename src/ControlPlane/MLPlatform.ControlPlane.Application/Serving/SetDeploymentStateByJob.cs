@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Internal: replica reports endpoint / health / exit.</summary>
+[Access(AccessKind.Internal)]
 public sealed record SetDeploymentStateByJobCommand(Guid JobId, string State, string? Reason, string? Endpoint) : ICommand<bool>;
 
 public sealed class SetDeploymentStateByJobCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SetDeploymentStateByJobCommand, bool>

@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
+[RequiresPermission("fleet.manage")]
 public sealed record DisconnectHostCommand(Guid WorkspaceId, Guid HostId) : ICommand<bool>;
 
 public sealed class DisconnectHostCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth)

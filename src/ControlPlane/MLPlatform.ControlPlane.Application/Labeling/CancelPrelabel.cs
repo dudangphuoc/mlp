@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record CancelPrelabelCommand(Guid WorkspaceId, Guid ProjectId, Guid JobId) : ICommand<PrelabelJobRow>;
 
 public sealed class CancelPrelabelCommandHandler(IWriteSession db, LabelAccess access, WorkspaceAuthorizer auth, IClock clock) : ICommandHandler<CancelPrelabelCommand, PrelabelJobRow>

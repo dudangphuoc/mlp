@@ -16,6 +16,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
+[RequiresPermission("job.submit")]
 public sealed record StartPipelineRunCommand(Guid WorkspaceId, Guid PipelineId, string ParamsJson) : ICommand<PipelineRunRow>;
 
 public sealed class StartPipelineRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<StartPipelineRunCommand, PipelineRunRow>

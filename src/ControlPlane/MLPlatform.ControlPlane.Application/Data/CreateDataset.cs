@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
+[RequiresPermission("dataset.write")]
 public sealed record CreateDatasetCommand(Guid WorkspaceId, string Slug, string Name, string Task) : ICommand<DatasetRow>;
 
 public sealed class CreateDatasetCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreateDatasetCommand, DatasetRow>

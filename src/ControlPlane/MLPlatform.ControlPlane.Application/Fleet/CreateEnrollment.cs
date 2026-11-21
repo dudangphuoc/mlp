@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 // ---- Create the machine plug-in command (M02 §5.1) ----
+[RequiresPermission("fleet.manage")]
 public sealed record CreateEnrollmentCommand(Guid WorkspaceId, string Os, string DataPath, string ModelsPath) : ICommand<EnrollmentDto>;
 
 public sealed class CreateEnrollmentCommandHandler(IWriteSession db, IClock clock, TokenService tokens, WorkspaceAuthorizer auth)

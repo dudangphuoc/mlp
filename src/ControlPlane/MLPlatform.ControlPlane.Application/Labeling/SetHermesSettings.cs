@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SetHermesSettingsCommand(Guid WorkspaceId, Guid ProjectId, bool Enabled, double Threshold) : ICommand<ProjectRow>;
 
 public sealed class SetHermesSettingsCommandHandler(IWriteSession db, LabelAccess access) : ICommandHandler<SetHermesSettingsCommand, ProjectRow>

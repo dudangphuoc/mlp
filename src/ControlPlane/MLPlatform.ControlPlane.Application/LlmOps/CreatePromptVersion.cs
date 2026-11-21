@@ -10,6 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
+[RequiresPermission("model.write")]
 public sealed record CreatePromptVersionCommand(Guid WorkspaceId, string PromptKey, string System, string Template, Guid? DeploymentId, double Temperature,
     int MaxTokens, string Note) : ICommand<PromptVersionRow>;
 

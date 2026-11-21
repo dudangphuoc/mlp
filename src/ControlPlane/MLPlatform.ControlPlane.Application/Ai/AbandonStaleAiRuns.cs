@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Startup: runs left "running" by a previous process are marked failed (visible, never stuck).</summary>
+[Access(AccessKind.Internal)]
 public sealed record AbandonStaleAiRunsCommand : ICommand<bool>, IInternalCommand;
 
 public sealed class AbandonStaleAiRunsCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<AbandonStaleAiRunsCommand, bool>

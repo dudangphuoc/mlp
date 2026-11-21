@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 // ───────────── Gateway: prediction log + ground-truth labels ─────────────
 
 /// <summary>Gateway logs each prediction (no user, no audit).</summary>
+[Access(AccessKind.Internal)]
 public sealed record LogPredictionsCommand(Guid DeploymentId, int ModelVersion, double LatencyMs, IReadOnlyList<(string Features, string Prediction)> Items)
     : ICommand<IReadOnlyList<Guid>>, IInternalCommand;
 

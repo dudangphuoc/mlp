@@ -6,6 +6,7 @@ using MLPlatform.Data;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Agent reports whether Docker is running on the machine (every 15 s).</summary>
+[Access(AccessKind.Internal)]
 public sealed record SetHostDockerCommand(Guid HostId, bool Ok, string Error) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="SetHostDockerCommand"/>.</summary>

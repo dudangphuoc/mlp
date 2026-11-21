@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
+[RequiresPermission("dataset.write")]
 public sealed record CompleteUploadCommand(Guid WorkspaceId, Guid DatasetId, string Path) : ICommand<FileRow>;
 
 public sealed class CompleteUploadCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth)

@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Picks the restore point for a new attempt (20/10 §4.6): latest checkpoint; same machine with a local copy →
 /// use the volume; different machine → durable copy (presigned GET).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ResolveResumeCommand(Guid AttemptId, Guid JobId, Guid HostId) : ICommand<string?>, IInternalCommand;
 
 public sealed class ResolveResumeCommandHandler(IWriteSession db, IClock clock, S3Client s3) : ICommandHandler<ResolveResumeCommand, string?>

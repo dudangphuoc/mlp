@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 // ───────────── Internal use (scheduler, proxy, reaper) — not called from RPC ─────────────
 
+[Access(AccessKind.Internal)]
 public sealed record SetNotebookStateByJobCommand(Guid JobId, string State, string? Reason, Guid? HostId, string? Endpoint) : ICommand<bool>;
 
 public sealed class SetNotebookStateByJobCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SetNotebookStateByJobCommand, bool>

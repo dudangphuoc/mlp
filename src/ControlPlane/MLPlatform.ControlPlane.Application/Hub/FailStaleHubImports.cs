@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>api startup: unfinished jobs → failed.</summary>
+[Access(AccessKind.Internal)]
 public sealed record FailStaleHubImportsCommand : ICommand<int>, IInternalCommand;
 
 /// <summary>Handles <see cref="FailStaleHubImportsCommand"/>.</summary>

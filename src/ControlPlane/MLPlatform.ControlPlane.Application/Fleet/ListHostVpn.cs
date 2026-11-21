@@ -6,6 +6,7 @@ using MLPlatform.Data;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>VPN status of the workspace's machines.</summary>
+[RequiresPermission("fleet.read")]
 public sealed record ListHostVpnQuery(Guid WorkspaceId) : IQuery<List<HostVpnRow>>;
 
 /// <summary>Handles <see cref="ListHostVpnQuery"/>.</summary>

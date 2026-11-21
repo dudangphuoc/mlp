@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Move machines now (without waiting for the suspect period to expire) — RecoveryLoop finalizes node_lost
 /// within seconds.</summary>
+[RequiresPermission("job.submit")]
 public sealed record MoveAttemptNowCommand(Guid WorkspaceId, Guid JobId) : ICommand<bool>;
 
 public sealed class MoveAttemptNowCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<MoveAttemptNowCommand, bool>

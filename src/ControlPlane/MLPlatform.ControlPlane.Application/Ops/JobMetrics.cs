@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("run.read")]
 public sealed record JobMetricsQuery(Guid WorkspaceId, Guid JobId) : IQuery<IReadOnlyList<AttemptMetricRow>>;
 
 public sealed class JobMetricsQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<JobMetricsQuery, IReadOnlyList<AttemptMetricRow>>

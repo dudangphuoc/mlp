@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[Access(AccessKind.Internal)]
 public sealed record MarkAttemptRunningCommand(Guid AttemptId, Guid JobId) : ICommand<bool>;
 
 public sealed class MarkAttemptRunningCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<MarkAttemptRunningCommand, bool>

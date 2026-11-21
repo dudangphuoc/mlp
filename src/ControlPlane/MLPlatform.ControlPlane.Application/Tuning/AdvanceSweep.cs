@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Tuning;
 
 /// <summary>One orchestrator step (M10 §5): sync trial state/values from M09 runs → update the best trial → done when
 /// the budget is used up and every trial has finished → if there is room (parallel).</summary>
+[Access(AccessKind.Internal)]
 public sealed record AdvanceSweepCommand(Guid WorkspaceId, Guid SweepId) : ICommand<int>, IInternalCommand;
 
 public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, IMediator mediator) : ICommandHandler<AdvanceSweepCommand, int>

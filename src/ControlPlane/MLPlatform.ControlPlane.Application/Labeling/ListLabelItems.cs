@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>The project's items by status / file name. A Lead sees every item; other members only their own.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ListLabelItemsQuery(Guid WorkspaceId, Guid ProjectId, string Status, string Search, bool Mine, int Limit, int Offset) : IQuery<ItemPage>;
 
 /// <summary>Pages the item states and resolves annotator / reviewer names in one lookup.</summary>

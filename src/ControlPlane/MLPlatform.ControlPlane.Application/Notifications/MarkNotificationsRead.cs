@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
 /// <summary>Marks as read (a list of ids, or all).</summary>
+[RequiresPermission("dataset.read")]
 public sealed record MarkNotificationsReadCommand(Guid WorkspaceId, IReadOnlyList<Guid> Ids, bool All) : ICommand<long>;
 
 public sealed class MarkNotificationsReadCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<MarkNotificationsReadCommand, long>

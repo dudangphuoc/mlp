@@ -16,6 +16,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
+[Access(AccessKind.Internal)]
 public sealed record ListActivePipelineRunsQuery : IQuery<IReadOnlyList<PipelineRunRow>>;
 
 public sealed class ListActivePipelineRunsQueryHandler(IReadSession db) : IQueryHandler<ListActivePipelineRunsQuery, IReadOnlyList<PipelineRunRow>>

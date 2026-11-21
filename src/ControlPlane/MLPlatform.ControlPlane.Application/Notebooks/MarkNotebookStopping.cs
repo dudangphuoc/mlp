@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
+[Access(AccessKind.Internal)]
 public sealed record MarkNotebookStoppingCommand(Guid ServerId, string Reason) : ICommand<bool>;
 
 public sealed class MarkNotebookStoppingCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<MarkNotebookStoppingCommand, bool>

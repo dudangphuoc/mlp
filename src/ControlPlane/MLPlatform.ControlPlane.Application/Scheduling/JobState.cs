@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>State of a job as the launcher needs it between slow steps (image build → container start).</summary>
+[Access(AccessKind.Internal)]
 public sealed record JobStateQuery(Guid JobId) : IQuery<string?>;
 
 /// <summary>Reads the job's current state; null when the job is gone.</summary>

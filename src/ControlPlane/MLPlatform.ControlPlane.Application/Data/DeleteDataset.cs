@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Delete a dataset: it leaves every list and its labeling projects end.</summary>
+[RequiresPermission("dataset.write")]
 public sealed record DeleteDatasetCommand(Guid WorkspaceId, Guid DatasetId) : ICommand<bool>;
 
 /// <summary>Marks the dataset and its labeling projects deleted.</summary>

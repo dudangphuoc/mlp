@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Run recording (internal: written by the api runtime around every AI call).</summary>
+[Access(AccessKind.Internal)]
 public sealed record StartAiRunCommand(Guid Id, Guid? WorkspaceId, string Kind, string Purpose, string? Subject, string Trigger, Guid? ActorId,
     Guid? ModelRef, string? ModelLabel, string SelectionJson, string InputJson) : ICommand<bool>, IInternalCommand;
 

@@ -12,6 +12,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
+[RequiresPermission("run.read")]
 public sealed record ListRunsQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<IReadOnlyList<RunRow>>;
 
 public sealed class ListRunsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListRunsQuery, IReadOnlyList<RunRow>>

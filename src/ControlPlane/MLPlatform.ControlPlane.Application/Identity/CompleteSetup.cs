@@ -4,6 +4,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Identity;
 
+[Access(AccessKind.Anonymous)]
 public sealed record CompleteSetupCommand(string BootstrapToken, string Email, string Password, string Username,
     string DisplayName, string InstanceName, bool AllowSignup) : ICommand<SessionDto>;
 

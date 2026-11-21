@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Worker finished writing files → update the version's file count + size.</summary>
+[Access(AccessKind.Internal)]
 public sealed record FinishHubModelVersionCommand(Guid VersionId, long FileCount, long SizeBytes) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="FinishHubModelVersionCommand"/>.</summary>

@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Internal (scheduler, at replica launch): fresh model links for the version.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ResolveModelFilesQuery(Guid WorkspaceId, Guid ModelVersionId) : IQuery<string>;
 
 /// <summary>Builds the version's model links.</summary>

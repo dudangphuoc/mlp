@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
+[RequiresPermission("dataset.read")]
 public sealed record ListDatasetsQuery(Guid WorkspaceId, string Task) : IQuery<IReadOnlyList<DatasetRow>>;
 
 public sealed class ListDatasetsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListDatasetsQuery, IReadOnlyList<DatasetRow>>

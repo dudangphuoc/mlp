@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>The conversions of a model version, newest first; running ones are settled from their job first.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListExportsCommand(Guid WorkspaceId, Guid ModelVersionId) : ICommand<IReadOnlyList<ExportRow>>;
 
 /// <summary>A running conversion whose job succeeded becomes ready (the uploaded file takes its real name), one whose

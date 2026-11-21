@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Deployments of the project's workspace (internal: called after the project was authorized; background jobs
 /// too).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListAssistDeploymentsQuery(Guid WorkspaceId) : IQuery<List<DeploymentRow>>;
 
 public sealed class ListAssistDeploymentsQueryHandler(IReadSession db)

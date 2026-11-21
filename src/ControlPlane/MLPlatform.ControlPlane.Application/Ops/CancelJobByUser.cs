@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Cancel any job that has not finished — waiting, reserving, preparing or running — from the Jobs
 /// page.</summary>
+[RequiresPermission("job.submit")]
 public sealed record CancelJobByUserCommand(Guid WorkspaceId, Guid JobId) : ICommand<JobRow>;
 
 /// <summary>Routes the cancel to the job's owner so its page shows the same outcome; a job without an owner is just

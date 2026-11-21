@@ -18,6 +18,7 @@ namespace MLPlatform.ControlPlane.Application.Pipelines;
 
 /// <summary>Rerun from the failed step (M14 §1): keeps outputs of succeeded steps, resets failed + skipped steps;
 /// parameters may be changed.</summary>
+[RequiresPermission("job.submit")]
 public sealed record RetryPipelineRunCommand(Guid WorkspaceId, Guid RunId, string ParamsJson) : ICommand<PipelineRunRow>;
 
 public sealed class RetryPipelineRunCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<RetryPipelineRunCommand, PipelineRunRow>

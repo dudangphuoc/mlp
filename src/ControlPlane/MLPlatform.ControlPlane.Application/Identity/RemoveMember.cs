@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-3: remove a member (not the Owner, not yourself).</summary>
+[RequiresPermission("member.manage")]
 public sealed record RemoveMemberCommand(Guid WorkspaceId, Guid UserId) : ICommand<bool>;
 
 /// <summary>Handles <see cref="RemoveMemberCommand"/>.</summary>

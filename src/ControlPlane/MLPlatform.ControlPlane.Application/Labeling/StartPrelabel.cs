@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record StartPrelabelCommand(Guid WorkspaceId, Guid ProjectId, string SourceKind, Guid SourceId, string SourceLabel, int Limit) : ICommand<PrelabelJobRow>;
 
 public sealed class StartPrelabelCommandHandler(IWriteSession db, LabelAccess access, WorkspaceAuthorizer auth, IClock clock) : ICommandHandler<StartPrelabelCommand, PrelabelJobRow>

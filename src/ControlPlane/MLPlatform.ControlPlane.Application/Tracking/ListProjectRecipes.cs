@@ -14,6 +14,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>The recipes a project works with.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListProjectRecipesQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<IReadOnlyList<ProjectRecipeView>>;
 
 /// <summary>Lists the project's copies and compares each with the Catalog recipe it came from.</summary>

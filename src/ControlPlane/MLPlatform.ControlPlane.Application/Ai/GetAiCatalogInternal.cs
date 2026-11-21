@@ -10,6 +10,7 @@ namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Catalog for the runtime (internal; no permission check — used while serving a request that was already
 /// authorized).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetAiCatalogInternalQuery : IQuery<AiOverview>;
 
 public sealed class GetAiCatalogInternalQueryHandler(IReadSession db, IClock clock) : IQueryHandler<GetAiCatalogInternalQuery, AiOverview>

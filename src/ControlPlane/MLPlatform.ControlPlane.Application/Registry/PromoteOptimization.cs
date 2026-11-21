@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Save a candidate as a new version of the source's model (recipe generic-onnx), with lineage, report and
 /// checksums.</summary>
+[RequiresPermission("model.write")]
 public sealed record PromoteOptimizationCommand(Guid WorkspaceId, Guid Id, string Candidate) : ICommand<ModelVersionRow>;
 
 /// <summary>Copies into models/{model}/v{n}/ : weights/model.onnx, config/onnx.json, classes.json (from the source),

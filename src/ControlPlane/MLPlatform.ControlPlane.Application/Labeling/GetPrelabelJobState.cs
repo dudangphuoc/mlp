@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.Internal)]
 public sealed record GetPrelabelJobStateQuery(Guid Id, Guid WorkspaceId) : IQuery<string?>;
 
 public sealed class GetPrelabelJobStateQueryHandler(IReadSession db) : IQueryHandler<GetPrelabelJobStateQuery, string?>

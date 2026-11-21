@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>M11 R6: create the model (if missing) + an hf_hub-sourced version (recipe hf-auto) — returns the model
 /// directory prefix for the worker to write files.</summary>
+[RequiresPermission("model.write")]
 public sealed record ReserveHubModelVersionCommand(Guid WorkspaceId, string ModelName, string Task, string SourceRef, string Source = "hf_hub") : ICommand<(Guid VersionId, string Prefix)>;
 
 /// <summary>Handles <see cref="ReserveHubModelVersionCommand"/>.</summary>

@@ -11,6 +11,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tuning;
 
+[Access(AccessKind.Internal)]
 public sealed record ListRunningSweepsQuery : IQuery<IReadOnlyList<SweepRow>>;
 
 public sealed class ListRunningSweepsQueryHandler(IReadSession db) : IQueryHandler<ListRunningSweepsQuery, IReadOnlyList<SweepRow>>

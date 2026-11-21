@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Bring a project up to the dataset's latest version: the project now labels that version and its new files
 /// become items.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SyncLabelingProjectCommand(Guid WorkspaceId, Guid ProjectId) : ICommand<long>;
 
 /// <summary>Moves the project to the latest version and seeds what is new; returns how many items were added.</summary>

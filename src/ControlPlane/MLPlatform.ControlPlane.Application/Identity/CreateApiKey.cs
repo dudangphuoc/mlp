@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Create an API key (the mlpk_ token is shown once; same permissions as the creator).</summary>
+[Access(AccessKind.Authenticated)]
 public sealed record CreateApiKeyCommand(string Name) : ICommand<(Guid Id, string Token)>;
 
 /// <summary>Handles <see cref="CreateApiKeyCommand"/>.</summary>

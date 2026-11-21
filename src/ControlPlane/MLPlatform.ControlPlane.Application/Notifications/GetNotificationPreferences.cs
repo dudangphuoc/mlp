@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
+[RequiresPermission("dataset.read")]
 public sealed record GetNotificationPreferencesQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<PreferenceView>>;
 
 public sealed class GetNotificationPreferencesQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetNotificationPreferencesQuery, IReadOnlyList<PreferenceView>>

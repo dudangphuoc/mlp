@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>§5 step 1: server = `notebook` job via the scheduler (a holder reserves CPU/GPU, D-15) → the agent runs the
 /// JupyterLab container.</summary>
+[RequiresPermission("notebook.use")]
 public sealed record CreateNotebookCommand(Guid WorkspaceId, string Name, string Profile, string Ide, double Cpus, int MemoryGb, int Gpus,
     int IdleTimeoutMin, string? ImageOverride, string? Network, Guid? HostId = null) : ICommand<ServerRow>;
 

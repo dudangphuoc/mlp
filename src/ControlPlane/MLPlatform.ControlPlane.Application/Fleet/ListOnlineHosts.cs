@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Internal (scheduler): online machines of the workspace, no user permission check.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListOnlineHostsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<HostRow>>;
 
 public sealed class ListOnlineHostsQueryHandler(IReadSession db) : IQueryHandler<ListOnlineHostsQuery, IReadOnlyList<HostRow>>

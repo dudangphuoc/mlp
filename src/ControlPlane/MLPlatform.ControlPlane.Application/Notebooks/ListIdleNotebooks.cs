@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
+[Access(AccessKind.Internal)]
 public sealed record ListIdleNotebooksQuery : IQuery<IReadOnlyList<ServerRow>>;
 
 public sealed class ListIdleNotebooksQueryHandler(IReadSession db, IClock clock) : IQueryHandler<ListIdleNotebooksQuery, IReadOnlyList<ServerRow>>

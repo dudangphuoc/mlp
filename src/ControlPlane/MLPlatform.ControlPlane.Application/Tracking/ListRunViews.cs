@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Runs of a project as the run list shows them.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListRunViewsQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<IReadOnlyList<RunView>>;
 
 /// <summary>Lists the project runs and attaches job, dataset and user details.</summary>

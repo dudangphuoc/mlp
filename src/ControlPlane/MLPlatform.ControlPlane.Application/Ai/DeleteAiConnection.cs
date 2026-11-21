@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.InstanceAdmin)]
 public sealed record DeleteAiConnectionCommand(Guid Id) : ICommand<bool>;
 
 public sealed class DeleteAiConnectionCommandHandler(IWriteSession db, IClock clock, InstanceAdminGuard guard) : ICommandHandler<DeleteAiConnectionCommand, bool>

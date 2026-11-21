@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Deploy model version (M12 §5.1, R1, R8): replica = `serve` job running `mlp-serve` in the recipe's image;
 /// the model directory is downloaded via presigned GET (user = container).</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record CreateDeploymentCommand(Guid WorkspaceId, string Slug, Guid ModelVersionId, double Cpus, int Gpus, string? ImageOverride,
     string Purpose = "service", int? IdleStopMin = null) : ICommand<DeploymentRow>;
 

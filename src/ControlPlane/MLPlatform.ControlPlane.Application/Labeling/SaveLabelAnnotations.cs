@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>R2: submits all labels of the item + etag (= revision).</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SaveLabelAnnotationsCommand(Guid WorkspaceId, Guid ProjectId, string Path, int Etag, IReadOnlyList<AnnotationInput> Annotations) : ICommand<int>;
 
 public sealed class SaveLabelAnnotationsCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<SaveLabelAnnotationsCommand, int>

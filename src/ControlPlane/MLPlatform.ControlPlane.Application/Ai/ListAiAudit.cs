@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.InstanceAdmin)]
 public sealed record ListAiAuditQuery(int Limit) : IQuery<List<AiAuditRow>>;
 
 public sealed class ListAiAuditQueryHandler(IReadSession db, InstanceAdminGuard guard) : IQueryHandler<ListAiAuditQuery, List<AiAuditRow>>

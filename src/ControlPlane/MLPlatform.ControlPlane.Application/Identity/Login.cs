@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- Login ----
+[Access(AccessKind.Anonymous)]
 public sealed record LoginCommand(string Email, string Password) : ICommand<SessionDto>;
 
 public sealed class LoginCommandHandler(IWriteSession db, IClock clock, TokenService tokens)

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[Access(AccessKind.Internal)]
 public sealed record ListActiveAttemptsQuery : IQuery<IReadOnlyList<AttemptRow>>;
 
 public sealed class ListActiveAttemptsQueryHandler(IReadSession db) : IQueryHandler<ListActiveAttemptsQuery, IReadOnlyList<AttemptRow>>

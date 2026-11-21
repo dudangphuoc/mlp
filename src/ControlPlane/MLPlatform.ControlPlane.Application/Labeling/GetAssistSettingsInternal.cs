@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Internal (background jobs): settings by project, no caller.</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetAssistSettingsInternalQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<ProjectAssistSettings>;
 
 public sealed class GetAssistSettingsInternalQueryHandler(IReadSession db) : IQueryHandler<GetAssistSettingsInternalQuery, ProjectAssistSettings>

@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Marks a replica as used now (keeps a test replica alive).</summary>
+[Access(AccessKind.Internal)]
 public sealed record TouchDeploymentCommand(Guid DeploymentId) : ICommand<bool>, IInternalCommand;
 
 public sealed class TouchDeploymentCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<TouchDeploymentCommand, bool>

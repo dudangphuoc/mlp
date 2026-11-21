@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Manually resume a failed job (e.g. out of retries, OOM) — 20/10 §5 `ResumeJob`.</summary>
+[RequiresPermission("job.submit")]
 public sealed record ResumeJobCommand(Guid WorkspaceId, Guid JobId) : ICommand<bool>;
 
 public sealed class ResumeJobCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<ResumeJobCommand, bool>

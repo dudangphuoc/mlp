@@ -12,6 +12,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
+[Access(AccessKind.Internal)]
 public sealed record GetRunIdForJobQuery(Guid JobId) : IQuery<Guid?>;
 
 public sealed class GetRunIdForJobQueryHandler(IReadSession db) : IQueryHandler<GetRunIdForJobQuery, Guid?>

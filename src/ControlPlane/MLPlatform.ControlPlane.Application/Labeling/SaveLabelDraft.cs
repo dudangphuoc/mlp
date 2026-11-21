@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>R1: draft auto-save — kept when the lock expires so the next person can choose "Use draft".</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SaveLabelDraftCommand(Guid WorkspaceId, Guid ProjectId, string Path, IReadOnlyList<AnnotationInput> Annotations) : ICommand<bool>;
 
 public sealed class SaveLabelDraftCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<SaveLabelDraftCommand, bool>

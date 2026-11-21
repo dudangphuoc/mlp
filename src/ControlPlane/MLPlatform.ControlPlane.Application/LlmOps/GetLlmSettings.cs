@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.LlmOps;
 
 // ───────────── Guardrails + pricing per deployment ─────────────
 
+[RequiresPermission("run.read")]
 public sealed record GetLlmSettingsQuery(Guid WorkspaceId, Guid DeploymentId) : IQuery<LlmSettingsRow>;
 
 public sealed class GetLlmSettingsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetLlmSettingsQuery, LlmSettingsRow>

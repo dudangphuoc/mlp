@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Worker updates progress (internal).</summary>
+[Access(AccessKind.Internal)]
 public sealed record UpdateHubImportCommand(Guid Id, string State, Guid? TargetId, int FilesTotal, int FilesDone, long BytesTotal, long BytesDone, string Message)
     : ICommand<bool>, IInternalCommand;
 

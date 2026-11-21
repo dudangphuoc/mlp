@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Instance-wide events (background loop stalled, component disconnected…) — 20/10 §2.6.</summary>
+[Access(AccessKind.Internal)]
 public sealed record EmitSystemEventCommand(string Source, string Kind, string Severity, string Message) : ICommand<bool>, IInternalCommand;
 
 public sealed class EmitSystemEventCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<EmitSystemEventCommand, bool>

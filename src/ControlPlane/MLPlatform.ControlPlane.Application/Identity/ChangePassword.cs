@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-2: change password (checks the current password), signs out other sessions.</summary>
+[Access(AccessKind.Authenticated)]
 public sealed record ChangePasswordCommand(string Current, string New) : ICommand<bool>;
 
 /// <summary>Handles <see cref="ChangePasswordCommand"/>.</summary>

@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[Access(AccessKind.Internal)]
 public sealed record ListExpiredSuspectsQuery : IQuery<IReadOnlyList<SuspectRow>>;
 
 public sealed class ListExpiredSuspectsQueryHandler(IReadSession db, IClock clock) : IQueryHandler<ListExpiredSuspectsQuery, IReadOnlyList<SuspectRow>>

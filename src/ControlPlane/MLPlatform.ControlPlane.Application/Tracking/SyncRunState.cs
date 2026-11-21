@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Job finished → run state (called from the api after FinishAttempt; to be replaced by a domain event once
 /// there is an outbox).</summary>
+[Access(AccessKind.Internal)]
 public sealed record SyncRunStateCommand(Guid JobId, string JobState) : ICommand<bool>;
 
 public sealed class SyncRunStateCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SyncRunStateCommand, bool>

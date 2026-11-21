@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>A one-hour link to a file of a run: a candidate model, a disagreement image, the report, the spec or the
 /// script.</summary>
+[RequiresPermission("run.read")]
 public sealed record GetOptimizationFileQuery(Guid WorkspaceId, Guid Id, string Path) : IQuery<string>;
 
 /// <summary>Only the files a run writes; no path escapes the run's folder.</summary>

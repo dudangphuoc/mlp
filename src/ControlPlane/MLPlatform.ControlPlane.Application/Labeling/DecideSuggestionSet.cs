@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>The annotator applied (labels copied into the editor, saved with the item) or dismissed a suggestion
 /// set.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record DecideSuggestionSetCommand(Guid WorkspaceId, Guid ProjectId, Guid Id, string Decision) : ICommand<SuggestionSetRow>;
 
 public sealed class DecideSuggestionSetCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<DecideSuggestionSetCommand, SuggestionSetRow>

@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- Logout ----
+[Access(AccessKind.Authenticated)]
 public sealed record LogoutCommand : ICommand<bool>;
 
 public sealed class LogoutCommandHandler(IWriteSession db, IClock clock, ICurrentUser user) : ICommandHandler<LogoutCommand, bool>

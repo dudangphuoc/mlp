@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>A visible step of an attempt on its machine (e.g.</summary>
+[Access(AccessKind.Internal)]
 public sealed record EmitAttemptEventCommand(Guid WorkspaceId, Guid AttemptId, string Code, string Level, string Message) : ICommand<bool>, IInternalCommand;
 
 public sealed class EmitAttemptEventCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<EmitAttemptEventCommand, bool>

@@ -9,6 +9,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
+[RequiresPermission("dataset.read")]
 public sealed record GetRecipeQuery(Guid WorkspaceId, string Name) : IQuery<RecipeRow>;
 
 public sealed class GetRecipeQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetRecipeQuery, RecipeRow>

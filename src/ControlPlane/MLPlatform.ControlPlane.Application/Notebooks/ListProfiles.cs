@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
+[RequiresPermission("dataset.read")]
 public sealed record ListProfilesQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<ProfileRow>>;
 
 public sealed class ListProfilesQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListProfilesQuery, IReadOnlyList<ProfileRow>>

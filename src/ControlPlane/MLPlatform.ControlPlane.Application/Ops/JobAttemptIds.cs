@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Checks read permission on the job (logs) and returns the attempt list.</summary>
+[RequiresPermission("run.read")]
 public sealed record JobAttemptIdsQuery(Guid WorkspaceId, Guid JobId) : IQuery<IReadOnlyList<Guid>>;
 
 public sealed class JobAttemptIdsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<JobAttemptIdsQuery, IReadOnlyList<Guid>>

@@ -14,6 +14,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>One trial.</summary>
+[RequiresPermission("run.read")]
 public sealed record GetTrialQuery(Guid WorkspaceId, Guid TrialId, Func<Guid, Task<IReadOnlyList<string>>>? LiveLines = null) : IQuery<TrialView>;
 
 /// <summary>Reads the trial and, while it is active, its live stages.</summary>

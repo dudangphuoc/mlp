@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Projects using a Catalog recipe.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListRecipeUsageQuery(Guid WorkspaceId, string Recipe) : IQuery<IReadOnlyList<RecipeUsageRow>>;
 
 /// <summary>One query over the workspace's project copies of the recipe.</summary>

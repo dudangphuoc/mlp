@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Dataset syncs of a job (newest first) for the job page.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListJobDataSyncsQuery(Guid WorkspaceId, Guid JobId) : IQuery<IReadOnlyList<DataSyncRow>>;
 
 /// <summary>Reads the stored dataset syncs of a job.</summary>

@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>VersionId: label the files of that dataset version (copied or reference); null = the dataset's uploaded
 /// files.</summary>
+[RequiresPermission("labeling.manage")]
 public sealed record CreateLabelingProjectCommand(Guid WorkspaceId, Guid DatasetId, string Name, string GuidelineMd, string ReviewMode, int LockTtlMin,
     Guid? VersionId = null, double AutoAcceptThreshold = 0) : ICommand<ProjectRow>;
 

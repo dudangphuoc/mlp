@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 // ───────────── Schema ─────────────
 
+[RequiresPermission("dataset.write")]
 public sealed record CreateLabelSchemaCommand(Guid WorkspaceId, Guid DatasetId, string Task, string Classes) : ICommand<SchemaRow>;
 
 public sealed class CreateLabelSchemaCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreateLabelSchemaCommand, SchemaRow>

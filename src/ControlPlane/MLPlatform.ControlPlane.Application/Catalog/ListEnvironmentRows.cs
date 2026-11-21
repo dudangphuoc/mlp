@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Internal (after the RPC checked the permission): the recorded environments of a recipe in a
 /// workspace.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListEnvironmentRowsQuery(Guid WorkspaceId, string RecipeName) : IQuery<IReadOnlyList<EnvironmentRow>>;
 
 /// <summary>A build that has been running longer than the limit was lost with an api restart and reads as

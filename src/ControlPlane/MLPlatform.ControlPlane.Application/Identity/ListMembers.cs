@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Identity;
 
+[RequiresPermission("dataset.read")]
 public sealed record ListMembersQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<MemberRow>>;
 
 public sealed class ListMembersQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListMembersQuery, IReadOnlyList<MemberRow>>

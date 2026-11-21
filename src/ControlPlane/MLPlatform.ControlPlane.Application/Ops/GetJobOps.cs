@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("run.read")]
 public sealed record GetJobOpsQuery(Guid WorkspaceId, Guid JobId) : IQuery<JobOpsView>;
 
 public sealed class GetJobOpsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetJobOpsQuery, JobOpsView>

@@ -12,6 +12,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
+[RequiresPermission("job.submit")]
 public sealed record CreateProjectCommand(Guid WorkspaceId, string Slug, string Name, string Task) : ICommand<ProjectRow>;
 
 public sealed class CreateProjectCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreateProjectCommand, ProjectRow>

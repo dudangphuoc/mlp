@@ -10,6 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
+[RequiresPermission("deployment.manage")]
 public sealed record UpdateLlmSettingsCommand(Guid WorkspaceId, Guid DeploymentId, string PiiMode, bool BlockInjection, IReadOnlyList<string> BlockedTerms,
     bool CheckOutput, double PricePer1k) : ICommand<LlmSettingsRow>;
 

@@ -6,6 +6,7 @@ namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Admin account declared in config (MLP__Admin__Email/Password/Name — compose `.env`): api ensures it exists
 /// on every startup.</summary>
+[Access(AccessKind.Anonymous)]
 public sealed record EnsureConfiguredAdminCommand(string Email, string Password, string DisplayName) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="EnsureConfiguredAdminCommand"/>.</summary>

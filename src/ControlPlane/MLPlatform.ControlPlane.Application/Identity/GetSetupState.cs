@@ -5,6 +5,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- First-time setup (D-27, M01 R7) ----
+[Access(AccessKind.Anonymous)]
 public sealed record GetSetupStateQuery : IQuery<bool>;
 
 public sealed class GetSetupStateQueryHandler(IReadSession db) : IQueryHandler<GetSetupStateQuery, bool>

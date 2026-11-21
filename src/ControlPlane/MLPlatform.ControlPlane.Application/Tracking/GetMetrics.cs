@@ -12,6 +12,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
+[RequiresPermission("run.read")]
 public sealed record GetMetricsQuery(Guid WorkspaceId, Guid RunId, IReadOnlyList<string>? Keys = null, int MaxPoints = 0) : IQuery<IReadOnlyList<MetricRow>>;
 
 public sealed class GetMetricsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetMetricsQuery, IReadOnlyList<MetricRow>>

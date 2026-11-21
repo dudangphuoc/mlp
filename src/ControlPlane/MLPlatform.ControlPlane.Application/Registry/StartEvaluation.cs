@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 // ───────────── User commands / queries ─────────────
 
+[RequiresPermission("deployment.manage")]
 public sealed record StartEvaluationCommand(Guid WorkspaceId, Guid ModelVersionId, Guid DatasetVersionId, string PathFilter, int MaxSamples, double ConfThreshold)
     : ICommand<EvaluationRow>;
 

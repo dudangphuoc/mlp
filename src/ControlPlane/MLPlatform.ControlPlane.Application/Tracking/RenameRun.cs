@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Rename a run (1–80 characters).</summary>
+[Access(AccessKind.ScopedPermission, "job.submit")]
 public sealed record RenameRunCommand(Guid WorkspaceId, Guid RunId, string Name) : ICommand<bool>;
 
 /// <summary>Validates the name and renames the run.</summary>

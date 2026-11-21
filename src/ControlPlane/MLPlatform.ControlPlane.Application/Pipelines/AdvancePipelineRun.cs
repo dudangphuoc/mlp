@@ -20,6 +20,7 @@ namespace MLPlatform.ControlPlane.Application.Pipelines;
 
 /// <summary>One engine tick for a run (M14 §5): checks running steps (M09 run / M03 job), starts eligible steps, skips
 /// branches after a failed step/closed gate, finalizes the run when every step has finished.</summary>
+[Access(AccessKind.Internal)]
 public sealed record AdvancePipelineRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<bool>, IInternalCommand;
 
 public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock clock, IMediator mediator, IHubImportQueue imports) : ICommandHandler<AdvancePipelineRunCommand, bool>

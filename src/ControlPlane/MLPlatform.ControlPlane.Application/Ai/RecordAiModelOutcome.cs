@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Health from a real call on a model that was tried but is not the run's final model.</summary>
+[Access(AccessKind.Internal)]
 public sealed record RecordAiModelOutcomeCommand(Guid ModelId, bool Ok, string? Reason) : ICommand<bool>, IInternalCommand;
 
 public sealed class RecordAiModelOutcomeCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<RecordAiModelOutcomeCommand, bool>

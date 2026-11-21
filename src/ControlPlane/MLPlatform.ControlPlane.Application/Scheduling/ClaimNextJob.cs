@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[Access(AccessKind.Internal)]
 public sealed record ClaimNextJobCommand : ICommand<ClaimedJob?>;
 
 public sealed class ClaimNextJobCommandHandler(IWriteSession db) : ICommandHandler<ClaimNextJobCommand, ClaimedJob?>

@@ -10,6 +10,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Content of a dataset version (or of the working copy when VersionId is null): folders and files under a
 /// prefix with browser-loadable URLs, the YOLO label file paired with each image.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record BrowseDatasetQuery(Guid WorkspaceId, Guid DatasetId, Guid? VersionId, string Prefix, string Search, string Kind, bool Recursive,
     int Offset, int Limit) : IQuery<BrowseResult>;
 

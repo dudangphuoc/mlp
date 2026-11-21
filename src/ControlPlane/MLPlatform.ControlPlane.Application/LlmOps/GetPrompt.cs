@@ -10,6 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
+[RequiresPermission("run.read")]
 public sealed record GetPromptQuery(Guid WorkspaceId, string Key) : IQuery<(PromptRow Prompt, IReadOnlyList<PromptVersionRow> Versions)>;
 
 public sealed class GetPromptQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetPromptQuery, (PromptRow Prompt, IReadOnlyList<PromptVersionRow> Versions)>

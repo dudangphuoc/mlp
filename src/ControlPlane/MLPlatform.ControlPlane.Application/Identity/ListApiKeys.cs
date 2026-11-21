@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-4: my API keys.</summary>
+[Access(AccessKind.Authenticated)]
 public sealed record ListApiKeysQuery : IQuery<IReadOnlyList<ApiKeyRow>>;
 
 /// <summary>Handles <see cref="ListApiKeysQuery"/>.</summary>

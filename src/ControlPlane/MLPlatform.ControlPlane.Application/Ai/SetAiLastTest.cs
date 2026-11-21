@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.Internal)]
 public sealed record SetAiLastTestCommand(Guid ModelId, Guid RunId) : ICommand<bool>, IInternalCommand;
 
 public sealed class SetAiLastTestCommandHandler(IWriteSession db) : ICommandHandler<SetAiLastTestCommand, bool>

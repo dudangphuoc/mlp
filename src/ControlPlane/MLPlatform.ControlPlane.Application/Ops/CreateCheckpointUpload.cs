@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Durable checkpoint (20/10 §4.2): presigned PUT to
 /// `mlp-artifacts/{ws}/jobs/{job}/checkpoints/{step}/{name}`.</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record CreateCheckpointUploadCommand(string Token, string Name, long Step) : ICommand<(string Url, string Key)>, IInternalCommand;
 
 public sealed class CreateCheckpointUploadCommandHandler(IReadSession db, TokenService tokens, S3Client s3) : ICommandHandler<CreateCheckpointUploadCommand, (string Url, string Key)>

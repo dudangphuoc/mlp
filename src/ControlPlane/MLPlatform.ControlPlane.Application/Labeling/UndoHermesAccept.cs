@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Undo an automatic accept: the item goes back to review. Lead or Reviewer.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record UndoHermesAcceptCommand(Guid WorkspaceId, Guid ProjectId, Guid CheckId) : ICommand<HermesCheckRow>;
 
 public sealed class UndoHermesAcceptCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<UndoHermesAcceptCommand, HermesCheckRow>

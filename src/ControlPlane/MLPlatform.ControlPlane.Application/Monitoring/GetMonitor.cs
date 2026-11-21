@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
+[RequiresPermission("run.read")]
 public sealed record GetMonitorQuery(Guid WorkspaceId, Guid DeploymentId) : IQuery<MonitorView>;
 
 public sealed class GetMonitorQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetMonitorQuery, MonitorView>

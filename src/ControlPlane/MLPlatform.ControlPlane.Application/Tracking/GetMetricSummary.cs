@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Every metric of a run without its points — the run page lists them and loads charts on demand.</summary>
+[RequiresPermission("run.read")]
 public sealed record GetMetricSummaryQuery(Guid WorkspaceId, Guid RunId) : IQuery<IReadOnlyList<MetricSummaryRow>>;
 
 /// <summary>Reads the per-metric summary after checking the run belongs to the workspace.</summary>

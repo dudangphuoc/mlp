@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>Removes a stopped/failed notebook from the list (the user's home volume on the machine is kept — it is
 /// shared with other notebooks).</summary>
+[Access(AccessKind.ScopedPermission, "notebook.use")]
 public sealed record DeleteNotebookCommand(Guid WorkspaceId, Guid ServerId) : ICommand<bool>;
 
 public sealed class DeleteNotebookCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<DeleteNotebookCommand, bool>

@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Replica the playground may call: any deployment the user can read, as long as it is healthy.</summary>
+[RequiresPermission("run.read")]
 public sealed record ResolveTestTargetQuery(Guid WorkspaceId, Guid DeploymentId) : IQuery<DeploymentRow>;
 
 public sealed class ResolveTestTargetQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ResolveTestTargetQuery, DeploymentRow>

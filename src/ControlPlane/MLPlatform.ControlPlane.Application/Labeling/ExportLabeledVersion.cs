@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Labels → a dataset version a recipe can train on: the labeled files, a YOLO `.txt` next to every image
 /// (`class cx cy w h`, normalized, class = position in the schema).</summary>
+[RequiresPermission("dataset.write")]
 public sealed record ExportLabeledVersionCommand(Guid WorkspaceId, Guid ProjectId, bool AllLabeled, string Note) : ICommand<LabelExport>;
 
 /// <summary>Copies the labeled files inside storage, writes the label files next to them and records the new

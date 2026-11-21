@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Features;
 
 /// <summary>Gateway (no user): feature values for entities per the deployment's binding.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ResolveServingFeaturesQuery(DeploymentRow Deployment, IReadOnlyList<string> Keys) : IQuery<IReadOnlyList<OnlineValue>?>;
 
 public sealed class ResolveServingFeaturesQueryHandler(IReadSession db, IClock clock) : IQueryHandler<ResolveServingFeaturesQuery, IReadOnlyList<OnlineValue>?>

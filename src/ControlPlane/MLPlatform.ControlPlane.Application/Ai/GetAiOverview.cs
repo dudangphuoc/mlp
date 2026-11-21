@@ -8,6 +8,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
+[Access(AccessKind.InstanceAdmin)]
 public sealed record GetAiOverviewQuery : IQuery<AiOverview>;
 
 public sealed class GetAiOverviewQueryHandler(IReadSession db, InstanceAdminGuard guard, IClock clock) : IQueryHandler<GetAiOverviewQuery, AiOverview>

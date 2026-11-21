@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Deletes the HF token.</summary>
+[RequiresPermission("member.manage")]
 public sealed record DeleteHubTokenCommand(Guid WorkspaceId) : ICommand<bool>;
 
 /// <summary>Handles <see cref="DeleteHubTokenCommand"/>.</summary>

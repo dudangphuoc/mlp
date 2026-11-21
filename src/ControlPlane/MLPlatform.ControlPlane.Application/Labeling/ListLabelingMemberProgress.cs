@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>What each annotator delivered (submitted, accepted, returned, last submit) — shown next to the member
 /// list.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ListLabelingMemberProgressQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<IReadOnlyList<MemberProgressRow>>;
 
 /// <summary>Counts per annotator from the item states.</summary>

@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Projects with progress and the caller's own open work (S-05-3) — a person sees what is waiting for them
 /// without opening each project.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record ListLabelingProjectViewsQuery(Guid WorkspaceId, Guid? DatasetId) : IQuery<IReadOnlyList<ProjectView>>;
 
 /// <summary>Joins the project rows with one progress query and the dataset names.</summary>

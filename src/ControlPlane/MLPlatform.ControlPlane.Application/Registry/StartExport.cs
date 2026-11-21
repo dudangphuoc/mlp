@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Convert a model version to Format: submits a job that runs the recipe's export command.</summary>
+[RequiresPermission("model.write")]
 public sealed record StartExportCommand(Guid WorkspaceId, Guid ModelVersionId, string Format, Guid? HostId = null) : ICommand<ExportRow>;
 
 /// <summary>Builds the shim spec (entrypoint <c>export</c>), signs the upload links and submits the job.</summary>

@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
+[RequiresPermission("dataset.read")]
 public sealed record ListFeatureViewsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<ViewRow>>;
 
 public sealed class ListFeatureViewsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListFeatureViewsQuery, IReadOnlyList<ViewRow>>

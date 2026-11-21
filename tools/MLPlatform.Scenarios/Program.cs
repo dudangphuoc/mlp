@@ -1138,7 +1138,7 @@ await Step("M16: failed-job + offline-machine notifications for the owner; mergi
 await Step("6.0: every workspace RPC refuses an outsider and an anonymous caller", async () =>
 {
     var other = await ws.CreateWorkspaceAsync(new CreateWorkspaceRequest { Slug = $"outside-{suffix}", Name = "Outside" }, auth);
-    var inv = await ws.CreateInvitationAsync(new CreateInvitationRequest { WorkspaceId = other.Id, Email = $"out{suffix}@x.io", Role = "owner" }, auth);
+    var inv = await ws.CreateInvitationAsync(new CreateInvitationRequest { WorkspaceId = other.Id, Email = $"out{suffix}@x.io", Role = "admin" }, auth);
     await iam.RegisterAsync(new RegisterRequest { Email = $"out{suffix}@x.io", Password = password, Username = $"out{suffix}", InvitationToken = inv.Token });
     var outsider = new Metadata { { "authorization", "Bearer " + (await iam.LoginAsync(new LoginRequest { Email = $"out{suffix}@x.io", Password = password })).SessionToken } };
     var target = (await iam.GetMeAsync(new Empty(), auth)).Workspaces[0].WorkspaceId;

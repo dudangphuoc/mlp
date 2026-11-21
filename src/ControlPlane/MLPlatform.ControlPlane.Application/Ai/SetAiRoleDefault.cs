@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Set (or clear, ModelId = null) the default model of a role.</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record SetAiRoleDefaultCommand(string Role, Guid? ModelId) : ICommand<bool>;
 
 public sealed class SetAiRoleDefaultCommandHandler(IWriteSession db, IClock clock, InstanceAdminGuard guard) : ICommandHandler<SetAiRoleDefaultCommand, bool>

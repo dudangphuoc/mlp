@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Splits of several versions of one dataset, for the version list.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record ListVersionSplitsQuery(Guid WorkspaceId, Guid[] VersionIds) : IQuery<IReadOnlyList<VersionSplitRow>>;
 
 /// <summary>One lookup for the whole list.</summary>

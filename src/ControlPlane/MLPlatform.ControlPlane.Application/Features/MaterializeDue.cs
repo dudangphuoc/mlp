@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Features;
 
 /// <summary>Background loop: materializes views whose schedule is due.</summary>
+[Access(AccessKind.Internal)]
 public sealed record MaterializeDueCommand : ICommand<int>, IInternalCommand;
 
 public sealed class MaterializeDueCommandHandler(IWriteSession db, IClock clock, S3Client s3) : ICommandHandler<MaterializeDueCommand, int>

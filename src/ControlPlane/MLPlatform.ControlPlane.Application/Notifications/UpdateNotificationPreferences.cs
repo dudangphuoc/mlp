@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
+[RequiresPermission("dataset.read")]
 public sealed record UpdateNotificationPreferencesCommand(Guid WorkspaceId, IReadOnlyList<(string Kind, bool Enabled)> Changes) : ICommand<bool>;
 
 public sealed class UpdateNotificationPreferencesCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<UpdateNotificationPreferencesCommand, bool>

@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Platform;
 
 /// <summary>All dynamic settings (Instance Admin).</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record ListSettingsQuery : IQuery<List<SettingRow>>;
 
 /// <summary>Handles <see cref="ListSettingsQuery"/>.</summary>

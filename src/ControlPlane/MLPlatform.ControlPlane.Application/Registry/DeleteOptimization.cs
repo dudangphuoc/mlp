@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Delete a run and its files (versions already saved from it stay).</summary>
+[RequiresPermission("model.write")]
 public sealed record DeleteOptimizationCommand(Guid WorkspaceId, Guid Id) : ICommand<bool>;
 
 /// <summary>Removes every object under the run's folder, then the row.</summary>

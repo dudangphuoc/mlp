@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-2: change display name.</summary>
+[Access(AccessKind.Authenticated)]
 public sealed record UpdateProfileCommand(string DisplayName) : ICommand<MeDto>;
 
 /// <summary>Handles <see cref="UpdateProfileCommand"/>.</summary>

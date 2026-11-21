@@ -6,6 +6,7 @@ using MLPlatform.Data;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Records the tunnel check result (internal, from the agent session).</summary>
+[Access(AccessKind.Internal)]
 public sealed record SetHostVpnCommand(Guid HostId, string Status, string? Message) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="SetHostVpnCommand"/>.</summary>

@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 // ───────────── Reads for WatchWorkspace / cluster map / status ─────────────
 
+[RequiresPermission("run.read")]
 public sealed record ActiveJobsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<ActiveJobRow>>;
 
 public sealed class ActiveJobsQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<ActiveJobsQuery, IReadOnlyList<ActiveJobRow>>

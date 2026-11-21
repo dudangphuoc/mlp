@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>S-01-5: rename the workspace (Owner).</summary>
+[RequiresPermission("workspace.manage")]
 public sealed record RenameWorkspaceCommand(Guid WorkspaceId, string Name) : ICommand<bool>;
 
 /// <summary>Handles <see cref="RenameWorkspaceCommand"/>.</summary>

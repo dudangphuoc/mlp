@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record GetLabelHistoryQuery(Guid WorkspaceId, Guid ProjectId, string Path) : IQuery<IReadOnlyList<HistoryRow>>;
 
 public sealed class GetLabelHistoryQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<GetLabelHistoryQuery, IReadOnlyList<HistoryRow>>

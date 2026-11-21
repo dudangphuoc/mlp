@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record GetHermesStatsQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<(ProjectRow Project, List<HermesStatRow> Stats, HashSet<string> Roles)>;
 
 /// <remarks>Roles = the caller's project roles, plus "manage" when the workspace role allows labeling.manage.</remarks>

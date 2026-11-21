@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[RequiresPermission("deployment.manage")]
 public sealed record CreateEndpointKeyCommand(Guid WorkspaceId, Guid DeploymentId, string Name) : ICommand<(Guid Id, string Key, string Prefix)>;
 
 public sealed class CreateEndpointKeyCommandHandler(IWriteSession db, IClock clock, TokenService tokens, WorkspaceAuthorizer auth)

@@ -11,6 +11,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tuning;
 
+[RequiresPermission("job.submit")]
 public sealed record CreateSweepCommand(Guid WorkspaceId, Guid ProjectId, string Name, string Recipe, string Variant, string Task, string Algorithm,
     string SpaceJson, string BaseParamsJson, string Objective, string Direction, int MaxTrials, int Parallel, int Seed, double Cpus, int Gpus,
     Guid? DatasetVersionId, string? ImageOverride, string? Network) : ICommand<SweepRow>;

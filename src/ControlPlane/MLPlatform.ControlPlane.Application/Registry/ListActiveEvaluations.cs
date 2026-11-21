@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 // ───────────── Engine (EvaluationRunner in the api) ─────────────
 
+[Access(AccessKind.Internal)]
 public sealed record ListActiveEvaluationsQuery : IQuery<IReadOnlyList<EvaluationRow>>;
 
 public sealed class ListActiveEvaluationsQueryHandler(IReadSession db) : IQueryHandler<ListActiveEvaluationsQuery, IReadOnlyList<EvaluationRow>>

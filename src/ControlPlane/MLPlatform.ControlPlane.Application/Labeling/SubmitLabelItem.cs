@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 // ───────────── Item state transitions (§4) ─────────────
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SubmitLabelItemCommand(Guid WorkspaceId, Guid ProjectId, string Path) : ICommand<string>;
 
 public sealed class SubmitLabelItemCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<SubmitLabelItemCommand, string>

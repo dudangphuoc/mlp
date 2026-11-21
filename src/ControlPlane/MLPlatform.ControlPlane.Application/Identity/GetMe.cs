@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- GetMe ----
+[Access(AccessKind.Authenticated)]
 public sealed record GetMeQuery : IQuery<MeDto>;
 
 public sealed class GetMeQueryHandler(IReadSession db, ICurrentUser user) : IQueryHandler<GetMeQuery, MeDto>

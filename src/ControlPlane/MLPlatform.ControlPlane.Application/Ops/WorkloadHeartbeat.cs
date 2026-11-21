@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Shim heartbeat (30 s) — tier 2 of 20/10 §2.3.</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record WorkloadHeartbeatCommand(string Token) : ICommand<bool>, IInternalCommand;
 
 public sealed class WorkloadHeartbeatCommandHandler(IWriteSession db, IClock clock, TokenService tokens) : ICommandHandler<WorkloadHeartbeatCommand, bool>

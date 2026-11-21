@@ -9,6 +9,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Estimate for every machine that has a cache of the dataset (machines without one would download
 /// everything).</summary>
+[RequiresPermission("run.read")]
 public sealed record EstimateDataTransferQuery(Guid WorkspaceId, Guid VersionId) : IQuery<(long Files, long Bytes, IReadOnlyList<HostDataEstimate> Hosts)>;
 
 /// <summary>Computes the per-machine transfer estimate from sync history and the versions' file ids.</summary>

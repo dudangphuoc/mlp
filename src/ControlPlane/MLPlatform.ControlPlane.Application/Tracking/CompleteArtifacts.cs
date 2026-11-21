@@ -6,6 +6,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
+[Access(AccessKind.WorkloadToken)]
 public sealed record CompleteArtifactsCommand(string WorkloadToken, Guid RunId, IReadOnlyList<(string Path, long Size)> Files) : ICommand<int>;
 
 public sealed class CompleteArtifactsCommandHandler(IWriteSession db, TokenService tokens) : ICommandHandler<CompleteArtifactsCommand, int>

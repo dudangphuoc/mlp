@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Existing labels of an item (the YOLO txt next to it in the version) become editable platform labels, once —
 /// the first time the item is opened.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ImportItemLabelsCommand(Guid WorkspaceId, Guid ProjectId, string Path, string YoloText) : ICommand<int>, IInternalCommand;
 
 /// <summary>Parses the text, stores the boxes, marks the item imported (also when the file held no valid

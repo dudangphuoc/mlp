@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>"Keep 1 more hour": pushes the activity timestamp forward so it is not auto-stopped (R4).</summary>
+[Access(AccessKind.ScopedPermission, "notebook.use")]
 public sealed record ExtendNotebookIdleCommand(Guid WorkspaceId, Guid ServerId) : ICommand<ServerRow>;
 
 public sealed class ExtendNotebookIdleCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<ExtendNotebookIdleCommand, ServerRow>

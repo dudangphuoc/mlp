@@ -7,6 +7,7 @@ namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>A user requests an upgrade of one machine: checks permission, records the job (one running job per
 /// machine).</summary>
+[RequiresPermission("fleet.manage")]
 public sealed record RequestAgentUpgradeCommand(Guid WorkspaceId, Guid HostId, string FromVersion, string ToVersion, bool Skip, string Message) : ICommand<Guid>;
 
 /// <summary>Handles <see cref="RequestAgentUpgradeCommand"/>.</summary>

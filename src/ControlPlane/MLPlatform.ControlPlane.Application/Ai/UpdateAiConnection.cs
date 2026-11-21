@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Update a connection. SecretEnc null = keep the stored key; ClearKey removes it.</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record UpdateAiConnectionCommand(Guid Id, string Name, string Endpoint, string? SecretEnc, bool ClearKey, int MaxConcurrency, int RpmLimit,
     int TimeoutMs, bool IsActive, bool IsExternal) : ICommand<AiConnectionRow>;
 

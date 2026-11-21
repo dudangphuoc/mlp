@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Keys of a deployment.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListEndpointKeysQuery(Guid WorkspaceId, Guid DeploymentId) : IQuery<IReadOnlyList<EndpointKeyRow>>;
 
 /// <summary>Keys of one deployment, newest first (prefix only).</summary>

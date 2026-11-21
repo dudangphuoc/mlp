@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record AddLabelingMemberCommand(Guid WorkspaceId, Guid ProjectId, Guid UserId, string Role, int MaxOpenItems) : ICommand<bool>;
 
 public sealed class AddLabelingMemberCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<AddLabelingMemberCommand, bool>

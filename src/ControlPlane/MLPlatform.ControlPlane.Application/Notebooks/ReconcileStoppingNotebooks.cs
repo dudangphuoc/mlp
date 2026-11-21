@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>Reaper: finishes "stopping" notebooks.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ReconcileStoppingNotebooksCommand : ICommand<List<Guid>>, IInternalCommand;
 
 public sealed class ReconcileStoppingNotebooksCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<ReconcileStoppingNotebooksCommand, List<Guid>>

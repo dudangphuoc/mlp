@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Run counts and best result per project of a workspace (project list cards).</summary>
+[RequiresPermission("run.read")]
 public sealed record ListProjectStatsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<ProjectStatsRow>>;
 
 /// <summary>Reads the per-project statistics after the workspace permission check.</summary>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
+[Access(AccessKind.WorkloadToken)]
 public sealed record CreateAttemptCommand(Guid JobId, int Number, IReadOnlyList<BundleDto> Bundles) : ICommand<AttemptCreated>;
 
 public sealed class CreateAttemptCommandHandler(IWriteSession db, IClock clock, TokenService tokens) : ICommandHandler<CreateAttemptCommand, AttemptCreated>

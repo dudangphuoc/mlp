@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>HF token secret for the api to call the Hub (internal — not exposed over RPC).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetHubSecretQuery(Guid WorkspaceId) : IQuery<string?>;
 
 /// <summary>Handles <see cref="GetHubSecretQuery"/>.</summary>

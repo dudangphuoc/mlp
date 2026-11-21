@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Delete a labeling project.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record DeleteLabelingProjectCommand(Guid WorkspaceId, Guid ProjectId) : ICommand<bool>;
 
 /// <summary>Marks the project deleted; it leaves every list.</summary>

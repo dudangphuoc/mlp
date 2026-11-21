@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("run.read")]
 public sealed record JobEventsAfterQuery(Guid WorkspaceId, Guid JobId, DateTimeOffset After) : IQuery<IReadOnlyList<EventRow>>;
 
 public sealed class JobEventsAfterQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<JobEventsAfterQuery, IReadOnlyList<EventRow>>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Invitations of the workspace.</summary>
+[RequiresPermission("member.manage")]
 public sealed record ListInvitationsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<InvitationListRow>>;
 
 /// <summary>Handles <see cref="ListInvitationsQuery"/>.</summary>

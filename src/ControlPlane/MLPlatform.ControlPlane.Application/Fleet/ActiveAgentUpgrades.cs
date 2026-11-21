@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>In-progress upgrade jobs across the instance.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ActiveAgentUpgradesQuery : IQuery<IReadOnlyList<ActiveAgentUpgradeRow>>;
 
 /// <summary>Handles <see cref="ActiveAgentUpgradesQuery"/>.</summary>

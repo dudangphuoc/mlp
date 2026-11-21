@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Agent (restarted or reconnected) reports containers still running (20/10 §4.3, §4.7): `suspect` attempt
 /// with a container → `running` (nothing lost).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ReconcileHostCommand(Guid HostId, IReadOnlyList<Guid> Running) : ICommand<(IReadOnlyList<Guid> Stop, IReadOnlyList<Guid> Lost)>, IInternalCommand;
 
 public sealed class ReconcileHostCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<ReconcileHostCommand, (IReadOnlyList<Guid> Stop, IReadOnlyList<Guid> Lost)>

@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Log metrics: a user with run write permission, or the container of the same job (workload token).</summary>
+[Access(AccessKind.ScopedPermission, "job.submit")]
 public sealed record LogMetricsCommand(Guid RunId, string? WorkloadToken, IReadOnlyList<(string Key, long Step, double Value, DateTimeOffset? At)> Points)
     : ICommand<int>;
 

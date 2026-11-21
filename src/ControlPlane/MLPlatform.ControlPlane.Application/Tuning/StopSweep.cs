@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Tuning;
 
 /// <summary>Stop a sweep: no new trials are generated; returns the running trials' jobs so the host stops the
 /// containers (WorkloadLauncher.StopJobAsync).</summary>
+[RequiresPermission("job.submit")]
 public sealed record StopSweepCommand(Guid WorkspaceId, Guid SweepId) : ICommand<(SweepRow Sweep, IReadOnlyList<Guid> ActiveJobs)>;
 
 public sealed class StopSweepCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopSweepCommand, (SweepRow Sweep, IReadOnlyList<Guid> ActiveJobs)>

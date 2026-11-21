@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
+[Access(AccessKind.Internal)]
 public sealed record RecordEvalSampleCommand(Guid EvaluationId, int Idx, string Path, int Width, int Height, string Gt, string Pred, int Tp, int Fp, int Fn,
     bool Correct, string? Error, double LatencyMs) : ICommand<bool>, IInternalCommand;
 

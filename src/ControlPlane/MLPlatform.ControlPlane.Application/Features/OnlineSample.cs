@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
+[RequiresPermission("dataset.read")]
 public sealed record OnlineSampleQuery(Guid WorkspaceId, Guid ViewId, int Limit) : IQuery<IReadOnlyList<OnlineRow>>;
 
 public sealed class OnlineSampleQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<OnlineSampleQuery, IReadOnlyList<OnlineRow>>

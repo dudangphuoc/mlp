@@ -14,6 +14,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>The caller's draft of a project recipe; made from the recipe's defaults the first time.</summary>
+[RequiresPermission("run.read")]
 public sealed record GetDraftCommand(Guid WorkspaceId, Guid ProjectRecipeId) : ICommand<DraftView>;
 
 /// <summary>Creates the draft on first use so the canvas always has something to show.</summary>

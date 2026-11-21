@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 
 /// <summary>Called by the monitoring loop: runs only when there are enough new predictions since the previous
 /// snapshot.</summary>
+[Access(AccessKind.Internal)]
 public sealed record MonitorTickCommand : ICommand<int>, IInternalCommand;
 
 public sealed class MonitorTickCommandHandler(IWriteSession db, IClock clock, IEnumerable<IDriftListener> listeners) : ICommandHandler<MonitorTickCommand, int>

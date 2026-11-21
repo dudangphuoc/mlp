@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record GetHermesContextQuery(Guid WorkspaceId, Guid ProjectId, string Path) : IQuery<HermesContext>;
 
 public sealed class GetHermesContextQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<GetHermesContextQuery, HermesContext>

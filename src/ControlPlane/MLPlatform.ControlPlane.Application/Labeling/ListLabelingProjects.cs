@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[RequiresPermission("dataset.read")]
 public sealed record ListLabelingProjectsQuery(Guid WorkspaceId, Guid? DatasetId) : IQuery<IReadOnlyList<ProjectRow>>;
 
 public sealed class ListLabelingProjectsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListLabelingProjectsQuery, IReadOnlyList<ProjectRow>>

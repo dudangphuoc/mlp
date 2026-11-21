@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>Proxy `/nb/{id}/…`: notebook owner only; returns null → 404.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ResolveNotebookProxyQuery(Guid ServerId, Guid UserId) : IQuery<ServerRow?>;
 
 public sealed class ResolveNotebookProxyQueryHandler(IReadSession db) : IQueryHandler<ResolveNotebookProxyQuery, ServerRow?>

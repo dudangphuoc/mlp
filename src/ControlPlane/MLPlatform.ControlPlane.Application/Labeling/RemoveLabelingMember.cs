@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record RemoveLabelingMemberCommand(Guid WorkspaceId, Guid ProjectId, Guid UserId, string Role) : ICommand<bool>;
 
 public sealed class RemoveLabelingMemberCommandHandler(IWriteSession db, LabelAccess access) : ICommandHandler<RemoveLabelingMemberCommand, bool>

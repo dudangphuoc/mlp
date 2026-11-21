@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
+[Access(AccessKind.WorkloadToken)]
 public sealed record EnrollAgentCommand(string EnrollToken, string PreviousCredential, string MachineName,
     string AgentVersion, string? WgPublicKey, byte[] HostInfo) : ICommand<AgentEnrollResult>;
 

@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Saves the HF token (already encrypted + whoami-checked by the api). Owner/Admin.</summary>
+[RequiresPermission("member.manage")]
 public sealed record SetHubTokenCommand(Guid WorkspaceId, string SecretEnc, string? Account, bool Valid) : ICommand<bool>;
 
 /// <summary>Handles <see cref="SetHubTokenCommand"/>.</summary>

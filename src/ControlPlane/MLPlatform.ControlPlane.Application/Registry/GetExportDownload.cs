@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>A one-hour download link of a finished conversion.</summary>
+[RequiresPermission("run.read")]
 public sealed record GetExportDownloadQuery(Guid WorkspaceId, Guid ExportId) : IQuery<string>;
 
 /// <summary>Signs the stored file for the browser.</summary>

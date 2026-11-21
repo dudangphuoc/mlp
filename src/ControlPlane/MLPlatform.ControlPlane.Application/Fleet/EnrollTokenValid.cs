@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Enroll token is still usable (unused, not expired) — the entry point of /install/agent/build .</summary>
+[Access(AccessKind.Internal)]
 public sealed record EnrollTokenValidQuery(string Token) : IQuery<bool>;
 
 /// <summary>Handles <see cref="EnrollTokenValidQuery"/>.</summary>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.Internal)]
 public sealed record NextPrelabelPathsQuery(Guid ProjectId, Guid JobId, int Limit) : IQuery<List<string>>;
 
 public sealed class NextPrelabelPathsQueryHandler(IReadSession db) : IQueryHandler<NextPrelabelPathsQuery, List<string>>

@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Takes a Catalog recipe into a project (idempotent): the project gets its own copy of the
 /// manifest.</summary>
+[RequiresPermission("job.submit")]
 public sealed record AdoptRecipeCommand(Guid WorkspaceId, Guid ProjectId, string Recipe) : ICommand<ProjectRecipeView>;
 
 /// <summary>Copies the manifest as it is now; a second call for the same recipe returns the existing copy.</summary>

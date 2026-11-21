@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[Access(AccessKind.Internal)]
 public sealed record ListProbeTargetsQuery : IQuery<IReadOnlyList<DeploymentRow>>;
 
 public sealed class ListProbeTargetsQueryHandler(IReadSession db) : IQueryHandler<ListProbeTargetsQuery, IReadOnlyList<DeploymentRow>>

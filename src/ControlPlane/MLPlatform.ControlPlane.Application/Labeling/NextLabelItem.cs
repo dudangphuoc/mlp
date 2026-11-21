@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 // ───────────── Queue ─────────────
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record NextLabelItemCommand(Guid WorkspaceId, Guid ProjectId, bool Review) : ICommand<ItemView?>;
 
 public sealed class NextLabelItemCommandHandler(IWriteSession db, LabelAccess access, IClock clock, S3Client s3) : ICommandHandler<NextLabelItemCommand, ItemView?>

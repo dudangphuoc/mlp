@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
+[Access(AccessKind.Internal)]
 public sealed record AgentHeartbeatCommand(Guid HostId, byte[]? HostInfo, string AgentVersion) : ICommand<bool>;
 
 public sealed class AgentHeartbeatCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<AgentHeartbeatCommand, bool>

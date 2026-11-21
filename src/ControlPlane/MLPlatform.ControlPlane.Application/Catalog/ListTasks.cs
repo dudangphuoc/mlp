@@ -9,6 +9,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
+[Access(AccessKind.Internal)]
 public sealed record ListTasksQuery : IQuery<IReadOnlyList<TaskRow>>;
 
 public sealed class ListTasksQueryHandler(IReadSession db) : IQueryHandler<ListTasksQuery, IReadOnlyList<TaskRow>>

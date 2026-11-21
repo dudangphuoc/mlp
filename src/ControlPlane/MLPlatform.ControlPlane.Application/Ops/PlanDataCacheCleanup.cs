@@ -9,6 +9,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Picks the cache volumes to delete: idle longer than MaxIdle, plus — on a machine whose free disk is below
 /// MinFreeBytes — idle caches oldest first until enough is freed.</summary>
+[Access(AccessKind.Internal)]
 public sealed record PlanDataCacheCleanupCommand : ICommand<IReadOnlyList<(JanitorCacheRow Cache, string Reason)>>, IInternalCommand;
 
 /// <summary>Computes the clean-up plan from the stored sync reports.</summary>

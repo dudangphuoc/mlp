@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
+[RequiresPermission("fleet.read")]
 public sealed record GetHostQuery(Guid WorkspaceId, Guid HostId) : IQuery<HostRow>;
 
 public sealed class GetHostQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetHostQuery, HostRow>

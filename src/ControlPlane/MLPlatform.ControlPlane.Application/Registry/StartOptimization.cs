@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Start an optimization run: picks calibration (train split) and check (val split) images, stores the spec
 /// and submits the job.</summary>
+[RequiresPermission("model.write")]
 public sealed record StartOptimizationCommand(Guid WorkspaceId, Guid SourceVersionId, string Device, IReadOnlyList<string> Candidates, Guid? HostId,
     Guid CheckDatasetVersionId, int CheckImages, Guid? CalibDatasetVersionId, int CalibImages, double Conf, string CalibMethod) : ICommand<OptimizationRow>;
 

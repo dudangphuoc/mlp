@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>Holder reports an allocation.</summary>
+[Access(AccessKind.WorkloadToken)]
 public sealed record ReportAllocationCommand(string Token, Guid AttemptId, Guid HostId, string[] GpuUuids, string NodeIp, bool Ok, string Message)
     : ICommand<AllocationComplete?>;
 

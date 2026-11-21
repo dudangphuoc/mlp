@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>Import history of the workspace.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record ListHubImportsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<HubImportRow>>;
 
 /// <summary>Handles <see cref="ListHubImportsQuery"/>.</summary>

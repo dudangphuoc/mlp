@@ -16,6 +16,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
+[RequiresPermission("run.read")]
 public sealed record GetPipelineRunQuery(Guid WorkspaceId, Guid RunId) : IQuery<(PipelineRunRow Run, IReadOnlyList<StepRow> Steps, string Definition)>;
 
 public sealed class GetPipelineRunQueryHandler(IReadSession db, WorkspaceAuthorizer auth)

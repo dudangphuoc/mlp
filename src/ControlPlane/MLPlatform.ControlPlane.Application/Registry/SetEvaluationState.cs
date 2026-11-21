@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
+[Access(AccessKind.Internal)]
 public sealed record SetEvaluationStateCommand(Guid EvaluationId, string State, string? Reason, Guid? DeploymentId, int? Total = null) : ICommand<bool>, IInternalCommand;
 
 public sealed class SetEvaluationStateCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SetEvaluationStateCommand, bool>

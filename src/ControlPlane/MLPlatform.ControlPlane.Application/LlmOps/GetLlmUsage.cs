@@ -10,6 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
+[RequiresPermission("run.read")]
 public sealed record GetLlmUsageQuery(Guid WorkspaceId, int Days) : IQuery<IReadOnlyList<UsageDayRow>>;
 
 public sealed class GetLlmUsageQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<GetLlmUsageQuery, IReadOnlyList<UsageDayRow>>

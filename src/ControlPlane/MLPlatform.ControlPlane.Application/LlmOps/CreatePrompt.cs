@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.LlmOps;
 
 // ───────────── Prompt registry ─────────────
 
+[RequiresPermission("model.write")]
 public sealed record CreatePromptCommand(Guid WorkspaceId, string Name, string Description) : ICommand<PromptRow>;
 
 public sealed class CreatePromptCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreatePromptCommand, PromptRow>

@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Compare 2–8 runs of one project.</summary>
+[RequiresPermission("run.read")]
 public sealed record CompareRunsQuery(Guid WorkspaceId, IReadOnlyList<Guid> RunIds) : IQuery<ComparisonView>;
 
 /// <summary>Same val = every run trained on the same dataset version (its split is fixed, R8).</summary>

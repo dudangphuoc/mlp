@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
 /// <summary>R4: warns 10 minutes before a notebook is auto-stopped (M16 `notebook.idle_warning`).</summary>
+[Access(AccessKind.Internal)]
 public sealed record WarnIdleNotebooksCommand : ICommand<int>;
 
 public sealed class WarnIdleNotebooksCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<WarnIdleNotebooksCommand, int>

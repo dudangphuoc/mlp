@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Formats a model version can be converted to, from its recipe.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListExportFormatsQuery(Guid WorkspaceId, Guid ModelVersionId) : IQuery<IReadOnlyList<string>>;
 
 /// <summary>Reads <c>entrypoints.export.formats</c> of the version's recipe.</summary>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 // ---- Agent register (reconnect) ----
+[Access(AccessKind.WorkloadToken)]
 public sealed record AgentRegisterCommand(string Credential, string AgentVersion, byte[]? HostInfo, string? WgPublicKey = null) : ICommand<HostRow>;
 
 public sealed class AgentRegisterCommandHandler(IWriteSession db, IClock clock, TokenService tokens)

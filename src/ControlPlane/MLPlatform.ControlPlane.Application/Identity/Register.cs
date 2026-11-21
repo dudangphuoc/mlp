@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 // ---- Register (M01 §5.1) ----
+[Access(AccessKind.Anonymous)]
 public sealed record RegisterCommand(string Email, string Password, string Username, string DisplayName, string InvitationToken = "") : ICommand<Guid>;
 
 public sealed class RegisterCommandHandler(IWriteSession db, IClock clock, TokenService tokens) : ICommandHandler<RegisterCommand, Guid>

@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
+[RequiresPermission("run.read")]
 public sealed record ListSnapshotsQuery(Guid WorkspaceId, Guid DeploymentId, int Limit) : IQuery<IReadOnlyList<SnapshotRow>>;
 
 public sealed class ListSnapshotsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListSnapshotsQuery, IReadOnlyList<SnapshotRow>>

@@ -5,6 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
+[Access(AccessKind.Internal)]
 public sealed record MarkHostOfflineCommand(Guid HostId, string Reason) : ICommand<bool>;
 
 public sealed class MarkHostOfflineCommandHandler(IWriteSession db, IClock clock, IEnumerable<IHostLossListener> hostLossListeners) : ICommandHandler<MarkHostOfflineCommand, bool>

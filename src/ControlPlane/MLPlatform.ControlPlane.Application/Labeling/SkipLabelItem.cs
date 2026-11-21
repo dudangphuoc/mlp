@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SkipLabelItemCommand(Guid WorkspaceId, Guid ProjectId, string Path, string Reason) : ICommand<string>;
 
 public sealed class SkipLabelItemCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<SkipLabelItemCommand, string>

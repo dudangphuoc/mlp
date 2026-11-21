@@ -53,8 +53,8 @@ public static class SurfaceDescription
     private static void WriteRequests(Utf8JsonWriter json)
     {
         json.WriteStartArray("requests");
-        foreach (var (name, isCommand, permission) in CqrsRegistration.Requests.OrderBy(r => r.Name, StringComparer.Ordinal))
-            json.WriteStringValue($"{(isCommand ? "command" : "query")} {name} {permission ?? "-"}");
+        foreach (var (name, isCommand, access, permission) in CqrsRegistration.Requests.OrderBy(r => r.Name, StringComparer.Ordinal))
+            json.WriteStringValue($"{(isCommand ? "command" : "query")} {name} {access} {permission ?? "-"}");
         json.WriteEndArray();
     }
 }

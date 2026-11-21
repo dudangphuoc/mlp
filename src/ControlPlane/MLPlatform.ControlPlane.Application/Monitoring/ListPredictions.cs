@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
+[RequiresPermission("run.read")]
 public sealed record ListPredictionsQuery(Guid WorkspaceId, Guid DeploymentId, int Limit) : IQuery<IReadOnlyList<PredictionRow>>;
 
 public sealed class ListPredictionsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListPredictionsQuery, IReadOnlyList<PredictionRow>>

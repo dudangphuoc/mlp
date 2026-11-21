@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Platform;
 
 /// <summary>All workspaces (id, slug) — internal, not exposed over RPC.</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListWorkspaceSlugsQuery : IQuery<List<WorkspaceSlugRow>>;
 
 /// <summary>Handles <see cref="ListWorkspaceSlugsQuery"/>.</summary>

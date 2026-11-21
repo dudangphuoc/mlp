@@ -9,6 +9,7 @@ namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Commit a version (M04 R5, R6): the latest version, minus the paths marked for removal, plus the files added
 /// since (the working copy).</summary>
+[RequiresPermission("dataset.write")]
 public sealed record CreateVersionCommand(Guid WorkspaceId, Guid DatasetId, string Note) : ICommand<VersionRow>;
 
 public sealed class CreateVersionCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth)

@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Files of the run's model directory.</summary>
+[Access(AccessKind.ScopedPermission, "run.read")]
 public sealed record ListRunFilesQuery(Guid WorkspaceId, Guid RunId) : IQuery<IReadOnlyList<RunFile>>;
 
 /// <summary>Lists the uploaded model files and signs a download link for each.</summary>

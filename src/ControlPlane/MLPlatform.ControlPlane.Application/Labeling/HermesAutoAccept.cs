@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Auto-accept after a passing check (internal).</summary>
+[Access(AccessKind.Internal)]
 public sealed record HermesAutoAcceptCommand(Guid ProjectId, Guid DatasetId, string Path, int Revision, Guid ActorId) : ICommand<string?>, IInternalCommand;
 
 public sealed class HermesAutoAcceptCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<HermesAutoAcceptCommand, string?>

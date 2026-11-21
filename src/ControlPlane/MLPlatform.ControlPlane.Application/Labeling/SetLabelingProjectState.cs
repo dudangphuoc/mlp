@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>activate (seeds items from the dataset's files) / pause / complete.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record SetLabelingProjectStateCommand(Guid WorkspaceId, Guid ProjectId, string State) : ICommand<ProjectRow>;
 
 public sealed class SetLabelingProjectStateCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<SetLabelingProjectStateCommand, ProjectRow>

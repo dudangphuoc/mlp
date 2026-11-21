@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>Sends a batch of due emails: on error → retry after 2^n minutes (up to 8 times, then `dead`).</summary>
+[Access(AccessKind.Internal)]
 public sealed record DispatchEmailsCommand(string PublicUrl) : ICommand<int>, IInternalCommand;
 
 /// <summary>Handles DispatchEmailsCommand in one transaction (rows locked with SKIP LOCKED — safe with multiple api

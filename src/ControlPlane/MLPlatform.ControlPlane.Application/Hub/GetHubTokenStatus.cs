@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Hub;
 
 /// <summary>HF token status (visible to members, no secret — M01 R10).</summary>
+[RequiresPermission("dataset.read")]
 public sealed record GetHubTokenStatusQuery(Guid WorkspaceId) : IQuery<IntegrationRow?>;
 
 /// <summary>Handles <see cref="GetHubTokenStatusQuery"/>.</summary>

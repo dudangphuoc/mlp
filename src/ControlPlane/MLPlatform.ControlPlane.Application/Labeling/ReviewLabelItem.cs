@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ReviewLabelItemCommand(Guid WorkspaceId, Guid ProjectId, string Path, bool Accept, string Comment) : ICommand<string>;
 
 public sealed class ReviewLabelItemCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<ReviewLabelItemCommand, string>

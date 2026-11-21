@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Dataset caches held by machines (one host, or all when HostId is null).</summary>
+[RequiresPermission("fleet.read")]
 public sealed record ListDataCachesQuery(Guid WorkspaceId, Guid? HostId) : IQuery<IReadOnlyList<DataCacheRow>>;
 
 /// <summary>Lists the dataset cache volumes known from sync reports.</summary>

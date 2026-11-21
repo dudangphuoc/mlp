@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Optimization runs of the workspace, newest first; running ones are settled from their job first.</summary>
+[RequiresPermission("run.read")]
 public sealed record ListOptimizationsCommand(Guid WorkspaceId) : ICommand<IReadOnlyList<OptimizationRow>>;
 
 /// <summary>A finished job's report.json becomes the run's report (ready when at least one candidate was

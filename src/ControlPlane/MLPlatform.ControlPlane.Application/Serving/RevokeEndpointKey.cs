@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Revoke one endpoint key.</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record RevokeEndpointKeyCommand(Guid WorkspaceId, Guid DeploymentId, Guid KeyId) : ICommand<bool>;
 
 /// <summary>Marks the key revoked; the gateway stops accepting it at once.</summary>

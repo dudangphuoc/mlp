@@ -16,6 +16,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
+[RequiresPermission("run.read")]
 public sealed record ListPipelinesQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<PipelineRow>>;
 
 public sealed class ListPipelinesQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListPipelinesQuery, IReadOnlyList<PipelineRow>>

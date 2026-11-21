@@ -6,6 +6,7 @@ namespace MLPlatform.ControlPlane.Application.Identity;
 
 /// <summary>When the DB has no users: generate a one-time bootstrap token (24 hours) and return the raw token to print
 /// to the log.</summary>
+[Access(AccessKind.Anonymous)]
 public sealed record IssueBootstrapTokenCommand : ICommand<string?>;
 
 public sealed class IssueBootstrapTokenCommandHandler(IWriteSession db, IClock clock, TokenService tokens)

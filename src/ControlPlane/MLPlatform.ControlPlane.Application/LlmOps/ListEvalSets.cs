@@ -10,6 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
+[RequiresPermission("run.read")]
 public sealed record ListEvalSetsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<EvalSetRow>>;
 
 public sealed class ListEvalSetsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListEvalSetsQuery, IReadOnlyList<EvalSetRow>>

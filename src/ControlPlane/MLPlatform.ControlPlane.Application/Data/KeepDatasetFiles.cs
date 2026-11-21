@@ -7,6 +7,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Undo "remove" for files of the latest version that are only marked.</summary>
+[RequiresPermission("dataset.write")]
 public sealed record KeepDatasetFilesCommand(Guid WorkspaceId, Guid DatasetId, IReadOnlyList<string> Paths) : ICommand<bool>;
 
 /// <summary>Drops the removal marks.</summary>

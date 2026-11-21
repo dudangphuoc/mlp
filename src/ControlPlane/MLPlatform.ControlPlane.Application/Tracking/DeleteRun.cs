@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Delete a finished run with its metrics and file list.</summary>
+[Access(AccessKind.ScopedPermission, "job.submit")]
 public sealed record DeleteRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<string>;
 
 /// <summary>Deletes the run records after the finished / no-registered-model checks.</summary>

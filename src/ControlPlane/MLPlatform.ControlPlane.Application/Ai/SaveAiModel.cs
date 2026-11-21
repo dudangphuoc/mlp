@@ -9,6 +9,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ai;
 
 /// <summary>Declare (create) or update a model on a connection.</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record SaveAiModelCommand(Guid? Id, Guid ConnectionId, string ModelId, string DisplayName, string[] Roles, string[] Inputs, string[] Outputs,
     string[] Skills, string Tier, double? InputUsdPer1m, double? OutputUsdPer1m, int MaxTokens, bool IsActive) : ICommand<AiModelRow>;
 

@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Internal: marks an inspection as running (a previous result for the same key is cleared) and returns the
 /// row.</summary>
+[Access(AccessKind.Internal)]
 public sealed record StartInspectionCommand(InspectionKey Key, string RecipeName) : ICommand<InspectionRow>;
 
 /// <summary>One row per key; starting again resets it.</summary>

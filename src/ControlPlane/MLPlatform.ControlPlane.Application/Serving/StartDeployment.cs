@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 /// <summary>Start a stopped or failed deployment again, on the same or another version of its model; same machine, keys
 /// and address.</summary>
+[RequiresPermission("deployment.manage")]
 public sealed record StartDeploymentCommand(Guid WorkspaceId, Guid DeploymentId, Guid? ModelVersionId) : ICommand<DeploymentRow>;
 
 /// <summary>Re-submits the replica through <see cref="CreateDeploymentCommand"/> with the stored machine.</summary>

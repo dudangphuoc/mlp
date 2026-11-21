@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Replaces the caller's draft: from a revision, from a run ("cook again from #n" — also its data, starting
 /// point and machine).</summary>
+[RequiresPermission("job.submit")]
 public sealed record ResetDraftCommand(Guid WorkspaceId, Guid ProjectRecipeId, int RevisionNumber, Guid? RunId, bool Origin, bool Retrain = false) : ICommand<DraftView>;
 
 /// <summary>A run without a revision (older runs, pipelines, sweeps) is rebuilt from the fields the run kept.</summary>

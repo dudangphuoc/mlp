@@ -14,6 +14,7 @@ using MLPlatform.Storage;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Stops a waiting or running trial; returns its job so the host stops the container.</summary>
+[RequiresPermission("job.submit")]
 public sealed record CancelTrialCommand(Guid WorkspaceId, Guid TrialId) : ICommand<(TrialView Trial, Guid? JobId)>;
 
 /// <summary>Marks the trial and its hidden run cancelled (a later job exit does not overwrite it).</summary>

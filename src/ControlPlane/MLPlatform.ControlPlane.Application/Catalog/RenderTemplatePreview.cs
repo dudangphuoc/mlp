@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Catalog;
 
 /// <summary>Renders a trial command with sample values (S-17-2 Command tab, S-17-3) — same template resolver as
 /// selfcheck.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record RenderTemplatePreviewQuery(Guid WorkspaceId, string Recipe, string Entrypoint, string Task, bool WeightsEmpty)
     : IQuery<(string Command, string Error)>;
 

@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Reads a version's split (looking at its files once and remembering the answer) for the training
 /// canvas.</summary>
+[RequiresPermission("dataset.read")]
 public sealed record DescribeVersionSplitCommand(Guid WorkspaceId, Guid VersionId) : ICommand<VersionSplitInfo>;
 
 /// <summary>Detects train/val folders from the file list the first time; versions made by SplitVersionCommand already

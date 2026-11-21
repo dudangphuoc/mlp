@@ -13,6 +13,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>One run as the run page shows it.</summary>
+[Access(AccessKind.ScopedPermission, "run.read")]
 public sealed record GetRunViewQuery(Guid WorkspaceId, Guid RunId) : IQuery<RunView>;
 
 /// <summary>Reads one run and attaches job, dataset and user details.</summary>

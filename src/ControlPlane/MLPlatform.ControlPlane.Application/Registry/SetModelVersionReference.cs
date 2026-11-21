@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Reference model version: store the source address of each file instead of copying (import worker,
 /// internal).</summary>
+[Access(AccessKind.Internal)]
 public sealed record SetModelVersionReferenceCommand(Guid VersionId, IReadOnlyList<(string Path, long Size, string Url)> Files) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="SetModelVersionReferenceCommand"/>.</summary>

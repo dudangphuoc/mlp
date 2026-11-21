@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("job.submit")]
 public sealed record ExtendGraceCommand(Guid WorkspaceId, Guid JobId, int Minutes) : ICommand<bool>;
 
 public sealed class ExtendGraceCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<ExtendGraceCommand, bool>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
 /// <summary>Agent upgrade history of a workspace (filterable by machine).</summary>
+[RequiresPermission("fleet.read")]
 public sealed record ListAgentUpgradesQuery(Guid WorkspaceId, Guid? HostId) : IQuery<IReadOnlyList<AgentUpgradeRow>>;
 
 /// <summary>Handles <see cref="ListAgentUpgradesQuery"/>.</summary>

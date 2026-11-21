@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Data;
 
 /// <summary>Makes a new version with a fixed train/val/test split: the same files (referenced, not copied) plus
 /// mlp-split.json .</summary>
+[RequiresPermission("dataset.write")]
 public sealed record SplitVersionCommand(Guid WorkspaceId, Guid VersionId, int TrainPct, int ValPct, int TestPct, string GroupBy, string Note) : ICommand<VersionRow>;
 
 /// <summary>Assigns each image by the hash of its path (or folder), writes the split file into storage and records the

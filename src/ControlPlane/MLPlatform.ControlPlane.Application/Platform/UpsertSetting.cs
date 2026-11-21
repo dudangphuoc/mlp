@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Platform;
 
 /// <summary>Saves a setting (the api has already merged + encrypted secrets).</summary>
+[Access(AccessKind.InstanceAdmin)]
 public sealed record UpsertSettingCommand(string Key, bool Enabled, string ConfigJson, string? SecretsEnc) : ICommand<bool>;
 
 /// <summary>Handles <see cref="UpsertSettingCommand"/>.</summary>

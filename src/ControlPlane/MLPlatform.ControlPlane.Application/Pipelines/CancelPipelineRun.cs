@@ -17,6 +17,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
 /// <summary>Cancels a run; returns running jobs so the host stops the containers.</summary>
+[RequiresPermission("job.submit")]
 public sealed record CancelPipelineRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<(PipelineRunRow Run, IReadOnlyList<Guid> Jobs)>;
 
 public sealed class CancelPipelineRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator, IAfterCommit afterCommit, IWorkloadControl workloads)

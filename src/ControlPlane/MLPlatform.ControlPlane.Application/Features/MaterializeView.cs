@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
+[RequiresPermission("dataset.write")]
 public sealed record MaterializeViewCommand(Guid WorkspaceId, Guid ViewId) : ICommand<ViewRow>;
 
 public sealed class MaterializeViewCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, S3Client s3) : ICommandHandler<MaterializeViewCommand, ViewRow>

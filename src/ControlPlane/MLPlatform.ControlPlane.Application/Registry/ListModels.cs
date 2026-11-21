@@ -9,6 +9,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
+[RequiresPermission("run.read")]
 public sealed record ListModelsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<ModelListRow>>;
 
 public sealed class ListModelsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListModelsQuery, IReadOnlyList<ModelListRow>>

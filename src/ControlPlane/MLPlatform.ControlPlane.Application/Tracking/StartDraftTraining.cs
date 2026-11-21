@@ -15,6 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Trains the caller's draft (canvas path): freezes it into a revision, starts the run, and records what the
 /// run cooked.</summary>
+[RequiresPermission("job.submit")]
 public sealed record StartDraftTrainingCommand(Guid WorkspaceId, Guid ProjectRecipeId) : ICommand<RunRow>;
 
 /// <summary>The same content never makes a second revision: an unchanged draft trains its existing revision

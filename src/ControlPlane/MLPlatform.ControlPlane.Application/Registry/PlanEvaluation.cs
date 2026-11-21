@@ -13,6 +13,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>Builds the sample list (deterministic shuffle by evaluation id, then the first max_samples) with internal
 /// download URLs.</summary>
+[Access(AccessKind.Internal)]
 public sealed record PlanEvaluationQuery(Guid EvaluationId) : IQuery<EvaluationPlan>;
 
 public sealed class PlanEvaluationQueryHandler(IReadSession db, S3Client s3) : IQueryHandler<PlanEvaluationQuery, EvaluationPlan>

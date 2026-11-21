@@ -12,6 +12,7 @@ namespace MLPlatform.ControlPlane.Application.LlmOps;
 
 /// <summary>REST gateway `{"messages":[…]}`: same guardrails + usage recording as prompt calls (no user, no
 /// audit).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GatewayChatCommand(DeploymentRow Deployment, IReadOnlyList<(string Role, string Content)> Messages, int MaxTokens, double Temperature)
     : ICommand<LlmCallResult>, IInternalCommand;
 

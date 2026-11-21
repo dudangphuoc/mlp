@@ -8,6 +8,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Ops;
 
 /// <summary>Records one automatic removal (sync rows marked removed + event on the host).</summary>
+[Access(AccessKind.Internal)]
 public sealed record RecordDataCacheCleanupCommand(JanitorCacheRow Cache, string Reason) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Marks the cache removed and emits `data.cache_removed`.</summary>

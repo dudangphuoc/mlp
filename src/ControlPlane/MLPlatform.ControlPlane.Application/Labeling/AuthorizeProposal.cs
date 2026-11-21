@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Who triggered a proposal and with what rights (checked in the api before any model is called).</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record AuthorizeProposalQuery(Guid WorkspaceId, Guid ProjectId, string Path) : IQuery<HermesContext>;
 
 public sealed class AuthorizeProposalQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<AuthorizeProposalQuery, HermesContext>

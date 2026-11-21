@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
+[RequiresPermission("run.read")]
 public sealed record GetQualityQuery(Guid WorkspaceId, Guid DeploymentId, int Days) : IQuery<IReadOnlyList<DailyQualityRow>>;
 
 public sealed class GetQualityQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<GetQualityQuery, IReadOnlyList<DailyQualityRow>>

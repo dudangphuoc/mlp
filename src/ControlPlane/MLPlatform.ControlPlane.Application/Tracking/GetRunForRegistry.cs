@@ -8,6 +8,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 
 /// <summary>Internal for M11: artifacts + final metrics of a run (no permission check — the caller already
 /// checked).</summary>
+[Access(AccessKind.Internal)]
 public sealed record GetRunForRegistryQuery(Guid RunId) : IQuery<(RunRow Run, IReadOnlyList<ArtifactRow> Artifacts, IReadOnlyList<FinalMetricRow> Metrics)?>;
 
 public sealed class GetRunForRegistryQueryHandler(IReadSession db)

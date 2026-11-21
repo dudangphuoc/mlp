@@ -7,6 +7,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Annotators who are only annotators see their own row; Leads, Reviewers and labeling managers see
 /// everyone.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record GetQualityReportQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<LabelQualityReport>;
 
 public sealed class GetQualityReportQueryHandler(IReadSession db, LabelAccess access, WorkspaceAuthorizer auth) : IQueryHandler<GetQualityReportQuery, LabelQualityReport>

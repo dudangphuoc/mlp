@@ -14,6 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Features;
 
 /// <summary>Creates a feature view (same name → new version; the old one is kept so earlier training stays
 /// reproducible), then materializes it immediately.</summary>
+[RequiresPermission("dataset.write")]
 public sealed record CreateFeatureViewCommand(Guid WorkspaceId, string Name, string Entity, Guid SourceVersionId, string TimestampColumn,
     IReadOnlyList<string> Features, int TtlHours, bool Online, int? MaterializeEveryMin) : ICommand<ViewRow>;
 

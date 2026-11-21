@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[RequiresPermission("dataset.read")]
 public sealed record SystemIncidentsQuery(Guid WorkspaceId) : IQuery<IReadOnlyList<EventRow>>;
 
 public sealed class SystemIncidentsQueryHandler(IReadSession db, IClock clock, WorkspaceAuthorizer auth) : IQueryHandler<SystemIncidentsQuery, IReadOnlyList<EventRow>>

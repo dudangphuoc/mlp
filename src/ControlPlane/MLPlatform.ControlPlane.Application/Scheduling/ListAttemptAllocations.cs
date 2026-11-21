@@ -7,6 +7,7 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>Machines and GPUs an attempt was given (to reserve them again when the Ray head lost them).</summary>
+[Access(AccessKind.Internal)]
 public sealed record ListAttemptAllocationsQuery(Guid AttemptId) : IQuery<IReadOnlyList<AllocationRow>>;
 
 /// <summary>Reads the allocation rows of the attempt.</summary>

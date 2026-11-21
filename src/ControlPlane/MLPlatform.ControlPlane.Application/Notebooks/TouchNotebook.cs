@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
+[Access(AccessKind.Internal)]
 public sealed record TouchNotebookCommand(Guid ServerId) : ICommand<bool>;
 
 public sealed class TouchNotebookCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<TouchNotebookCommand, bool>

@@ -7,6 +7,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Audit;
 
+[RequiresPermission("audit.read")]
 public sealed record ListAuditQuery(Guid WorkspaceId) : IQuery<(IReadOnlyList<AuditRow> Events, bool ChainValid)>;
 
 public sealed class ListAuditQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<ListAuditQuery, (IReadOnlyList<AuditRow> Events, bool ChainValid)>

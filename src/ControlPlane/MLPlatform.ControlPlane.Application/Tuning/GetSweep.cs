@@ -11,6 +11,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tuning;
 
+[RequiresPermission("run.read")]
 public sealed record GetSweepQuery(Guid WorkspaceId, Guid SweepId) : IQuery<(SweepRow Sweep, IReadOnlyList<TrialRow> Trials)>;
 
 public sealed class GetSweepQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetSweepQuery, (SweepRow Sweep, IReadOnlyList<TrialRow> Trials)>

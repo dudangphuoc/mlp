@@ -10,6 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
+[Access(AccessKind.Internal)]
 public sealed record DbPingQuery : IQuery<bool>;
 
 public sealed class DbPingQueryHandler(IReadSession db) : IQueryHandler<DbPingQuery, bool>

@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record GetAssistSettingsQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<(ProjectRow Project, ProjectAssistSettings Settings, bool CanManage)>;
 
 public sealed class GetAssistSettingsQueryHandler(IReadSession db, LabelAccess access, WorkspaceAuthorizer auth)

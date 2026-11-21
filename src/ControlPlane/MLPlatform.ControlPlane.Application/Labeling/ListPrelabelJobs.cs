@@ -6,6 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ListPrelabelJobsQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<(List<PrelabelJobRow> Jobs, long Targets)>;
 
 public sealed class ListPrelabelJobsQueryHandler(IReadSession db, LabelAccess access) : IQueryHandler<ListPrelabelJobsQuery, (List<PrelabelJobRow>, long)>

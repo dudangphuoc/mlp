@@ -12,6 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
+[RequiresPermission("deployment.manage")]
 public sealed record StopDeploymentCommand(Guid WorkspaceId, Guid DeploymentId) : ICommand<DeploymentRow>;
 
 public sealed class StopDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopDeploymentCommand, DeploymentRow>

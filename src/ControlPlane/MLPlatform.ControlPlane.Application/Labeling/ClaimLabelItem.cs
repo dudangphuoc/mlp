@@ -11,6 +11,7 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>Open one chosen item for editing — from the item list or the dataset preview — instead of taking the next
 /// one in the queue.</summary>
+[Access(AccessKind.ScopedPermission, "labeling.annotate")]
 public sealed record ClaimLabelItemCommand(Guid WorkspaceId, Guid ProjectId, string Path) : ICommand<ItemView>;
 
 /// <summary>Locks the item for the caller; refuses when someone else holds it.</summary>
