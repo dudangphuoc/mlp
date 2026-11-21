@@ -13,7 +13,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class TuningGrpc(IMediator mediator, WorkloadLauncher launcher) : TuningService.TuningServiceBase
+public sealed class TuningGrpc(IMediator mediator) : TuningService.TuningServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -46,8 +46,7 @@ public sealed class TuningGrpc(IMediator mediator, WorkloadLauncher launcher) : 
 
     public override async Task<Sweep> StopSweep(SweepRef r, ServerCallContext ctx)
     {
-        var (s, jobs) = await mediator.Send(new StopSweepCommand(G(r.WorkspaceId, "workspace_id"), G(r.SweepId, "sweep_id")), ctx.CancellationToken);
-        foreach (var j in jobs) await launcher.StopJobAsync(j, ctx.CancellationToken);
+        var (s, _) = await mediator.Send(new StopSweepCommand(G(r.WorkspaceId, "workspace_id"), G(r.SweepId, "sweep_id")), ctx.CancellationToken);
         return ToProto(s);
     }
 

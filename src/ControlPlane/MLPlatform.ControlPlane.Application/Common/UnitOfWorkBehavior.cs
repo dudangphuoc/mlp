@@ -3,23 +3,26 @@ using MLPlatform.Data;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
-public sealed class UnitOfWorkBehavior(IWriteSession session) : IRequestBehavior
+/// <summary>Commands run in one transaction; nested commands join the outermost one, which also drains the after-commit queue.</summary>
+public sealed class UnitOfWorkBehavior(IWriteSession session, AfterCommitQueue afterCommit) : IRequestBehavior
 {
     public async ValueTask<object?> Handle(RequestContext context, Func<ValueTask<object?>> next, CancellationToken ct)
     {
-        // Nested commands (e.g. StartTraining → SubmitJob) share the outermost command's transaction
         if (!context.IsCommand || session.InTransaction) return await next();
         await session.BeginAsync(ct);
+        object? result;
         try
         {
-            var result = await next();
+            result = await next();
             await session.CommitAsync(ct);
-            return result;
         }
         catch
         {
             await session.RollbackAsync(ct);
+            afterCommit.Discard();
             throw;
         }
+        await afterCommit.RunAsync(ct);
+        return result;
     }
 }

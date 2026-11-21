@@ -16,13 +16,14 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 public sealed record StopRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<Guid?>;
 
 /// <summary>Marks the run cancelled; the host then stops the job.</summary>
-public sealed class StopRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<StopRunCommand, Guid?>
+public sealed class StopRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopRunCommand, Guid?>
 {
     public async ValueTask<Guid?> Handle(StopRunCommand c, CancellationToken ct)
     {
         var r = await RunRules.RequireAsync(db, auth, c.WorkspaceId, c.RunId, "job.submit", ct);
         if (RunRules.Finished(r.State)) throw new PreconditionException("TRACK_RUN_FINISHED", "This run has already finished");
         await db.SetRunStateAsync(r.Id, "cancelled", clock.UtcNow, ct);
+        if (r.JobId is { } job) afterCommit.StopAfterCommit(workloads, job);
         return r.JobId;
     }
 }

@@ -12,7 +12,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class NotebookGrpc(IMediator mediator, WorkloadLauncher launcher) : NotebookService.NotebookServiceBase
+public sealed class NotebookGrpc(IMediator mediator) : NotebookService.NotebookServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -44,14 +44,6 @@ public sealed class NotebookGrpc(IMediator mediator, WorkloadLauncher launcher) 
     public override async Task<NotebookServer> StopServer(NotebookRef r, ServerCallContext ctx)
     {
         var s = await mediator.Send(new StopNotebookCommand(G(r.WorkspaceId, "workspace_id"), G(r.ServerId, "server_id")), ctx.CancellationToken);
-        // The stop goes to the machine in the background: the user gets an answer at once, and a machine that does not answer
-        // cannot turn the request into an error or a hang (the reaper finishes "stopping" notebooks after 5 minutes).
-        if (s.State is "stopping" or "stopped" && s.JobId is { } job)
-            _ = Task.Run(async () =>
-            {
-                try { await launcher.StopJobAsync(job, CancellationToken.None); }
-                catch (Exception e) when (e is TimeoutException or InvalidOperationException or IOException or ObjectDisposedException) { }
-            });
         return ToProto(s);
     }
 

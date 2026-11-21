@@ -8,7 +8,7 @@ using Empty = MLPlatform.Contracts.V1.Empty;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class TrackingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infrastructure.WorkloadLauncher launcher, MLPlatform.Storage.S3Client s3,
+public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client s3,
     MLPlatform.ControlPlane.Infrastructure.LogStore logs) : TrackingService.TrackingServiceBase
 {
     private static Guid G(string s, string f) =>
@@ -96,8 +96,7 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.ControlPlane.Inf
     public override async Task<Run> StopRun(GetRunRequest r, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id"); var id = G(r.RunId, "run_id");
-        // The run is marked first; the container keeps a 30 s grace to save a checkpoint, so stopping must outlive this request.
-        if (await mediator.Send(new StopRunCommand(ws, id), ctx.CancellationToken) is { } job) await launcher.StopJobAsync(job, CancellationToken.None);
+        await mediator.Send(new StopRunCommand(ws, id), ctx.CancellationToken);
         return await View(ws, id, ctx);
     }
 
@@ -109,8 +108,7 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.ControlPlane.Inf
 
     public override async Task<RecipeTrial> CancelTrial(GetTrialRequest r, ServerCallContext ctx)
     {
-        var (trial, job) = await mediator.Send(new CancelTrialCommand(G(r.WorkspaceId, "workspace_id"), G(r.TrialId, "trial_id")), ctx.CancellationToken);
-        if (job is { } j) await launcher.StopJobAsync(j, CancellationToken.None);
+        var (trial, _) = await mediator.Send(new CancelTrialCommand(G(r.WorkspaceId, "workspace_id"), G(r.TrialId, "trial_id")), ctx.CancellationToken);
         return ToProto(trial);
     }
 

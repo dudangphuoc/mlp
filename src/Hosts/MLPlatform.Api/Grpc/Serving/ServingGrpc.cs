@@ -7,7 +7,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class ServingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infrastructure.WorkloadLauncher launcher, MLPlatform.Api.Middleware.PublicRoutes routes,
+public sealed class ServingGrpc(IMediator mediator, MLPlatform.Api.Middleware.PublicRoutes routes,
     MLPlatform.ControlPlane.Infrastructure.ModelServerClients clients) : ServingService.ServingServiceBase
 {
     private static Guid G(string s, string f) =>
@@ -31,7 +31,6 @@ public sealed class ServingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infr
     public override async Task<Deployment> StopDeployment(GetDeploymentRequest r, ServerCallContext ctx)
     {
         var d = await mediator.Send(new StopDeploymentCommand(G(r.WorkspaceId, "workspace_id"), G(r.DeploymentId, "deployment_id")), ctx.CancellationToken);
-        if (d.JobId is { } job) await launcher.StopJobAsync(job, ctx.CancellationToken);
         return ToProto(d);
     }
 
@@ -45,8 +44,6 @@ public sealed class ServingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infr
     {
         var ws = G(r.WorkspaceId, "workspace_id");
         var cur = await mediator.Query(new GetDeploymentQuery(ws, G(r.DeploymentId, "deployment_id")), ctx.CancellationToken);
-        // A failed replica may still hold its container: stopped before the new one starts.
-        if (cur.JobId is { } old && cur.State == "failed") await launcher.StopJobAsync(old, ctx.CancellationToken);
         return await WithUrl(ToProto(await mediator.Send(new StartDeploymentCommand(ws, cur.Id,
             string.IsNullOrEmpty(r.ModelVersionId) ? null : G(r.ModelVersionId, "model_version_id")), ctx.CancellationToken)), ctx.CancellationToken);
     }
@@ -56,7 +53,6 @@ public sealed class ServingGrpc(IMediator mediator, MLPlatform.ControlPlane.Infr
         var ws = G(r.WorkspaceId, "workspace_id");
         var cur = await mediator.Query(new GetDeploymentQuery(ws, G(r.DeploymentId, "deployment_id")), ctx.CancellationToken);
         await mediator.Send(new DeleteDeploymentCommand(ws, cur.Id), ctx.CancellationToken);
-        if (cur.JobId is { } old && cur.State == "failed") await launcher.StopJobAsync(old, ctx.CancellationToken);
         return new DeleteDeploymentResponse();
     }
 

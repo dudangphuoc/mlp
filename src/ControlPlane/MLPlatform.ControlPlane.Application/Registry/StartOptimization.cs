@@ -107,7 +107,7 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
         string? SplitOf(string p) => SplitRules.FolderSplit(p) ?? fixedSplit?.GetValueOrDefault(p);
         var wanted = images.Where(f => splits.Contains(SplitOf(f.Path))).ToList();
         if (wanted.Count == 0) wanted = images;
-        return [.. OptimizationRules.Pick(wanted, n, seed, f => f.Path).Select(f => new OptImage(f.Path, Evaluations.FileUrl(s3, v, f.Path, f.Url, Audience.Workload),
+        return [.. OptimizationRules.Pick(wanted, n, seed, f => f.Path).Select(f => new OptImage(f.Path, DatasetFileUrls.For(s3, v, f.Path, f.Url, Audience.Workload),
             f.SizeBytes, DataCacheRules.Id(v, f.Path, f.Url, f.SizeBytes), v.DatasetId))];
     }
 }

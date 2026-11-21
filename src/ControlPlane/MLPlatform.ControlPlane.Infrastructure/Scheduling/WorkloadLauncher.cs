@@ -8,7 +8,7 @@ using MLPlatform.Ray;
 namespace MLPlatform.ControlPlane.Infrastructure;
 
 /// <summary>Fully allocated → send StartWorkload to the agent on each host (20/08 §9 step 3).</summary>
-public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, RecipeEnvironments envs, LogStore logs, ILogger<WorkloadLauncher> log)
+public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, RecipeEnvironments envs, LogStore logs, ILogger<WorkloadLauncher> log) : MLPlatform.ControlPlane.Application.Scheduling.IWorkloadControl
 {
     public async Task LaunchAsync(AllocationComplete done, CancellationToken ct)
     {

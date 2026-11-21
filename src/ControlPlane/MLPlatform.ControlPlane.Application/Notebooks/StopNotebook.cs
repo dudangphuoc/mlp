@@ -13,9 +13,16 @@ namespace MLPlatform.ControlPlane.Application.Notebooks;
 /// </summary>
 public sealed record StopNotebookCommand(Guid WorkspaceId, Guid ServerId) : ICommand<ServerRow>;
 
-public sealed class StopNotebookCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<StopNotebookCommand, ServerRow>
+public sealed class StopNotebookCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopNotebookCommand, ServerRow>
 {
     public async ValueTask<ServerRow> Handle(StopNotebookCommand c, CancellationToken ct)
+    {
+        var server = await StopAsync(c, ct);
+        if (server.State is "stopping" or "stopped" && server.JobId is { } job) afterCommit.StopInBackgroundAfterCommit(workloads, job);
+        return server;
+    }
+
+    private async Task<ServerRow> StopAsync(StopNotebookCommand c, CancellationToken ct)
     {
         var s = await NotebookAccess.LoadAsync(db, auth, c.WorkspaceId, c.ServerId, ct);
         if (s.State is "stopped" or "failed") return s;

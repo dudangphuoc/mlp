@@ -19,7 +19,7 @@ namespace MLPlatform.ControlPlane.Application.Pipelines;
 /// <summary>Cancels a run; returns running jobs so the host stops the containers.</summary>
 public sealed record CancelPipelineRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<(PipelineRunRow Run, IReadOnlyList<Guid> Jobs)>;
 
-public sealed class CancelPipelineRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator)
+public sealed class CancelPipelineRunCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator, IAfterCommit afterCommit, IWorkloadControl workloads)
     : ICommandHandler<CancelPipelineRunCommand, (PipelineRunRow Run, IReadOnlyList<Guid> Jobs)>
 {
     public async ValueTask<(PipelineRunRow Run, IReadOnlyList<Guid> Jobs)> Handle(CancelPipelineRunCommand c, CancellationToken ct)
@@ -34,6 +34,7 @@ public sealed class CancelPipelineRunCommandHandler(IWriteSession db, IClock clo
             await db.UpdateStepAsync(r.Id, s.StepId, "failed", s.Attempt, s.RefId, s.Output, "Cancelled", clock.UtcNow, ct);
         }
         await db.FinishPipelineRunAsync(r.Id, "cancelled", "Cancelled by user", clock.UtcNow, ct);
+        afterCommit.StopAfterCommit(workloads, jobs);
         return ((await db.GetPipelineRunAsync(r.Id, c.WorkspaceId, ct))!, jobs);
     }
 }

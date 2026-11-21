@@ -588,7 +588,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         var pref = new LabelingProjectRef { WorkspaceId = wsId, ProjectId = proj.Id };
         Assert((await lab.GetProjectStatsAsync(pref, auth)).Total == 3, "a new project starts active with its items loaded");
         await lab.AddProjectMemberAsync(new LabelingMemberRequest { WorkspaceId = wsId, ProjectId = proj.Id, UserId = reg.UserId, Role = "annotator" }, auth);
-        await lab.SetProjectStateAsync(new SetLabelingProjectStateRequest { WorkspaceId = wsId, ProjectId = proj.Id, State = "active" }, auth);
         var st = await lab.GetProjectStatsAsync(pref, auth);
         Assert(st.Total == 3 && st.ByStatus["unlabeled"] == 3, "wrong item seeding");
 

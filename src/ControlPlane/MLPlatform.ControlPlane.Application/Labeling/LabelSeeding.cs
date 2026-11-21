@@ -23,19 +23,6 @@ public static class LabelSeeding
         return versionId is { } v ? db.SeedItemsFromVersionAsync(projectId, datasetId, v, images, exts, ct) : db.SeedItemsAsync(projectId, datasetId, images, exts, ct);
     }
 
-    /// <summary>The YOLO label file that may sit next to an image: …/images/x.jpg ↔ …/labels/x.txt (or yololabels), or x.txt in the same folder.</summary>
-    public static IReadOnlyList<string> YoloCandidates(string imagePath)
-    {
-        var stem = imagePath[..^Path.GetExtension(imagePath).Length];
-        var list = new List<string>();
-        foreach (var dir in new[] { "/labels/", "/yololabels/", "/yolo_labels/" })
-        {
-            var c = (stem.StartsWith("images/", StringComparison.Ordinal) ? "/" + stem : stem).Replace("/images/", dir).TrimStart('/') + ".txt";
-            if (c != stem + ".txt") list.Add(c);
-        }
-        list.Add(stem + ".txt");
-        return list;
-    }
 
     /// <summary>"class cx cy w h" lines (normalized centre) → platform boxes {x, y, w, h} (normalized top-left); malformed lines are skipped.</summary>
     public static List<AnnotationInput> ParseYolo(string text, IReadOnlySet<int>? classes)

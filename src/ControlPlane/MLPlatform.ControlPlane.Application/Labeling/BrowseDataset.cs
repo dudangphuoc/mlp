@@ -4,7 +4,9 @@ using MLPlatform.Cqrs;
 using MLPlatform.Data;
 using MLPlatform.Storage;
 
-namespace MLPlatform.ControlPlane.Application.Data;
+using MLPlatform.ControlPlane.Application.Data;
+
+namespace MLPlatform.ControlPlane.Application.Labeling;
 
 /// <summary>
 /// Content of a dataset version (or of the working copy when <c>VersionId</c> is null): folders and files under a prefix with
@@ -36,13 +38,13 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
         var folders = recursive ? [] : await db.BrowseFoldersAsync(q.VersionId, q.DatasetId, prefixLike, prefix.Length, ct);
 
         string Url(string path, string? url) => version is not null
-            ? Registry.Evaluations.FileUrl(s3, version, path, url, Audience.Public)
+            ? DatasetFileUrls.For(s3, version, path, url, Audience.Public)
             : s3.Presign(HttpMethod.Get, Buckets.Datasets, Buckets.Raw(q.WorkspaceId, q.DatasetId) + path, TimeSpan.FromHours(6), Audience.Public);
 
         // YOLO labels: the txt next to each image (…/images/x.jpg ↔ …/labels|yololabels/x.txt, or the same folder).
         var images = rows.Where(r => FileKinds.Of(r.Path) == "image").ToList();
         var candidates = new Dictionary<string, List<string>>();
-        foreach (var img in images) candidates[img.Path] = [.. Labeling.LabelSeeding.YoloCandidates(img.Path)];
+        foreach (var img in images) candidates[img.Path] = [.. YoloLabelFiles.CandidatesFor(img.Path)];
         var labelFiles = candidates.Count == 0 ? []
             : (await db.FindFilesByPathAsync(q.VersionId, q.DatasetId, candidates.Values.SelectMany(x => x).Distinct().ToArray(), ct))
                 .ToDictionary(r => r.Path, r => r.Url, StringComparer.Ordinal);
@@ -62,7 +64,7 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
                 }).ToArray()).ToJsonString();
             return new BrowsedFile(r.Path, r.SizeBytes, FileKinds.Of(r.Path), Url(r.Path, r.Url), labelUrl, labelPath, ann);
         }).ToList();
-        var classes = (await Labeling.LabelSql.GetCurrentSchemaAsync(db, q.DatasetId, ct))?.Classes ?? "[]";
+        var classes = (await LabelSql.GetCurrentSchemaAsync(db, q.DatasetId, ct))?.Classes ?? "[]";
         return new BrowseResult(folders, files, total, classes);
     }
 }

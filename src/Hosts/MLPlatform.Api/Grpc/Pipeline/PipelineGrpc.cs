@@ -14,7 +14,7 @@ using Pipeline = MLPlatform.Contracts.V1.Pipeline;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class PipelineGrpc(IMediator mediator, WorkloadLauncher launcher) : PipelineService.PipelineServiceBase
+public sealed class PipelineGrpc(IMediator mediator) : PipelineService.PipelineServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -63,8 +63,7 @@ public sealed class PipelineGrpc(IMediator mediator, WorkloadLauncher launcher) 
 
     public override async Task<PipelineRun> CancelRun(PipelineRunRef r, ServerCallContext ctx)
     {
-        var (run, jobs) = await mediator.Send(new CancelPipelineRunCommand(G(r.WorkspaceId, "workspace_id"), G(r.RunId, "run_id")), ctx.CancellationToken);
-        foreach (var j in jobs) await launcher.StopJobAsync(j, ctx.CancellationToken);
+        var (run, _) = await mediator.Send(new CancelPipelineRunCommand(G(r.WorkspaceId, "workspace_id"), G(r.RunId, "run_id")), ctx.CancellationToken);
         return ToProto(run);
     }
 

@@ -17,7 +17,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 public sealed record CancelTrialCommand(Guid WorkspaceId, Guid TrialId) : ICommand<(TrialView Trial, Guid? JobId)>;
 
 /// <summary>Marks the trial and its hidden run cancelled (a later job exit does not overwrite it).</summary>
-public sealed class CancelTrialCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CancelTrialCommand, (TrialView Trial, Guid? JobId)>
+public sealed class CancelTrialCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<CancelTrialCommand, (TrialView Trial, Guid? JobId)>
 {
     public async ValueTask<(TrialView Trial, Guid? JobId)> Handle(CancelTrialCommand c, CancellationToken ct)
     {
@@ -26,6 +26,7 @@ public sealed class CancelTrialCommandHandler(IWriteSession db, IClock clock, Wo
         if (t.State is not ("queued" or "running")) throw new PreconditionException("TRACK_TRIAL_FINISHED", "This trial has already finished");
         await db.SetTrialStateAsync(t.Id, c.WorkspaceId, "cancelled", "Stopped on request", clock.UtcNow, ct);
         if (await db.GetRunAsync(t.RunId, ct) is { } run && !RunRules.Finished(run.State)) await db.SetRunStateAsync(run.Id, "cancelled", clock.UtcNow, ct);
+        if (t.JobId is { } job) afterCommit.StopAfterCommit(workloads, job);
         return (await RecipeTrials.ViewAsync(db, (await db.GetTrialAsync(t.Id, c.WorkspaceId, ct))!, null, ct), t.JobId);
     }
 }

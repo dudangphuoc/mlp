@@ -13,7 +13,7 @@ using Empty = MLPlatform.Contracts.V1.Empty;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class SchedulerGrpc(IMediator mediator, LogStore logs, WorkloadLauncher launcher) : SchedulerService.SchedulerServiceBase
+public sealed class SchedulerGrpc(IMediator mediator, LogStore logs) : SchedulerService.SchedulerServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -46,9 +46,6 @@ public sealed class SchedulerGrpc(IMediator mediator, LogStore logs, WorkloadLau
     {
         var ws = G(r.WorkspaceId, "workspace_id"); var id = G(r.JobId, "job_id");
         await mediator.Send(new MLPlatform.ControlPlane.Application.Ops.CancelJobByUserCommand(ws, id), ctx.CancellationToken);
-        // Marks the job cancelled, stops its container (if any) and frees its reservation; a machine that does not answer cannot fail the request.
-        try { await launcher.StopJobAsync(id, CancellationToken.None); }
-        catch (Exception e) when (e is TimeoutException or InvalidOperationException or IOException or ObjectDisposedException) { }
         return ToProto(await mediator.Query(new GetJobQuery(ws, id), ctx.CancellationToken));
     }
 

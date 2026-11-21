@@ -26,6 +26,6 @@ public sealed class ListEvalSamplesQueryHandler(IReadSession db, WorkspaceAuthor
         var v = (await db.GetVersionAsync(e.DatasetVersionId, q.WorkspaceId, ct))!;
         var urls = (await db.ListVersionFilesAsync(v.Id, ct)).ToDictionary(f => f.Path, f => f.Url, StringComparer.Ordinal);
         var rows = await db.ListEvalSamplesAsync(e.Id, q.ErrorsOnly, Math.Max(0, q.Offset), Math.Clamp(q.Limit, 1, 200), ct);
-        return rows.Select(r => (r, Evaluations.FileUrl(s3, v, r.Path, urls.GetValueOrDefault(r.Path), Audience.Public))).ToList();
+        return rows.Select(r => (r, DatasetFileUrls.For(s3, v, r.Path, urls.GetValueOrDefault(r.Path), Audience.Public))).ToList();
     }
 }

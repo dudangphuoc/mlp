@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Application.Labeling;
 using MLPlatform.ControlPlane.Infrastructure;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;

@@ -23,7 +23,7 @@ public sealed class PlanEvaluationQueryHandler(IReadSession db, S3Client s3) : I
         var v = await db.GetVersionAsync(e.DatasetVersionId, e.WorkspaceId, ct) ?? throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found");
         var files = await db.ListVersionFilesAsync(v.Id, ct);
         var urls = files.ToDictionary(f => f.Path, f => f.Url, StringComparer.Ordinal);
-        string Url(string p) => Evaluations.FileUrl(s3, v, p, urls.GetValueOrDefault(p), Audience.Internal);
+        string Url(string p) => DatasetFileUrls.For(s3, v, p, urls.GetValueOrDefault(p), Audience.Internal);
         var classes = Evaluations.Classes((await db.GetCurrentSchemaAsync(v.DatasetId, ct))?.Classes);
         var specs = EvalMath.FindSamples(mv.Task, urls.Keys, e.PathFilter);
         // COCO ground truth: one annotations json (preferring one whose path matches the filter, e.g. val/annotations.json).

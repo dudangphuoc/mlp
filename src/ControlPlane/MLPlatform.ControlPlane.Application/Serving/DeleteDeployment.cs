@@ -16,7 +16,7 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 public sealed record DeleteDeploymentCommand(Guid WorkspaceId, Guid DeploymentId) : ICommand<bool>;
 
 /// <summary>Refuses while running; otherwise removes the deployment's rows in every module.</summary>
-public sealed class DeleteDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<DeleteDeploymentCommand, bool>
+public sealed class DeleteDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<DeleteDeploymentCommand, bool>
 {
     public async ValueTask<bool> Handle(DeleteDeploymentCommand c, CancellationToken ct)
     {
@@ -29,6 +29,7 @@ public sealed class DeleteDeploymentCommandHandler(IWriteSession db, WorkspaceAu
         await MLPlatform.ControlPlane.Application.Features.FeatureSql.DeleteDeploymentBindingAsync(db, d.Id, ct);
         await MLPlatform.ControlPlane.Application.Registry.RegistrySql.ForgetDeploymentAsync(db, d.Id, ct);
         await db.DeleteDeploymentAsync(d.Id, ct);
+        if (d.JobId is { } job && d.State == "failed") afterCommit.StopAfterCommit(workloads, job);
         return true;
     }
 }

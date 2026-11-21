@@ -17,7 +17,7 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 public sealed record CancelJobByUserCommand(Guid WorkspaceId, Guid JobId) : ICommand<JobRow>;
 
 /// <summary>Routes the cancel to the job's owner so its page shows the same outcome; a job without an owner is just cancelled.</summary>
-public sealed class CancelJobByUserCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IMediator mediator) : ICommandHandler<CancelJobByUserCommand, JobRow>
+public sealed class CancelJobByUserCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IMediator mediator, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<CancelJobByUserCommand, JobRow>
 {
     public async ValueTask<JobRow> Handle(CancelJobByUserCommand c, CancellationToken ct)
     {
@@ -35,6 +35,7 @@ public sealed class CancelJobByUserCommandHandler(IWriteSession db, WorkspaceAut
         }
         else if (await db.GetDeploymentByJobAsync(job.Id, ct) is { State: not "stopped" } dep) await mediator.Send(new StopDeploymentCommand(c.WorkspaceId, dep.Id), ct);
         else if (await db.GetServerByJobAsync(job.Id, ct) is { State: not ("stopped" or "stopping") } nb) await mediator.Send(new StopNotebookCommand(c.WorkspaceId, nb.Id), ct);
+        afterCommit.StopAfterCommitTolerant(workloads, job.Id);
         return job;
     }
 }

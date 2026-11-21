@@ -35,6 +35,8 @@ public static class ApiServices
         s.AddScoped<CurrentUser>();
         s.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<CurrentUser>());
         s.AddScoped<IRequestBehavior, MLPlatform.ControlPlane.Application.Common.ReadReleaseBehavior>();
+        s.AddScoped<AfterCommitQueue>();
+        s.AddScoped<MLPlatform.Cqrs.IAfterCommit>(sp => sp.GetRequiredService<AfterCommitQueue>());
         s.AddScoped<IRequestBehavior, UnitOfWorkBehavior>();
         s.AddScoped<IRequestBehavior, MLPlatform.ControlPlane.Application.Audit.AuditBehavior>();
         s.AddGeneratedHandlers();
@@ -50,6 +52,7 @@ public static class ApiServices
         s.AddHostedService<AgentListener>();
         s.AddSingleton<RecipeEnvironments>();
         s.AddSingleton<WorkloadLauncher>();
+        s.AddSingleton<MLPlatform.ControlPlane.Application.Scheduling.IWorkloadControl>(sp => sp.GetRequiredService<WorkloadLauncher>());
         s.AddSingleton<ReservationKeeper>();
         s.AddHttpClient<MLPlatform.Ray.RayJobsClient>(c => c.BaseAddress = new Uri(cfg["Ray:DashboardUrl"] ?? "http://127.0.0.1:8265/"));
         s.AddHostedService<SchedulerLoop>();

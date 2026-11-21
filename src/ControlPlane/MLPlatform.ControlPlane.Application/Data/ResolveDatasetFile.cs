@@ -21,7 +21,7 @@ public sealed class ResolveDatasetFileQueryHandler(IReadSession db, WorkspaceAut
         var row = (await db.FindFilesByPathAsync(q.VersionId, q.DatasetId, [q.Path], ct)).FirstOrDefault()
                   ?? throw new NotFoundException("DATA_FILE_NOT_FOUND", "File not found in this dataset");
         var url = version is not null
-            ? Registry.Evaluations.FileUrl(s3, version, row.Path, row.Url, Audience.Internal)
+            ? DatasetFileUrls.For(s3, version, row.Path, row.Url, Audience.Internal)
             : s3.Presign(HttpMethod.Get, Buckets.Datasets, Buckets.Raw(q.WorkspaceId, q.DatasetId) + row.Path, TimeSpan.FromMinutes(10), Audience.Internal);
         return (url, row.SizeBytes);
     }

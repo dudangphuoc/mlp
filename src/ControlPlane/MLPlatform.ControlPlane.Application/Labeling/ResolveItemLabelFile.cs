@@ -23,9 +23,9 @@ public sealed class ResolveItemLabelFileQueryHandler(IReadSession db, LabelAcces
         if ((await db.ListAnnotationsAsync(p.DatasetId, q.Path, ct)).Count > 0) return null;
         var v = await db.GetVersionAsync(vid, q.WorkspaceId, ct);
         if (v is null) return null;
-        var found = await db.FindFilesByPathAsync(vid, p.DatasetId, [.. LabelSeeding.YoloCandidates(q.Path)], ct);
-        var order = LabelSeeding.YoloCandidates(q.Path);
+        var found = await db.FindFilesByPathAsync(vid, p.DatasetId, [.. YoloLabelFiles.CandidatesFor(q.Path)], ct);
+        var order = YoloLabelFiles.CandidatesFor(q.Path);
         var hit = found.OrderBy(f => order.ToList().IndexOf(f.Path)).FirstOrDefault();
-        return hit is null ? null : Registry.Evaluations.FileUrl(s3, v, hit.Path, hit.Url, Audience.Internal);
+        return hit is null ? null : DatasetFileUrls.For(s3, v, hit.Path, hit.Url, Audience.Internal);
     }
 }

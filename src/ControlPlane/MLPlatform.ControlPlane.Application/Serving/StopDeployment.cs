@@ -14,13 +14,14 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 public sealed record StopDeploymentCommand(Guid WorkspaceId, Guid DeploymentId) : ICommand<DeploymentRow>;
 
-public sealed class StopDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<StopDeploymentCommand, DeploymentRow>
+public sealed class StopDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopDeploymentCommand, DeploymentRow>
 {
     public async ValueTask<DeploymentRow> Handle(StopDeploymentCommand c, CancellationToken ct)
     {
         await auth.RequireAsync(c.WorkspaceId, "deployment.manage", ct);
         var d = await db.GetDeploymentAsync(c.DeploymentId, c.WorkspaceId, ct) ?? throw new NotFoundException("SERVE_NOT_FOUND", "Deployment not found");
         await db.SetDeploymentStateAsync(d.Id, "stopped", "Stopped by user", null, ct);
+        if (d.JobId is { } job) afterCommit.StopAfterCommit(workloads, job);
         return d with { State = "stopped" };
     }
 }
