@@ -3,6 +3,7 @@
 #   deploy/verify/verify.sh up     — start infrastructure, build api, apply migrations
 #   deploy/verify/verify.sh test   — reset identity data, start the api, run every integration scenario
 #   deploy/verify/verify.sh toy    — rebuild the test recipe image mlp-test/toy-recipe:dev from the current shim and fixtures
+#   deploy/verify/verify.sh api    — start the api for UI checks (admin account from deploy/compose/.env)
 #   deploy/verify/verify.sh down   — stop the api/agent started here and remove the mlp-verify project (volumes kept unless DOWN_ALL=1)
 # Never touches the dev stack: different project, network, container names, ports and state folder.
 set -euo pipefail
@@ -117,7 +118,15 @@ down() {
   if [ "${DOWN_ALL:-0}" = 1 ]; then "${COMPOSE[@]}" down -v; else "${COMPOSE[@]}" down; fi
 }
 
+api_for_ui() {
+  local envf="$ROOT/deploy/compose/.env"
+  export MLP__Admin__Email="$(sed -n 's/^MLP_ADMIN_EMAIL=//p' "$envf" | head -1)" MLP__Admin__Password="$(sed -n 's/^MLP_ADMIN_PASSWORD=//p' "$envf" | head -1)"
+  (cd "$ROOT" && nice -n 19 dotnet build src/Hosts/MLPlatform.Api -m:1 -v q -clp:ErrorsOnly)
+  start_api
+  echo "api on http://127.0.0.1:5091 (web: MLP_API_WEB=http://127.0.0.1:5091)"
+}
+
 case "${1:-}" in
-  up) up ;; test) test_all ;; toy) toy ;; down) down ;;
+  up) up ;; test) test_all ;; toy) toy ;; api) api_for_ui ;; down) down ;;
   *) echo "Usage: $0 up|test|down"; exit 2 ;;
 esac

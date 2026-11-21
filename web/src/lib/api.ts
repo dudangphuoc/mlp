@@ -24,7 +24,7 @@ import { HubService } from "../gen/mlplatform/v1/hub_pb";
 import { SettingsService } from "../gen/mlplatform/v1/settings_pb";
 import { AiService } from "../gen/mlplatform/v1/ai_pb";
 
-const transport = createGrpcWebTransport({
+export const transport = createGrpcWebTransport({
   baseUrl: window.location.origin,
   fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
 });

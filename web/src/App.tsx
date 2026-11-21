@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { Command } from "cmdk";
-import {
+import { Braces,
   Activity, Boxes, BrainCircuit, Menu as Menu2, Gauge, ChevronRight, ChevronsUpDown, Database, FlaskConical, Languages, LayoutDashboard, LibraryBig, ListChecks, Moon,
   NotebookPen, PanelLeftClose, PanelLeftOpen, Rocket, Search, Server, Settings, SlidersHorizontal, Sun, Table2, Tags, Workflow,
   type LucideIcon,
@@ -29,6 +29,7 @@ import { Annotator, LabelingPage, LabelingProjectPage } from "./pages/Labeling";
 import { NotebookPage, NotebooksPage } from "./pages/Notebooks";
 import { NotificationBell } from "./pages/Notifications";
 import { SettingsPage } from "./pages/Settings";
+import { ApiExplorerPage } from "./pages/ApiExplorer";
 import { SweepPage, SweepsPage } from "./pages/Sweeps";
 import { DeploymentMonitorPage } from "./pages/Monitoring";
 import { PipelineRunPage, PipelinesPage } from "./pages/Pipelines";
@@ -67,7 +68,9 @@ const GROUPS: NavGroup[] = [
     { key: "fleet", label: "Machines", icon: Server },
     { key: "ai", label: "AI models", icon: BrainCircuit },
     { key: "status", label: "System status", icon: Activity }] },
-  { label: "Settings", icon: Settings, subs: [{ key: "settings", label: "Settings", icon: Settings }] },
+  { label: "Settings", icon: Settings, subs: [
+    { key: "settings", label: "Settings", icon: Settings },
+    { key: "api", label: "API", icon: Braces }] },
 ];
 const groupOf = (key: string) => GROUPS.find((g) => g.subs.some((s) => s.key === key)) ?? GROUPS[0];
 const subOf = (key: string) => groupOf(key).subs.find((s) => s.key === key) ?? GROUPS[0].subs[0];
@@ -318,6 +321,7 @@ function Page({ ws, parts, go, me }: { ws: string; parts: string[]; go: (p: stri
     case "pipelines": return a === "runs" && b ? <PipelineRunPage ws={ws} id={b} onBack={() => go("pipelines")} /> : <PipelinesPage ws={ws} onRun={(id) => go(`pipelines/runs/${id}`)} />;
     case "sweeps": return a ? <SweepPage ws={ws} id={a} onBack={() => go("sweeps")} /> : <SweepsPage ws={ws} onOpen={(id) => go(`sweeps/${id}`)} />;
     case "settings": return <SettingsPage ws={ws} me={me} go={go} />;
+    case "api": return <ApiExplorerPage ws={ws} myRole={me.workspaces.find((w) => w.workspaceId === ws)?.role ?? "viewer"} />;
     case "notebooks": return a ? <NotebookPage ws={ws} id={a} onBack={() => go("notebooks")} /> : <NotebooksPage ws={ws} onOpen={(id) => go(`notebooks/${id}`)} />;
     case "labeling":
       if (a && (b === "annotate" || b === "review")) return <Annotator key={a + b} ws={ws} projectId={a} review={b === "review"} onExit={() => go(`labeling/${a}`)} />;
