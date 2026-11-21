@@ -14,7 +14,7 @@ if [[ " $* " == *" --accept-proto "* ]]; then (cd proto && "$BUF" build -o ../ga
 if (cd proto && "$BUF" lint); then ok "buf lint"; else fail "buf lint"; fi
 if (cd proto && "$BUF" breaking --against ../gates/proto-baseline.binpb); then ok "buf breaking (against gates/proto-baseline.binpb)"; else fail "buf breaking (against gates/proto-baseline.binpb)"; fi
 nice -n 19 dotnet build tools/MLPlatform.SqlGate -m:1 -v q >/dev/null
-if dotnet tools/MLPlatform.SqlGate/bin/Debug/net10.0/mlp-sqlgate.dll "$ROOT"; then ok "SqlGate + CommentGate + migration"; else fail "SqlGate + CommentGate + migration"; fi
+if dotnet tools/MLPlatform.SqlGate/bin/Debug/net11.0/mlp-sqlgate.dll "$ROOT"; then ok "SqlGate + CommentGate + migration"; else fail "SqlGate + CommentGate + migration"; fi
 if nice -n 19 dotnet build MLPlatform.slnx -m:1 -v q -warnaserror >/dev/null; then ok "build -warnaserror"; else fail "build -warnaserror"; fi
 if (cd web && npx tsc --noEmit -p tsconfig.json); then ok "tsc web"; else fail "tsc web"; fi
 if [[ " $* " == *" --aot "* ]]; then

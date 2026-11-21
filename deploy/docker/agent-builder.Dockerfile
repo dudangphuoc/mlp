@@ -1,6 +1,6 @@
 # agent-builder (plug-and-play): keeps the agent (and mlp-shim) source in the control plane, builds mlp-agent for the RID of each plugged-in machine, then caches it.
 # Native AOT for the RID matching the builder's architecture (linux glibc); other RIDs → self-contained single-file (no cross toolchain needed).
-FROM mcr.microsoft.com/dotnet/sdk:10.0
+FROM mcr.microsoft.com/dotnet/sdk:11.0
 RUN apt-get update && apt-get install -y --no-install-recommends clang zlib1g-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY global.json nuget.config Directory.Build.props Directory.Packages.props BannedSymbols.txt ./

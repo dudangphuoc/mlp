@@ -1,6 +1,6 @@
 # MLPlatform backend — kế hoạch refactor
 
-Trạng thái: **kế hoạch, chờ chủ dự án duyệt**. Chưa sửa dòng code nào.
+Trạng thái: **đã duyệt 2026-11-21** (chủ dự án đồng ý cả 6 câu ở mục 7). Đã xong: 0.0 (nâng .NET 11 / C# 15) và 0.1 (git). Hướng dẫn C# 15 cho mọi bước: skill `.claude/skills/csharp-15/SKILL.md`.
 Ngày đo: 2026-11-21. Phạm vi: backend .NET 10 (`src/`, `tools/`), gate, docs sinh từ code, và trang API explorer ở `web/`.
 
 Bản kế hoạch này đã qua ba reviewer độc lập, chỉ đọc code (kiến trúc; red-team vận hành kèm đối chiếu số liệu; UX). Mục 8 ghi lại những gì đã sửa theo góp ý và những điểm tôi tự kiểm lại trong code.
@@ -530,7 +530,8 @@ Project này chỉ cần `Microsoft.Extensions.Hosting` và `Http`, cùng kiểu
 
 | Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
 |---|---|---|---|---|
-| 0.1 | toàn repo | **Repo chưa có git.** Điều kiện tiên quyết là `git init`, kiểm `.gitignore` (`.env`, `.dev/`, `bin/`, `obj/`), commit nền, rồi mỗi bước một commit. Cần chủ dự án đồng ý. | không có cách hoàn tác thật | `git status` sạch |
+| 0.0 ✅ | toàn repo | **Nâng .NET 10 → .NET 11 (SDK 11.0.100 GA), C# 15** (`LangVersion 15.0`): `global.json`, `Directory.Build.props`, gói (gRPC 2.85, Npgsql 11, OpenTelemetry 1.21, Microsoft.Extensions 11), bỏ 4 tham chiếu `*.Abstractions` (NU1510: đã có trong framework), bỏ `NuGetAuditSuppress` của SDK 10, Dockerfile `sdk:11.0` + `runtime-deps:11.0-resolute-chiseled`, CI, script. | breaking change .NET 11 (skill mục 10) | build `-warnaserror` 0 lỗi 0 cảnh báo; `buf lint/breaking`; AOT publish api |
+| 0.1 ✅ | toàn repo | **Repo chưa có git.** Điều kiện tiên quyết là `git init`, kiểm `.gitignore` (`.env`, `.dev/`, `bin/`, `obj/`), commit nền, rồi mỗi bước một commit. Cần chủ dự án đồng ý. | không có cách hoàn tác thật | `git status` sạch |
 | 0.2 | `deploy/compose`, `deploy/dev` | stack kiểm chứng riêng: compose project `mlp-verify`, port, volume và tên container riêng, Postgres, S3 và Ray cục bộ, api chạy từ source ở port riêng. `stack.sh` nhận `MLP_VERIFY=1` để không bao giờ chạm project `mlplatform`. | xung đột port với `mlp-wg-dev` (5080/5081/7443) | chạy scenario khi stack dev vẫn chạy, rồi `docker ps` cho thấy container dev không đổi |
 | 0.3 | `Api/Program.cs` | lệnh `mlp-api describe --json`: dựng host với config giả, không chạy server và **không chạy startup task**. Xuất method gRPC, route REST kèm verb và metadata, danh sách DI theo thứ tự, hosted service theo thứ tự, catalog `Requests`. | | `artifacts/surface/baseline.json` |
 | 0.4 | `tools/MLPlatform.SqlGate`, `gates/` | đổi tên thành CodeGate. **Tắt MLPDOC001 ngay** (cần chủ dự án đồng ý, vì đi ngược luật "không thêm baseline"). Khoá baseline của các rule còn lại theo symbol hoặc tên query thay vì đường dẫn file. Thêm `--metrics` để tái tạo các bảng ở mục 1. | | số liệu khớp mục 1 |
@@ -594,7 +595,18 @@ Khi gặp phụ thuộc "ngược lên", chọn cách xử lý theo thứ tự �
 |---|---|---|---|---|
 | 5.1 | theo module, dựa trên kho comment ở 0.5 | phân loại từng comment: (a) thừa → xoá; (b) giải thích "cái gì" → đổi tên, trích method, đặt hằng có tên, tạo type; (c) giải thích "tại sao" → đưa vào tên (ví dụ `ReholdReservationsLostByRayRestart`) hoặc tên scenario; (d) tham chiếu spec → trường `spec` của module trong `modules.json` (docs sinh ra sẽ link tới cookbook) | mất tri thức | duyệt mẫu theo từng module |
 | 5.2 | các method dài | trích method giữ nguyên hành vi: `AdvancePipelineRunCommandHandler` (~260 dòng), `WorkloadLauncher` (~300), `AiRuntime`, `Shim/Runner`, `HfHub`. Làm cùng lúc với 5.1, mỗi file chỉ động vào một lần. | trung bình | scenario |
+| 5.4 | theo module, cùng lần chạm với 5.1–5.2 | áp dụng C# 15 theo checklist của skill `csharp-15` (mục 11): họ record trừu tượng nội bộ → `closed` (bỏ nhánh `_ => throw`); kết quả "một trong N" (tuple `(trial, job?)`, `ChatReply`/`DecisionReply`, bước pipeline) → `union` với case là record class; collection biết trước kích thước → `[with(capacity: n), ..]`; vòng lồng thoát bằng cờ/`goto` → `break`/`continue` có nhãn (IDE0410 bật mức lỗi); backing field chỉ để kiểm tra → `field`; nhóm extension → khối `extension` (kể cả extension indexer cho `JsonObject`/config). Không dùng tính năng preview (`unsafe(...)`, `safe`). | đổi chữ ký public | build + snapshot + scenario |
 | 5.3 | toàn bộ C# viết tay | tool Roslyn xoá hết trivia comment còn lại. Thêm `MLPCODE001`: cấm comment trong C# viết tay, trừ `obj/` và file sinh. Giữ directive `#pragma`. Không đụng `.sql` (dòng `-- mlp:query` là cú pháp) và proto. Đổi comment tiếng Việt trong `Directory.Build.props` sang tiếng Anh. | | build + gate xanh |
+
+### Phase 5b — Hiệu năng (M, đo trước rồi mới sửa)
+
+| Bước | Phạm vi | Cách làm | Rủi ro | Kiểm chứng |
+|---|---|---|---|---|
+| 5b.1 | `tools/MLPlatform.Benchmarks` (mới), stack kiểm chứng | đo nền: BenchmarkDotNet (chạy `nice`, một core) cho đường nóng — `SchedulerLoop.TickAsync` (chọn host), gateway predict (parse body, gọi model server, ghi prediction log), khung agent (`AgentProtocol/Framing`), hàng đợi label (`SKIP LOCKED`), `StreamBroker`, ánh xạ proto `ToProto`; thêm thời gian từng scenario, RSS và thời gian khởi động của api AOT | số đo nhiễu khi máy bận | lưu `artifacts/perf/baseline.json` |
+| 5b.2 | `Directory.Build.props` | thử **runtime async** của .NET 11 (`<Features>runtime-async=on</Features>`): giảm chi phí async cho mọi handler và loop; giữ nếu AOT publish + scenario xanh và số đo không tệ hơn | hành vi stack trace/ExecutionContext | AOT + scenario + so 5b.1 |
+| 5b.3 | đường nóng đo được ở 5b.1 | áp dụng API .NET 11 trong skill (mục 9): `FrozenDictionary` cho `Permissions` và catalog setting; `EqualityComparer<T>.Create`; `SearchValues`; `[LoggerMessage]`; `Utf8JsonWriter.Reset` cho writer dùng lại; `Base64.EncodeToUtf8`; `ReadOnlyMemoryStream` thay copy; `[with(capacity)]`; bỏ LINQ trong vòng lặp per-item của scheduler/gateway; union struct có `TryGetValue` khi case là value type | tối ưu sai chỗ | mỗi thay đổi kèm số đo trước/sau; bỏ nếu không nhanh hơn |
+| 5b.4 | `HttpClient` | `SocketsHttpHandler.InitialHttp2MaxConcurrentStreams`/`ShouldEvictConnection` cho client model server và Ray; nén body lớn bằng `ZstandardCompressedContent` khi phía nhận hỗ trợ | tương thích phía nhận | scenario serving |
+| 5b.5 | SQL | dùng số đo DB (`pg_stat_statements` trên stack kiểm chứng) cho các truy vấn nóng; thêm index/sửa truy vấn qua migration mới | migration | scenario + so số đo |
 
 ### Phase 6 — Quyền khai báo, OpenAPI, docs sinh từ code (L)
 
@@ -653,18 +665,21 @@ Khi gặp phụ thuộc "ngược lên", chọn cách xử lý theo thứ tự �
 | 2 | L | 8 | không |
 | 3 | M | 4 | không |
 | 4 | L | 7 | **có** |
-| 5 | M–L | 3 | không (trích method giữ hành vi) |
+| 5 | M–L | 4 | không (trích method, cú pháp C# 15 giữ hành vi) |
+| 5b | M | 5 | có thể (runtime async, tối ưu đường nóng — luôn kèm số đo) |
 | 6 | L | 7 | **có** (6.1) |
 | 7 | M–L | 8 | tính năng mới |
 
-## 7. Câu hỏi cho chủ dự án
+## 7. Quyết định của chủ dự án (2026-11-21: đồng ý cả 6)
 
-1. Cho phép `git init` + commit nền (0.1)?
-2. Cho tắt `MLPDOC001` ngay từ Phase 0 và khoá baseline theo symbol (0.4)?
-3. Đồng ý thêm stack kiểm chứng riêng `mlp-verify` (0.2)?
-4. Đồng ý tách phân tầng làm hai phần: cấu trúc ở Phase 1, gỡ vòng (đổi logic) ở Phase 4 sau khi tách file?
-5. Explorer cho phép gọi lệnh ghi (đã có công tắc và bước xác nhận như 7.4) hay chỉ cho đọc?
-6. `/openapi/v1.json` cần đăng nhập; riêng phần mô tả gateway (predict/feedback) có công khai cho integrator bên ngoài không?
+1. ✅ `git init` + commit nền (đã làm: commit `89f65d2`).
+2. ✅ Tắt `MLPDOC001` ngay từ Phase 0, baseline khoá theo symbol (0.4).
+3. ✅ Thêm stack kiểm chứng riêng `mlp-verify` (0.2).
+4. ✅ Phân tầng làm hai phần: cấu trúc ở Phase 1, gỡ vòng ở Phase 4.
+5. ✅ Explorer cho gọi lệnh ghi, có công tắc và xác nhận hai bước (7.4).
+6. ✅ `/openapi/v1.json` cần đăng nhập; phần mô tả gateway (predict/feedback) công khai.
+
+Yêu cầu thêm cùng ngày: nâng lên .NET 11 / C# 15 (0.0, đã xong), dùng tối đa C# 15 (5.4) và tăng hiệu năng (Phase 5b).
 
 ## 8. Review đã chạy
 

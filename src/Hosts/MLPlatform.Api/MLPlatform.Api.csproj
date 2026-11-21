@@ -17,10 +17,6 @@
     <EmbeddedResource Include="../../../deploy/agent-upgrade/upgrade.ps1" LogicalName="agent-upgrade/upgrade.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The ILCompiler shipped with SDK 10.0.401 is affected by this advisory; remove this line when upgrading to a patched SDK (noted in 50/02 P0-2). -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-p3jp-9v83-76w9" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />

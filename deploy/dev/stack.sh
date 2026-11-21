@@ -105,7 +105,7 @@ seed() {
     docker logs mlp-api-dev 2>&1 | grep -o "mlpb_[a-z0-9]*" | tail -1 > "$STATE/token"
   else api >/dev/null; fi
   (cd "$ROOT" && nice -n 19 dotnet build tools/MLPlatform.Scenarios -m:1 -v q >/dev/null)
-  dotnet "$ROOT/tools/MLPlatform.Scenarios/bin/Debug/net10.0/mlp-scenarios.dll" http://127.0.0.1:5080 "$(cat "$STATE/token")" enroll "${SEED_OS:-windows}" 'C:\mlp\datasets' 'C:\mlp\models' \
+  dotnet "$ROOT/tools/MLPlatform.Scenarios/bin/Debug/net11.0/mlp-scenarios.dll" http://127.0.0.1:5080 "$(cat "$STATE/token")" enroll "${SEED_OS:-windows}" 'C:\mlp\datasets' 'C:\mlp\models' \
     | grep -v '^SESSION' | tee "$STATE/enroll.txt"
   echo "Sign in: ${MLP_ADMIN_EMAIL:-admin@lab.local} / ${MLP_ADMIN_PASSWORD:-mot-mat-khau-dai}"
 }
@@ -131,7 +131,7 @@ test_all() {
   MLP__Admin__Email="" api >/dev/null   # scenarios need an uninitialized instance (tests /setup); on a normal start the api recreates the .env account
   local token; token="$(cat "$STATE/token")"
   (cd "$ROOT" && nice -n 19 dotnet build tools/MLPlatform.Scenarios -m:1 -v q >/dev/null && nice -n 19 dotnet build src/Hosts/MLPlatform.Agent -m:1 -v q >/dev/null)
-  MLP_RAY=1 MLP_AGENT="$ROOT/src/Hosts/MLPlatform.Agent/bin/Debug/net10.0/mlp-agent.dll" \
+  MLP_RAY=1 MLP_AGENT="$ROOT/src/Hosts/MLPlatform.Agent/bin/Debug/net11.0/mlp-agent.dll" \
     nice -n 19 dotnet run --project "$ROOT/tools/MLPlatform.Scenarios" --no-build -- http://127.0.0.1:5080 "$token"
 }
 
