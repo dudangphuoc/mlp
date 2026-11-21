@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # CI gates (P0-11) — run sequentially with little CPU (CLAUDE.md). Red only on NEW violations.
-#   gates/run.sh          — proto lint+breaking, SqlGate/CommentGate/migration, build -warnaserror, tsc web
+#   gates/run.sh          — proto lint+breaking, CodeGate (SQL, migration, comment report), build -warnaserror, tsc web
 #   gates/run.sh --aot    — also run the AOT gate: publish Native AOT api/agent/shim; trim/AOT warnings are errors (~5–10 min on one core)
 #   gates/run.sh --accept-proto  — accept the current proto contract as the new breaking-change baseline (after review)
 set -euo pipefail
@@ -13,8 +13,8 @@ if [[ " $* " == *" --accept-proto "* ]]; then (cd proto && "$BUF" build -o ../ga
 
 if (cd proto && "$BUF" lint); then ok "buf lint"; else fail "buf lint"; fi
 if (cd proto && "$BUF" breaking --against ../gates/proto-baseline.binpb); then ok "buf breaking (against gates/proto-baseline.binpb)"; else fail "buf breaking (against gates/proto-baseline.binpb)"; fi
-nice -n 19 dotnet build tools/MLPlatform.SqlGate -m:1 -v q >/dev/null
-if dotnet tools/MLPlatform.SqlGate/bin/Debug/net11.0/mlp-sqlgate.dll "$ROOT"; then ok "SqlGate + CommentGate + migration"; else fail "SqlGate + CommentGate + migration"; fi
+nice -n 19 dotnet build tools/MLPlatform.CodeGate -m:1 -v q >/dev/null
+if dotnet tools/MLPlatform.CodeGate/bin/Debug/net11.0/mlp-codegate.dll "$ROOT"; then ok "CodeGate"; else fail "CodeGate"; fi
 if nice -n 19 dotnet build MLPlatform.slnx -m:1 -v q -warnaserror >/dev/null; then ok "build -warnaserror"; else fail "build -warnaserror"; fi
 if (cd web && npx tsc --noEmit -p tsconfig.json); then ok "tsc web"; else fail "tsc web"; fi
 if [[ " $* " == *" --aot "* ]]; then
