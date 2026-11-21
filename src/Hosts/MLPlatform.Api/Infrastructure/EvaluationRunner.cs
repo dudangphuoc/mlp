@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Application.Common;
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using Google.Protobuf;
@@ -42,7 +43,7 @@ public sealed class EvaluationRunner(IServiceScopeFactory scopes, ModelServerCli
     private async Task StepAsync(EvaluationRow e, CancellationToken stop)
     {
         await using var scope = scopes.CreateAsyncScope();
-        scope.ServiceProvider.GetRequiredService<CurrentUser>().UserId = e.CreatedBy;   // the engine acts as the requester
+        scope.ServiceProvider.GetRequiredService<CurrentUser>().ActAs(e.CreatedBy);
         var m = scope.ServiceProvider.GetRequiredService<IMediator>();
         try
         {

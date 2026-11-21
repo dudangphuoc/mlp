@@ -5,13 +5,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.Api.Infrastructure;
 
-/// <summary>Per-request principal: Bearer (SDK/CLI) or the `mlp_session` cookie (web); 20/06 §1.</summary>
-public sealed class CurrentUser : ICurrentUser
-{
-    public Guid? UserId { get; set; }
-    public string? SessionTokenHash { get; set; }
-}
-
 public static class AuthMiddleware
 {
     public const string Cookie = "mlp_session";
@@ -28,9 +21,7 @@ public static class AuthMiddleware
             var uid = await sp.GetRequiredService<IReadSession>().GetSessionUserAsync(hash, ctx.RequestAborted);
             if (uid is { } id)
             {
-                var cu = sp.GetRequiredService<CurrentUser>();
-                cu.UserId = id;
-                cu.SessionTokenHash = hash;
+                sp.GetRequiredService<CurrentUser>().SignIn(id, hash);
             }
         }
         await next();

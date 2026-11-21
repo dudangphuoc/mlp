@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Application.Common;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.Api.Infrastructure;
@@ -80,7 +81,7 @@ public sealed class SweepLoop(IServiceScopeFactory scopes, SystemHealth health, 
                 foreach (var s in sweeps)
                 {
                     await using var scope = scopes.CreateAsyncScope();
-                    scope.ServiceProvider.GetRequiredService<CurrentUser>().UserId = s.CreatedBy;
+                    scope.ServiceProvider.GetRequiredService<CurrentUser>().ActAs(s.CreatedBy);
                     try
                     {
                         var n = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new AdvanceSweepCommand(s.WorkspaceId, s.Id), stop);

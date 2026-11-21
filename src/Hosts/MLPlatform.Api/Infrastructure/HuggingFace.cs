@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Application.Common;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -278,7 +279,7 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
             job = await m.Query(new GetHubImportJobQuery(id), ct);
         }
         if (job is not { State: "queued" }) return;
-        scope.ServiceProvider.GetRequiredService<CurrentUser>().UserId = job.CreatedBy;   // same permissions as the user who started the import
+        scope.ServiceProvider.GetRequiredService<CurrentUser>().ActAs(job.CreatedBy);
         var token = job.Source == "hf" ? secrets.Open(await m.Query(new GetHubSecretQuery(job.WorkspaceId), ct)) : null;
         await UpdateAsync(id, "running", job.TargetId, 0, 0, 0, 0, "Listing files");
 

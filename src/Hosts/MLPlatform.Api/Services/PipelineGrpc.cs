@@ -1,3 +1,4 @@
+using MLPlatform.ControlPlane.Application.Common;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MLPlatform.Api.Infrastructure;
@@ -96,7 +97,7 @@ public sealed class PipelineLoop(IServiceScopeFactory scopes, SystemHealth healt
                 foreach (var r in runs)
                 {
                     await using var scope = scopes.CreateAsyncScope();
-                    scope.ServiceProvider.GetRequiredService<CurrentUser>().UserId = r.CreatedBy;
+                    scope.ServiceProvider.GetRequiredService<CurrentUser>().ActAs(r.CreatedBy);
                     try { await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new AdvancePipelineRunCommand(r.WorkspaceId, r.Id), stop); }
                     catch (AppException e) { log.LogWarning("Pipeline run {Run} failed: {Reason} {Msg}", r.Id, e.Reason, e.Message); }
                 }
