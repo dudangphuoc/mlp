@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Timeline;
 using MLPlatform.ControlPlane.Application.Common;
 using MLPlatform.ControlPlane.Application.Data;
 using MLPlatform.ControlPlane.Application.Scheduling;
@@ -9,7 +10,6 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-public sealed record EventRow(Guid Id, DateTimeOffset At, string Source, string ResourceType, Guid? ResourceId, string Kind, string Severity, string Message, string Data);
 public sealed record WorkloadAttemptRow(Guid Id, Guid JobId, string State, Guid WorkspaceId, Guid[] HostIds);
 public sealed record CheckpointRow(Guid Id, Guid AttemptId, Guid HostId, long Step, string Name, string Location, string? S3Key, long SizeBytes, string Sha256, DateTimeOffset CreatedAt);
 public sealed record AttemptDetailRow(Guid Id, int Number, Guid[] HostIds, string State, int? ExitCode, string? ExitReason, string? Message, DateTimeOffset StartedAt,
@@ -19,13 +19,6 @@ public sealed record SuspectRow(Guid Id, Guid JobId, Guid WorkspaceId);
 
 public static partial class OpsSql
 {
-    [SqlQuery("Ops/InsertEvent.sql")]
-    public static partial Task InsertEventAsync(this IWriteSession db, Guid id, DateTimeOffset at, DateTimeOffset now, Guid? workspaceId, string source, string resourceType,
-        Guid? resourceId, string kind, string severity, string message, string data, CancellationToken ct);
-    [SqlQuery("Ops/ListEvents.sql")]
-    public static partial Task<List<EventRow>> ListEventsAsync(this IReadSession db, Guid jobId, CancellationToken ct);
-    [SqlQuery("Ops/JobWorkspace.sql")]
-    public static partial Task<Guid?> JobWorkspaceAsync(this IReadSession db, Guid id, CancellationToken ct);
     [SqlQuery("Ops/AttemptByWorkloadToken.sql")]
     public static partial Task<WorkloadAttemptRow?> AttemptByWorkloadTokenAsync(this IReadSession db, string tokenHash, CancellationToken ct);
     [SqlQuery("Ops/SetProgress.sql")]
@@ -59,14 +52,6 @@ public static partial class OpsSql
 public sealed record RecoveryOptions(TimeSpan Grace);
 
 /// <summary>Records an operational event row (20/10 §2.1) — in the same transaction as the state change that caused it.</summary>
-public static class OpsEvents
-{
-    public static Task EmitAsync(IWriteSession db, IClock clock, Guid? workspaceId, string source, string resourceType, Guid? resourceId, string kind,
-        string severity, string message, JsonObject? data = null, DateTimeOffset? at = null, CancellationToken ct = default) =>
-        db.InsertEventAsync(Ids.New(), at ?? clock.UtcNow, clock.UtcNow, workspaceId, source, resourceType, resourceId, kind, severity, message,
-            (data ?? []).ToJsonString(), ct);
-}
-
 /// <summary>
 /// Authenticates the `mlpj_` workload token with fencing (20/10 §4.5): a token of a replaced/finished attempt → `SCHED_ATTEMPT_FENCED`,
 /// so two copies never write to the same run.
@@ -112,7 +97,7 @@ public sealed class ReportProgressCommandHandler(IWriteSession db, IClock clock,
         await Ops2Sql.ClearSignalLostAsync(db, a.Id, ct);
         if (oldPhase != c.Phase || oldCurrent != c.Current) await Ops2Sql.ProgressChangedAsync(db, a.JobId, clock.UtcNow, ct);
         if (oldPhase != c.Phase)
-            await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "progress.phase", "info",
+            await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "progress.phase", "info",
                 Phases.Label(c.Phase) + (string.IsNullOrEmpty(c.Message) ? "" : ": " + c.Message), new JsonObject { ["phase"] = c.Phase }, ct: ct);
         return true;
     }
@@ -176,7 +161,7 @@ public sealed class RegisterCheckpointCommandHandler(IWriteSession db, IClock cl
         await db.InsertCheckpointAsync(Ids.New(), a.JobId, a.Id, a.HostIds[0], c.Step, Buckets.SafePath(c.Name), c.Location, c.Key, c.SizeBytes, c.Sha256, clock.UtcNow, ct);
         if (replaced?.S3Key is { } oldKey) await s3.DeleteAsync(Buckets.Artifacts, oldKey, ct);
         if (c.Location == "durable")
-            await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "checkpoint.durable", "success",
+            await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "checkpoint.durable", "success",
                 $"Checkpoint at step {c.Step} saved durably ({c.SizeBytes / 1024.0:0.#} KB)", new JsonObject { ["step"] = c.Step, ["name"] = c.Name }, ct: ct);
         if (c.Location == "durable") await CheckpointRetention.PruneAsync(db, s3, a.JobId, ct);
         return true;
@@ -192,7 +177,7 @@ public static class Suspects
     {
         var until = clock.UtcNow + opts.Grace;
         foreach (var s in await db.MarkSuspectAsync(hostId, until, ct))
-            await OpsEvents.EmitAsync(db, clock, s.WorkspaceId, "scheduler", "attempt", s.Id, "attempt.suspect", "warning",
+            await TimelineEvents.EmitAsync(db, clock, s.WorkspaceId, "scheduler", "attempt", s.Id, "attempt.suspect", "warning",
                 $"Machine {hostName} disconnected — waiting for it to return until {until:HH:mm:ss} UTC before moving to another machine", new JsonObject { ["host_id"] = hostId.ToString() }, ct: ct);
     }
 }
@@ -224,7 +209,7 @@ public sealed class ReconcileHostCommandHandler(IWriteSession db, IClock clock) 
             {
                 case "suspect" when alive:
                     await db.ReviveAttemptAsync(a.Id, ct);
-                    await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, $"agent:{c.HostId}", "attempt", a.Id, "attempt.reattached", "success",
+                    await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, $"agent:{c.HostId}", "attempt", a.Id, "attempt.reattached", "success",
                         "Agent is back and the container is still running — continuing with nothing lost", ct: ct);
                     break;
                 case "suspect":
@@ -236,7 +221,7 @@ public sealed class ReconcileHostCommandHandler(IWriteSession db, IClock clock) 
                     if (alive)
                     {
                         stop.Add(a.Id);
-                        await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "attempt", a.Id, "attempt.fenced", "warning",
+                        await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "attempt", a.Id, "attempt.fenced", "warning",
                             "Previous machine is back but the run attempt was replaced — stopping the old container", ct: ct);
                     }
                     break;
@@ -275,7 +260,7 @@ public sealed class ResolveResumeCommandHandler(IWriteSession db, IClock clock, 
                 $"step {durableTop} (durable copy in storage: {string.Join(", ", durable.Select(x => x.Name))})");
         else return null;
         await db.SetResumedFromAsync(c.AttemptId, label, ct);
-        await OpsEvents.EmitAsync(db, clock, ws, "scheduler", "attempt", c.AttemptId, "attempt.resumed", "info", "Resuming from checkpoint " + label, ct: ct);
+        await TimelineEvents.EmitAsync(db, clock, ws, "scheduler", "attempt", c.AttemptId, "attempt.resumed", "info", "Resuming from checkpoint " + label, ct: ct);
         return value;
     }
 }
@@ -292,7 +277,7 @@ public sealed class ResumeJobCommandHandler(IWriteSession db, IClock clock, Work
         if (job.State != "failed") throw new PreconditionException("SCHED_NOT_FAILED", "Only failed jobs can be resumed");
         if ((await db.ListCheckpointsAsync(job.Id, ct)).Count == 0) throw new NotFoundException("SCHED_CHECKPOINT_NOT_FOUND", "No checkpoint to resume from");
         await db.ResumeJobAsync(job.Id, c.WorkspaceId, "Manually resumed from checkpoint", clock.UtcNow, ct);
-        await OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "job", job.Id, "job.resume_requested", "info", "User requested resume from checkpoint", ct: ct);
+        await TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "job", job.Id, "job.resume_requested", "info", "User requested resume from checkpoint", ct: ct);
         return true;
     }
 }
@@ -310,6 +295,6 @@ public sealed class GetJobOpsQueryHandler(IReadSession db, WorkspaceAuthorizer a
         await auth.RequireAsync(q.WorkspaceId, "run.read", ct);
         _ = await db.GetJobAsync(q.JobId, q.WorkspaceId, ct) ?? throw new NotFoundException("SCHED_JOB_NOT_FOUND", "Job not found");
         return new JobOpsView(await db.JobProgressAsync(q.JobId, q.WorkspaceId, ct), await db.JobAttemptsAsync(q.JobId, ct),
-            await db.ListCheckpointsAsync(q.JobId, ct), await db.ListEventsAsync(q.JobId, ct));
+            await db.ListCheckpointsAsync(q.JobId, ct), await db.ListTimelineEventsAsync(q.JobId, ct));
     }
 }

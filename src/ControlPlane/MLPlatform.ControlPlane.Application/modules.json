@@ -1,10 +1,10 @@
 {
   "layers": ["Kernel", "Foundation", "Core", "Products", "Orchestration"],
   "modules": {
-    "Common":        { "layer": "Kernel",        "sql": [],                       "spec": "cookbook/40-module/M01-iam.md" },
-    "Timeline":      { "layer": "Kernel",        "sql": [],                       "spec": "cookbook/40-module/M03-scheduler.md" },
-    "Notifications": { "layer": "Kernel",        "sql": ["Notify"],               "spec": "cookbook/40-module/M16-notifications.md" },
-    "Audit":         { "layer": "Kernel",        "sql": ["Audit"],                "spec": "cookbook/40-module/M06-lineage-audit.md" },
+    "Common":        { "layer": "Kernel",        "sql": [], "publicSql": true,                       "spec": "cookbook/40-module/M01-iam.md" },
+    "Timeline":      { "layer": "Kernel",        "sql": [], "publicSql": true,                       "spec": "cookbook/40-module/M03-scheduler.md" , "uses": ["Common"] },
+    "Notifications": { "layer": "Kernel",        "sql": ["Notify"],               "spec": "cookbook/40-module/M16-notifications.md" , "uses": ["Common"] },
+    "Audit":         { "layer": "Kernel",        "sql": ["Audit"],                "spec": "cookbook/40-module/M06-lineage-audit.md" , "uses": ["Common"] },
     "Identity":      { "layer": "Foundation",    "sql": ["Identity"],             "spec": "cookbook/40-module/M01-iam.md" },
     "Platform":      { "layer": "Foundation",    "sql": ["Platform"],             "spec": "cookbook/40-module/M01-iam.md", "uses": ["Identity"] },
     "Catalog":       { "layer": "Foundation",    "sql": ["Catalog"],              "spec": "cookbook/40-module/M17-model-catalog.md" },

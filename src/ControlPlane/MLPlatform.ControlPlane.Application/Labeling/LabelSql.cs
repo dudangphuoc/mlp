@@ -37,12 +37,12 @@ public static partial class LabelSql
     [SqlQuery("Label/GetSchemaVersion.sql")]
     public static partial Task<SchemaRow?> GetSchemaVersionAsync(this IReadSession db, Guid datasetId, int version, CancellationToken ct);
     [SqlQuery("Label/InsertProject.sql")]
-    public static partial Task InsertProjectAsync(this IWriteSession db, Guid id, Guid workspaceId, Guid datasetId, string name, string guidelineMd,
+    public static partial Task InsertLabelProjectAsync(this IWriteSession db, Guid id, Guid workspaceId, Guid datasetId, string name, string guidelineMd,
         int schemaVersion, string reviewMode, int lockTtlMin, Guid createdBy, DateTimeOffset now, Guid? versionId, double autoAcceptThreshold, CancellationToken ct);
     [SqlQuery("Label/GetProject.sql")]
-    public static partial Task<ProjectRow?> GetProjectAsync(this IReadSession db, Guid id, Guid workspaceId, CancellationToken ct);
+    public static partial Task<ProjectRow?> GetLabelProjectAsync(this IReadSession db, Guid id, Guid workspaceId, CancellationToken ct);
     [SqlQuery("Label/ListProjects.sql")]
-    public static partial Task<List<ProjectRow>> ListProjectsAsync(this IReadSession db, Guid workspaceId, Guid? datasetId, CancellationToken ct);
+    public static partial Task<List<ProjectRow>> ListLabelProjectsAsync(this IReadSession db, Guid workspaceId, Guid? datasetId, CancellationToken ct);
     [SqlQuery("Label/SetProjectState.sql")]
     public static partial Task SetProjectStateAsync(this IWriteSession db, Guid id, string state, CancellationToken ct);
     [SqlQuery("Label/SeedItems.sql")]
@@ -103,7 +103,7 @@ public static partial class LabelSql
     [SqlQuery("Label/ListComments.sql")]
     public static partial Task<List<CommentRow>> ListCommentsAsync(this IReadSession db, Guid projectId, string path, CancellationToken ct);
     [SqlQuery("Label/ProjectStats.sql")]
-    public static partial Task<List<StatRow>> ProjectStatsAsync(this IReadSession db, Guid projectId, CancellationToken ct);
+    public static partial Task<List<StatRow>> LabelProjectStatsAsync(this IReadSession db, Guid projectId, CancellationToken ct);
     [SqlQuery("Label/ListMyItems.sql")]
     public static partial Task<List<MyItemRow>> ListMyItemsAsync(this IReadSession db, Guid projectId, Guid userId, CancellationToken ct);
     [SqlQuery("Label/ProjectSummaries.sql")]

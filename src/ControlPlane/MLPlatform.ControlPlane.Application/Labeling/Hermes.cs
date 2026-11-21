@@ -143,7 +143,7 @@ public sealed class SetHermesSettingsCommandHandler(IWriteSession db, LabelAcces
             await access.LoadAsync(c.WorkspaceId, c.ProjectId, "labeling.manage", ct);   // not a Lead → needs the workspace right
         if (c.Threshold is < 0 or > 1) throw LabelRules.Invalid("threshold", "Threshold must be between 0 and 1");
         await db.SetHermesSettingsAsync(p.Id, p.WorkspaceId, c.Enabled, Math.Round(c.Threshold, 3), ct);
-        return (await db.GetProjectAsync(p.Id, p.WorkspaceId, ct))!;
+        return (await db.GetLabelProjectAsync(p.Id, p.WorkspaceId, ct))!;
     }
 }
 

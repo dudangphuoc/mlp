@@ -34,7 +34,7 @@ public static partial class TuneSql
     [SqlQuery("Tune/SetBest.sql")]
     public static partial Task SetBestAsync(this IWriteSession db, Guid id, int? bestTrial, double? bestValue, CancellationToken ct);
     [SqlQuery("Tune/InsertTrial.sql")]
-    public static partial Task InsertTrialAsync(this IWriteSession db, Guid sweepId, int number, string trialParams, Guid? runId, string state, string? error,
+    public static partial Task InsertSweepTrialAsync(this IWriteSession db, Guid sweepId, int number, string trialParams, Guid? runId, string state, string? error,
         DateTimeOffset now, CancellationToken ct);
     [SqlQuery("Tune/ListTrials.sql")]
     public static partial Task<List<TrialRow>> ListTrialsAsync(this IReadSession db, Guid sweepId, CancellationToken ct);
@@ -243,11 +243,11 @@ public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, I
             {
                 var run = await mediator.Send(new StartTrainingCommand(s.WorkspaceId, s.ProjectId, $"{s.Name}-t{n}", s.Recipe, s.Variant, s.Task,
                     paramsJson, false, s.Cpus, s.Gpus, s.ImageOverride, s.Network, s.DatasetVersionId), ct);
-                await db.InsertTrialAsync(s.Id, n, paramsJson, run.Id, "queued", null, clock.UtcNow, ct);
+                await db.InsertSweepTrialAsync(s.Id, n, paramsJson, run.Id, "queued", null, clock.UtcNow, ct);
             }
             catch (AppException e)
             {
-                await db.InsertTrialAsync(s.Id, n, paramsJson, null, "failed", $"{e.Reason}: {e.Message}", clock.UtcNow, ct);
+                await db.InsertSweepTrialAsync(s.Id, n, paramsJson, null, "failed", $"{e.Reason}: {e.Message}", clock.UtcNow, ct);
                 active--;
             }
             launched++;

@@ -321,7 +321,7 @@ public sealed class DeleteDeploymentCommandHandler(IWriteSession db, WorkspaceAu
         var d = await db.GetDeploymentAsync(c.DeploymentId, c.WorkspaceId, ct) ?? throw new NotFoundException("SERVE_NOT_FOUND", "Deployment not found");
         if (d.State is not ("stopped" or "failed")) throw new PreconditionException("SERVE_RUNNING", "Stop the deployment first");
         // Each module drops what it keeps about the deployment; one write session = one transaction.
-        await MLPlatform.ControlPlane.Application.Monitoring.MonitorSql.DeleteDeploymentDataAsync(db, d.Id, ct);
+        await MLPlatform.ControlPlane.Application.Monitoring.MonitorSql.DeleteMonitorDeploymentDataAsync(db, d.Id, ct);
         await MLPlatform.ControlPlane.Application.LlmOps.LlmSql.DeleteDeploymentDataAsync(db, d.Id, ct);
         await MLPlatform.ControlPlane.Application.Features.FeatureSql.DeleteDeploymentBindingAsync(db, d.Id, ct);
         await MLPlatform.ControlPlane.Application.Registry.RegistrySql.ForgetDeploymentAsync(db, d.Id, ct);

@@ -39,7 +39,7 @@ public static partial class PipelineSql
     [SqlQuery("Pipeline/SetPipelineEnabled.sql")]
     public static partial Task SetPipelineEnabledAsync(this IWriteSession db, Guid id, bool enabled, DateTimeOffset now, CancellationToken ct);
     [SqlQuery("Pipeline/InsertRun.sql")]
-    public static partial Task<int> InsertRunAsync(this IWriteSession db, Guid id, Guid pipelineId, Guid workspaceId, string runParams, string trigger,
+    public static partial Task<int> InsertPipelineRunAsync(this IWriteSession db, Guid id, Guid pipelineId, Guid workspaceId, string runParams, string trigger,
         Guid createdBy, DateTimeOffset now, CancellationToken ct);
     [SqlQuery("Pipeline/GetRun.sql")]
     public static partial Task<PipelineRunRow?> GetPipelineRunAsync(this IReadSession db, Guid id, Guid workspaceId, CancellationToken ct);
@@ -189,7 +189,7 @@ public static partial class PipelineDef
         var (defaults, steps) = Parse(p.Definition);
         foreach (var (k, v) in overrides ?? []) defaults[k] = v?.DeepClone();
         var id = Ids.New();
-        await db.InsertRunAsync(id, p.Id, p.WorkspaceId, defaults.ToJsonString(), trigger, createdBy, clock.UtcNow, ct);
+        await db.InsertPipelineRunAsync(id, p.Id, p.WorkspaceId, defaults.ToJsonString(), trigger, createdBy, clock.UtcNow, ct);
         foreach (var s in steps) await db.InsertStepAsync(id, s.Id, s.Kind, ct);
         return id;
     }

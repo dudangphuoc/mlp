@@ -67,6 +67,4 @@ public static partial class IdentitySql
     public static partial Task CompleteBootstrapAsync(this IWriteSession db, string name, bool allowSignup,
         DateTimeOffset now, CancellationToken ct);
 
-    [SqlQuery("Identity/GetMemberRole.sql")]
-    public static partial Task<string?> GetMemberRoleAsync(this IReadSession db, Guid workspaceId, Guid userId, CancellationToken ct);
 }

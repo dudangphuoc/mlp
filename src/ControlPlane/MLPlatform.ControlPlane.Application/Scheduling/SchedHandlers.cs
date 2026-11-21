@@ -1,4 +1,5 @@
 using MLPlatform.ControlPlane.Application.Common;
+using MLPlatform.ControlPlane.Application.Timeline;
 using MLPlatform.Cqrs;
 using MLPlatform.Data;
 using MLPlatform.Security;
@@ -20,7 +21,7 @@ public sealed class SubmitJobCommandHandler(IWriteSession db, IClock clock, Work
         if (errors.Count > 0) throw new ValidationException(errors);
         var id = Ids.New();
         await db.InsertJobAsync(id, c.WorkspaceId, c.Kind, c.Name, uid, c.Spec.ToJson(), c.Priority, clock.UtcNow, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "job", id, "job.queued", "info",
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "job", id, "job.queued", "info",
             $"Queued: needs {c.Spec.Nnodes} machines × {c.Spec.Cpus} CPU{(c.Spec.Gpus > 0 ? $", {c.Spec.Gpus} GPU" : "")}", ct: ct);
         return id;
     }
@@ -67,9 +68,9 @@ public sealed class RequeueJobCommandHandler(IWriteSession db, IClock clock) : I
     {
         await db.RequeueJobAsync(c.JobId, c.Reason, ct);
         // Waiting for machines repeats every loop — only record an event when the reason changes (avoid flooding the timeline).
-        var last = (await MLPlatform.ControlPlane.Application.Ops.OpsSql.ListEventsAsync(db, c.JobId, ct)).LastOrDefault();
+        var last = (await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.ListTimelineEventsAsync(db, c.JobId, ct)).LastOrDefault();
         if (last?.Kind != "job.waiting" || last.Message != c.Reason)
-            await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, c.JobId, ct), "scheduler", "job", c.JobId,
+            await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct), "scheduler", "job", c.JobId,
                 "job.waiting", "warning", c.Reason, ct: ct);
         return true;
     }
@@ -88,7 +89,7 @@ public sealed class CreateAttemptCommandHandler(IWriteSession db, IClock clock, 
         await db.InsertAttemptAsync(id, c.JobId, c.Number, tokens.Hash(token), c.Bundles.Select(b => b.HostId).ToArray(),
             System.Text.Json.JsonSerializer.Serialize(c.Bundles.ToList(), SchedJson.Default.ListBundleDto), clock.UtcNow, ct);
         await db.SetJobStartingAsync(c.JobId, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, c.JobId, ct), "scheduler", "attempt", id,
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct), "scheduler", "attempt", id,
             "attempt.reserving", "info", $"Attempt {c.Number} reserving resources (placement group) on {c.Bundles.Count} machines", ct: ct);
         return new AttemptCreated(id, token);
     }
@@ -123,7 +124,7 @@ public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock cloc
             var before = await db.GetJobAsync(a.JobId, a.WorkspaceId, ct);
             await db.RequeueJobAsync(a.JobId, reason, ct);
             if (before?.StateReason != reason)
-                await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "attempt", a.Id, "attempt.waiting", "warning", reason, ct: ct);
+                await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "attempt", a.Id, "attempt.waiting", "warning", reason, ct: ct);
             if (await MLPlatform.ControlPlane.Application.Serving.ServingSql.GetDeploymentByJobAsync(db, a.JobId, ct) is { State: not "stopped" } dep)
                 await MLPlatform.ControlPlane.Application.Serving.ServingSql.SetDeploymentStateAsync(db, dep.Id, dep.State, reason, null, ct);
             if (await MLPlatform.ControlPlane.Application.Notebooks.NbSql.GetServerByJobAsync(db, a.JobId, ct) is { State: "queued" or "starting" } nb)
@@ -134,7 +135,7 @@ public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock cloc
         var allocs = await db.ListAllocationsAsync(a.Id, ct);
         if (allocs.Count < a.HostIds.Length) return null;
         await db.SetAttemptStateAsync(a.Id, "launching", null, null, null, clock.UtcNow, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "holder", "attempt", a.Id, "attempt.launching", "info",
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "holder", "attempt", a.Id, "attempt.launching", "info",
             "Resources reserved — sending the container run command" + (c.GpuUuids.Length > 0 ? $" (GPU {string.Join(",", c.GpuUuids)})" : ""), ct: ct);
         return new AllocationComplete(a, JobSpecDto.Parse(a.Spec), allocs);
     }
@@ -147,14 +148,14 @@ public sealed class MarkAttemptRunningCommandHandler(IWriteSession db, IClock cl
     public async ValueTask<bool> Handle(MarkAttemptRunningCommand c, CancellationToken ct)
     {
         // The job was cancelled while its container was being prepared: do not bring it back — the caller stops the container.
-        if (await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, c.JobId, ct) is { } ws && (await db.GetJobAsync(c.JobId, ws, ct))?.State == "cancelled")
+        if (await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct) is { } ws && (await db.GetJobAsync(c.JobId, ws, ct))?.State == "cancelled")
         {
             await db.SetAttemptStateAsync(c.AttemptId, "cancelled", null, "cancelled", null, clock.UtcNow, ct);
             return false;
         }
         await db.SetAttemptStateAsync(c.AttemptId, "running", null, null, null, clock.UtcNow, ct);
         await db.SetJobStateAsync(c.JobId, "running", null, clock.UtcNow, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, c.JobId, ct), "agent", "attempt", c.AttemptId,
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct), "agent", "attempt", c.AttemptId,
             "attempt.running", "info", "Container started", ct: ct);
         return true;
     }
@@ -194,7 +195,7 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
             return new FinishResult(a.JobId, "cancelled", false);
         }
         await db.SetAttemptStateAsync(a.Id, state, c.ExitCode, reason, c.Message, now, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, a.WorkspaceId, reason is "node_lost" or "container_lost" ? "scheduler" : "agent", "attempt", a.Id,
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, reason is "node_lost" or "container_lost" ? "scheduler" : "agent", "attempt", a.Id,
             state == "succeeded" ? "attempt.succeeded" : "attempt." + reason, state == "succeeded" ? "success" : reason is "node_lost" or "container_lost" ? "warning" : "error",
             state == "succeeded" ? "Attempt finished" : $"Attempt failed: {reason} (code {c.ExitCode}){(string.IsNullOrEmpty(c.Message) ? "" : " — " + c.Message)}",
             new System.Text.Json.Nodes.JsonObject { ["exit_code"] = c.ExitCode }, ct: ct);
@@ -203,14 +204,14 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
         if (retryable && job is not null && job.AttemptCount < 3)
         {
             await db.RetryJobAsync(a.JobId, $"Retrying after error {reason} (attempt {job.AttemptCount}/3)", now, ct);
-            await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "job", a.JobId, "job.recovering", "warning",
+            await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "job", a.JobId, "job.recovering", "warning",
                 $"Retrying from the latest checkpoint (attempt {job.AttemptCount + 1}/3)", ct: ct);
             return new FinishResult(a.JobId, "queued", true);
         }
         var jobState = state == "succeeded" ? "succeeded" : "failed";
         var detail = string.IsNullOrWhiteSpace(c.Message) ? $"The process exited with code {c.ExitCode} — open the job log for details" : c.Message;
         await db.SetJobStateAsync(a.JobId, jobState, state == "succeeded" ? null : reason is "failed" ? detail : $"{reason}: {detail}", now, ct);
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "job", a.JobId, "job." + jobState, jobState == "succeeded" ? "success" : "error",
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "job", a.JobId, "job." + jobState, jobState == "succeeded" ? "success" : "error",
             jobState == "succeeded" ? "Job finished" : $"Job failed: {reason}", ct: ct);
         await MLPlatform.ControlPlane.Application.Notifications.Notifier.JobFinishedAsync(db, clock, a.JobId, jobState, state == "succeeded" ? null : reason, ct);
         return new FinishResult(a.JobId, jobState, false);
@@ -225,7 +226,7 @@ public sealed class CancelJobCommandHandler(IWriteSession db, IClock clock) : IC
     public async ValueTask<bool> Handle(CancelJobCommand c, CancellationToken ct)
     {
         await db.SetJobStateAsync(c.JobId, "cancelled", c.Reason, clock.UtcNow, ct);
-        if (await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, c.JobId, ct) is { } ws)
+        if (await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct) is { } ws)
             await db.CancelPendingAttemptsAsync(c.JobId, ws, clock.UtcNow, ct);
         return true;
     }
@@ -238,7 +239,7 @@ public sealed record JobStateQuery(Guid JobId) : IQuery<string?>;
 public sealed class JobStateQueryHandler(IReadSession db) : IQueryHandler<JobStateQuery, string?>
 {
     public async ValueTask<string?> Handle(JobStateQuery q, CancellationToken ct) =>
-        await MLPlatform.ControlPlane.Application.Ops.OpsSql.JobWorkspaceAsync(db, q.JobId, ct) is { } ws ? (await db.GetJobAsync(q.JobId, ws, ct))?.State : null;
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, q.JobId, ct) is { } ws ? (await db.GetJobAsync(q.JobId, ws, ct))?.State : null;
 }
 
 public sealed record ListActiveAttemptsQuery : IQuery<IReadOnlyList<AttemptRow>>;
@@ -285,7 +286,7 @@ public sealed class EmitAttemptEventCommandHandler(IWriteSession db, IClock cloc
 {
     public async ValueTask<bool> Handle(EmitAttemptEventCommand c, CancellationToken ct)
     {
-        await MLPlatform.ControlPlane.Application.Ops.OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "scheduler", "attempt", c.AttemptId, c.Code, c.Level, c.Message, ct: ct);
+        await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "scheduler", "attempt", c.AttemptId, c.Code, c.Level, c.Message, ct: ct);
         return true;
     }
 }

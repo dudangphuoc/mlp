@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Timeline;
 using MLPlatform.ControlPlane.Application.Common;
 using MLPlatform.Cqrs;
 using MLPlatform.Data;
@@ -62,7 +63,7 @@ public static class DataSyncRecorder
             (int)L("done_files"), L("done_bytes"), (int)L("uncached_files"), (int)L("retries"), sync["seconds"] is JsonValue s && s.TryGetValue<double>(out var sec) ? sec : 0,
             L("cache_files"), L("cache_bytes"), L("free_bytes"), clock.UtcNow,
             Guid.TryParse(sync["version"]?.ToString(), out var vid) ? vid : null, sync["subset"]?.GetValue<bool>() == true, ct);
-        await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "data.synced", failed > 0 ? "warning" : "success",
+        await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "shim", "attempt", a.Id, "data.synced", failed > 0 ? "warning" : "success",
             $"Dataset: {L("files")} files · {L("reused_files")} reused ({Size(L("reused_bytes"))}) · {L("done_files")} downloaded ({Size(L("done_bytes"))}) · {sync["seconds"]} s",
             sync.DeepClone().AsObject(), ct: ct);
     }
@@ -119,7 +120,7 @@ public sealed class RecordDataCacheCleanupCommandHandler(IWriteSession db, ICloc
     {
         var r = c.Cache;
         await db.MarkDataCacheRemovedAsync(r.WorkspaceId, r.HostId, r.DatasetId, clock.UtcNow, ct);
-        await OpsEvents.EmitAsync(db, clock, r.WorkspaceId, "system:janitor", "host", r.HostId, "data.cache_removed", "info",
+        await TimelineEvents.EmitAsync(db, clock, r.WorkspaceId, "system:janitor", "host", r.HostId, "data.cache_removed", "info",
             $"Dataset cache removed ({DataSyncRecorder.Size(r.CacheBytes)}): {c.Reason}",
             new JsonObject { ["dataset_id"] = r.DatasetId.ToString(), ["bytes"] = r.CacheBytes, ["reason"] = c.Reason }, ct: ct);
         return true;
@@ -189,7 +190,7 @@ public sealed class PreferDataHostsCommandHandler(IWriteSession db, IClock clock
         {
             var first = ordered[0];
             var hit = held.TryGetValue(first, out var r);
-            await OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "scheduler", "job", c.JobId, "data.placement", hit ? "info" : "warning",
+            await TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "scheduler", "job", c.JobId, "data.placement", hit ? "info" : "warning",
                 hit ? $"Placed on a machine that already holds this dataset ({r!.CacheFiles} files, {DataSyncRecorder.Size(r.CacheBytes)})"
                     : "The machines holding this dataset cannot take the job now — the dataset is downloaded on another machine",
                 new System.Text.Json.Nodes.JsonObject { ["host_id"] = first.ToString(), ["cached_bytes"] = hit ? r!.CacheBytes : 0 }, ct: ct);

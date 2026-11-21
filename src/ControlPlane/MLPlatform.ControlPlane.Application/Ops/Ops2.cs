@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Timeline;
 using MLPlatform.ControlPlane.Application.Common;
 using MLPlatform.ControlPlane.Application.Notifications;
 using MLPlatform.Cqrs;
@@ -106,7 +107,7 @@ public sealed class DetectAnomaliesCommandHandler(IWriteSession db, IClock clock
             if (a.SignalLostAt is null)
             {
                 await db.MarkSignalLostAsync(a.Id, now, ct);
-                await OpsEvents.EmitAsync(db, clock, a.WorkspaceId, "system:recovery", "attempt", a.Id, "job.signal_lost", "warning",
+                await TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "system:recovery", "attempt", a.Id, "job.signal_lost", "warning",
                     $"No signal from the training process for over {opts.SignalLostAfter.TotalMinutes:0.#} minutes (machine still online)", ct: ct);
                 await Notifier.SendAsync(db, clock, a.WorkspaceId, [a.OwnerId], "job.signal_lost", $"Job \"{a.Name}\" lost signal", $"#/jobs/{a.JobId}", $"job/{a.JobId}", "warning", ct);
             }
@@ -115,7 +116,7 @@ public sealed class DetectAnomaliesCommandHandler(IWriteSession db, IClock clock
         foreach (var j in await db.StalledAsync(now, ct))
         {
             await db.MarkStalledAsync(j.Id, now, ct);
-            await OpsEvents.EmitAsync(db, clock, j.WorkspaceId, "system:recovery", "job", j.Id, "progress.stalled", "warning",
+            await TimelineEvents.EmitAsync(db, clock, j.WorkspaceId, "system:recovery", "job", j.Id, "progress.stalled", "warning",
                 $"Progress stuck at {j.Current:0.#} — may be stalled (not stopped automatically: some valid steps stay silent for a long time)", ct: ct);
             await Notifier.SendAsync(db, clock, j.WorkspaceId, [j.OwnerId], "job.stalled", $"Job \"{j.Name}\" may be stalled", $"#/jobs/{j.Id}", $"job/{j.Id}", "warning", ct);
         }
@@ -133,7 +134,7 @@ public sealed class MoveAttemptNowCommandHandler(IWriteSession db, IClock clock,
         await auth.RequireAsync(c.WorkspaceId, "job.submit", ct);
         var s = await db.SuspectOfJobAsync(c.JobId, c.WorkspaceId, ct) ?? throw new PreconditionException("SCHED_NOT_SUSPECT", "Job is not waiting for its machine to come back");
         await db.SetSuspectUntilAsync(s.Id, clock.UtcNow, ct);
-        await OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "attempt", s.Id, "attempt.move_requested", "info", "User requested an immediate machine move", ct: ct);
+        await TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "attempt", s.Id, "attempt.move_requested", "info", "User requested an immediate machine move", ct: ct);
         return true;
     }
 }
@@ -149,7 +150,7 @@ public sealed class ExtendGraceCommandHandler(IWriteSession db, IClock clock, Wo
         var mins = c.Minutes is > 0 and <= 24 * 60 ? c.Minutes : 15;
         var until = (await db.JobAttemptsAsync(c.JobId, ct)).First(a => a.Id == s.Id).SuspectUntil.GetValueOrDefault(clock.UtcNow).AddMinutes(mins);
         await db.SetSuspectUntilAsync(s.Id, until, ct);
-        await OpsEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "attempt", s.Id, "attempt.grace_extended", "info", $"Waiting {mins} more minutes for the machine to come back", ct: ct);
+        await TimelineEvents.EmitAsync(db, clock, c.WorkspaceId, "api", "attempt", s.Id, "attempt.grace_extended", "info", $"Waiting {mins} more minutes for the machine to come back", ct: ct);
         return true;
     }
 }
@@ -232,7 +233,7 @@ public sealed class EmitSystemEventCommandHandler(IWriteSession db, IClock clock
 {
     public async ValueTask<bool> Handle(EmitSystemEventCommand c, CancellationToken ct)
     {
-        await OpsEvents.EmitAsync(db, clock, null, c.Source, "system", null, c.Kind, c.Severity, c.Message, ct: ct);
+        await TimelineEvents.EmitAsync(db, clock, null, c.Source, "system", null, c.Kind, c.Severity, c.Message, ct: ct);
         return true;
     }
 }

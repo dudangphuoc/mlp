@@ -23,7 +23,7 @@ public sealed class ListLabelingProjectViewsQueryHandler(IReadSession db, Worksp
     public async ValueTask<IReadOnlyList<ProjectView>> Handle(ListLabelingProjectViewsQuery q, CancellationToken ct)
     {
         var uid = await auth.RequireAsync(q.WorkspaceId, "dataset.read", ct);
-        var projects = await db.ListProjectsAsync(q.WorkspaceId, q.DatasetId, ct);
+        var projects = await db.ListLabelProjectsAsync(q.WorkspaceId, q.DatasetId, ct);
         if (projects.Count == 0) return [];
         var sums = (await db.ProjectSummariesAsync(q.WorkspaceId, uid, ct)).ToDictionary(s => s.ProjectId);
         var names = (await db.ListDatasetsAsync(q.WorkspaceId, "", ct)).ToDictionary(d => d.Id, d => d.Name);

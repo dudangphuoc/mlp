@@ -9,6 +9,7 @@ public sealed class ModuleManifest
 
     private readonly Dictionary<string, int> _layerOf = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> _uses = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _publicSql = new(StringComparer.Ordinal);
 
     public IReadOnlyCollection<string> Modules => _layerOf.Keys;
 
@@ -25,9 +26,12 @@ public sealed class ModuleManifest
             manifest._uses[module.Name] = module.Value.TryGetProperty("uses", out var uses)
                 ? [.. uses.EnumerateArray().Select(u => u.GetString()!)]
                 : [];
+            if (module.Value.TryGetProperty("publicSql", out var shared) && shared.GetBoolean()) manifest._publicSql.Add(module.Name);
         }
         return manifest;
     }
+
+    public bool SharesSql(string module) => _publicSql.Contains(module);
 
     public bool Knows(string module) => _layerOf.ContainsKey(module);
 

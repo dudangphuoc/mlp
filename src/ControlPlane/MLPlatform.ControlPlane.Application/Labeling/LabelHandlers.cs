@@ -152,7 +152,7 @@ public sealed class LabelAccess(IReadSession readDb, WorkspaceAuthorizer auth, I
     public async Task<(Guid Uid, ProjectRow Project, HashSet<string> Roles)> LoadAsync(Guid ws, Guid projectId, string permission, CancellationToken ct)
     {
         var uid = await auth.RequireAsync(ws, permission, ct);
-        var p = await db.GetProjectAsync(projectId, ws, ct) ?? throw new NotFoundException("LABEL_PROJECT_NOT_FOUND", "Labeling project not found");
+        var p = await db.GetLabelProjectAsync(projectId, ws, ct) ?? throw new NotFoundException("LABEL_PROJECT_NOT_FOUND", "Labeling project not found");
         var roles = (await db.MemberRolesAsync(projectId, uid, ct)).Select(r => r.Role).ToHashSet();
         // Whoever manages labeling in the workspace (owner, admin) leads every project: a project never ends up with nobody able to run it.
         if (await auth.HasAsync(ws, "labeling.manage", ct)) roles.Add("lead");
@@ -246,14 +246,14 @@ public sealed class CreateLabelingProjectCommandHandler(IWriteSession db, IClock
             throw LabelRules.Invalid("version_id", "The version does not belong to this dataset");
         if (c.AutoAcceptThreshold is < 0 or > 1) throw LabelRules.Invalid("auto_accept_threshold", "Must be between 0 and 1 (0 = off)");
         var id = Ids.New();
-        await db.InsertProjectAsync(id, c.WorkspaceId, c.DatasetId, c.Name.Trim(), c.GuidelineMd, schema.Version, mode,
+        await db.InsertLabelProjectAsync(id, c.WorkspaceId, c.DatasetId, c.Name.Trim(), c.GuidelineMd, schema.Version, mode,
             c.LockTtlMin is > 0 and <= 240 ? c.LockTtlMin : 10, uid, clock.UtcNow, versionId, c.AutoAcceptThreshold, ct);
         // The person who creates a project can label in it right away: lead and annotator, items loaded, project active.
         await db.UpsertMemberAsync(id, uid, "lead", 50, ct);
         await db.UpsertMemberAsync(id, uid, "annotator", 500, ct);
         await LabelSeeding.SeedAsync(db, id, c.DatasetId, versionId, ds.Task, ct);
         await db.SetProjectStateAsync(id, "active", ct);
-        return (await db.GetProjectAsync(id, c.WorkspaceId, ct))!;
+        return (await db.GetLabelProjectAsync(id, c.WorkspaceId, ct))!;
     }
 }
 
@@ -264,7 +264,7 @@ public sealed class ListLabelingProjectsQueryHandler(IReadSession db, WorkspaceA
     public async ValueTask<IReadOnlyList<ProjectRow>> Handle(ListLabelingProjectsQuery q, CancellationToken ct)
     {
         await auth.RequireAsync(q.WorkspaceId, "dataset.read", ct);
-        return await db.ListProjectsAsync(q.WorkspaceId, q.DatasetId, ct);
+        return await db.ListLabelProjectsAsync(q.WorkspaceId, q.DatasetId, ct);
     }
 }
 
@@ -302,7 +302,7 @@ public sealed class SetLabelingProjectStateCommandHandler(IWriteSession db, Labe
             await Notifier.SendAsync(db, clock, p.WorkspaceId,
                 (await db.ListProjectMembersAsync(p.Id, ct)).Where(m => m.Role == "lead").Select(m => m.UserId).Concat(await Notifier.AdminsAsync(db, p.WorkspaceId, ct)),
                 "labeling.project_completed", $"Labeling project \"{p.Name}\" is complete", $"#/labeling/{p.Id}", $"labelproject/{p.Id}", "success", ct);
-        return (await db.GetProjectAsync(p.Id, c.WorkspaceId, ct))!;
+        return (await db.GetLabelProjectAsync(p.Id, c.WorkspaceId, ct))!;
     }
 }
 
@@ -352,7 +352,7 @@ public sealed class GetLabelingStatsQueryHandler(IReadSession db, LabelAccess ac
     public async ValueTask<(ProjectRow Project, IReadOnlyList<StatRow> Stats)> Handle(GetLabelingStatsQuery q, CancellationToken ct)
     {
         var (_, p, _) = await access.LoadAsync(q.WorkspaceId, q.ProjectId, "dataset.read", ct);
-        return (p, await db.ProjectStatsAsync(p.Id, ct));
+        return (p, await db.LabelProjectStatsAsync(p.Id, ct));
     }
 }
 

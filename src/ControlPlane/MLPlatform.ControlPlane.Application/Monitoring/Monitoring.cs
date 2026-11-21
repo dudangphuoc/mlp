@@ -21,7 +21,7 @@ public sealed record DailyQualityRow(DateTimeOffset Day, long Labeled, double? A
 public static partial class MonitorSql
 {
     [SqlQuery("Monitor/DeleteDeploymentData.sql")]
-    public static partial Task DeleteDeploymentDataAsync(this IWriteSession db, Guid deploymentId, CancellationToken ct);
+    public static partial Task DeleteMonitorDeploymentDataAsync(this IWriteSession db, Guid deploymentId, CancellationToken ct);
     [SqlQuery("Monitor/InsertPrediction.sql")]
     public static partial Task InsertPredictionAsync(this IWriteSession db, Guid id, Guid deploymentId, int modelVersion, DateTimeOffset now, double latencyMs,
         string features, string prediction, CancellationToken ct);

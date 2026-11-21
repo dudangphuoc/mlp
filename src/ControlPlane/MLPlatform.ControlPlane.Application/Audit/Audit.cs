@@ -15,9 +15,9 @@ public static partial class AuditSql
     [SqlQuery("Audit/LockChain.sql")] public static partial Task LockChainAsync(this IWriteSession db, CancellationToken ct);
     [SqlQuery("Audit/LastHash.sql")] public static partial Task<string?> LastHashAsync(this IWriteSession db, CancellationToken ct);
     [SqlQuery("Audit/InsertEvent.sql")]
-    public static partial Task InsertEventAsync(this IWriteSession db, Guid id, DateTimeOffset at, Guid? workspaceId, Guid? actorId, string action,
+    public static partial Task InsertAuditEventAsync(this IWriteSession db, Guid id, DateTimeOffset at, Guid? workspaceId, Guid? actorId, string action,
         string outcome, string? reason, string prevHash, string hash, CancellationToken ct);
-    [SqlQuery("Audit/ListEvents.sql")] public static partial Task<List<AuditRow>> ListEventsAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Audit/ListEvents.sql")] public static partial Task<List<AuditRow>> ListAuditEventsAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
     [SqlQuery("Audit/AllEvents.sql")] public static partial Task<List<AuditRow>> AllEventsAsync(this IReadSession db, CancellationToken ct);
 }
 
@@ -33,7 +33,7 @@ public static class AuditChain
         var prev = await db.LastHashAsync(ct) ?? "genesis";
         var id = Ids.New();
         var at = DateTimeOffset.FromUnixTimeMilliseconds(clock.UtcNow.ToUnixTimeMilliseconds());
-        await db.InsertEventAsync(id, at, ws, actor, action, outcome, reason, prev, Hash(prev, id, at, ws, actor, action, outcome, reason), ct);
+        await db.InsertAuditEventAsync(id, at, ws, actor, action, outcome, reason, prev, Hash(prev, id, at, ws, actor, action, outcome, reason), ct);
     }
 }
 
@@ -95,6 +95,6 @@ public sealed class ListAuditQueryHandler(IReadSession db, WorkspaceAuthorizer a
             if (e.PrevHash != prev || e.Hash != AuditChain.Hash(e.PrevHash, e.Id, e.At, e.WorkspaceId, e.ActorId, e.Action, e.Outcome, e.Reason)) { valid = false; break; }
             prev = e.Hash;
         }
-        return (await db.ListEventsAsync(q.WorkspaceId, ct), valid);
+        return (await db.ListAuditEventsAsync(q.WorkspaceId, ct), valid);
     }
 }
