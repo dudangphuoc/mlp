@@ -15,7 +15,7 @@ public sealed record DataCacheRow(Guid HostId, Guid DatasetId, long CacheFiles, 
     /// <summary>Marks rows whose last job is still active (job states come from the scheduler module).</summary>
     public static async Task<List<DataCacheRow>> WithUseAsync(IMediator mediator, List<DataCacheRow> rows, CancellationToken ct)
     {
-        var res = new List<DataCacheRow>(rows.Count);
+        List<DataCacheRow> res = [with(capacity: rows.Count)];
         foreach (var r in rows)
             res.Add(r with { InUse = await mediator.Query(new MLPlatform.ControlPlane.Application.Scheduling.JobStateQuery(r.LastJobId), ct)
                 is { } s && s is not ("succeeded" or "failed" or "cancelled" or "stopped") });

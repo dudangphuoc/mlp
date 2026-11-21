@@ -41,7 +41,6 @@ public sealed class ErrorInterceptor(ILogger<ErrorInterceptor> log) : Intercepto
             ValidationException => StatusCode.InvalidArgument,
             InvalidArgumentException => StatusCode.InvalidArgument,
             AbortedException => StatusCode.Aborted,
-            _ => StatusCode.Unknown,
         };
         var trailers = new Metadata { { "mlp-error-reason", e.Reason } };
         foreach (var (k, v) in e.Metadata)

@@ -22,7 +22,7 @@ public sealed class LogPredictionsCommandHandler(IWriteSession db, IClock clock)
 {
     public async ValueTask<IReadOnlyList<Guid>> Handle(LogPredictionsCommand c, CancellationToken ct)
     {
-        var ids = new List<Guid>(c.Items.Count);
+        List<Guid> ids = [with(capacity: c.Items.Count)];
         var now = clock.UtcNow;
         var each = c.LatencyMs / Math.Max(1, c.Items.Count);
         foreach (var (features, prediction) in c.Items)

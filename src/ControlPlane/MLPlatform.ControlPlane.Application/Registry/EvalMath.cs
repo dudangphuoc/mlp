@@ -17,9 +17,9 @@ public static class EvalMath
     /// <summary>Pairs images with their ground truth.</summary>
     public static List<EvalSampleSpec> FindSamples(string task, IReadOnlyCollection<string> paths, string filter)
     {
-        var set = new HashSet<string>(paths, StringComparer.Ordinal);
+        HashSet<string> set = [with(StringComparer.Ordinal), .. paths];
         var images = paths.Where(IsImage).Where(p => string.IsNullOrEmpty(filter) || p.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
-        var result = new List<EvalSampleSpec>(images.Count);
+        List<EvalSampleSpec> result = [with(capacity: images.Count)];
         foreach (var img in images)
         {
             if (ClassifyTasks.Contains(task))
@@ -176,7 +176,7 @@ public static class EvalMath
     {
         if (nGt == 0) return 0;
         var used = images.Select(i => new bool[i.Gt.Count]).ToArray();
-        var tps = new List<bool>(preds.Count);
+        List<bool> tps = [with(capacity: preds.Count)];
         foreach (var (img, box) in preds)
         {
             var gt = images[img].Gt;

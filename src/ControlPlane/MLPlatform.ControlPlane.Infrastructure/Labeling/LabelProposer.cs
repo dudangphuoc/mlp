@@ -74,7 +74,7 @@ public sealed class LabelProposer(AiRuntime ai, ItemContent content, ModelServer
         var w = Stopwatch.StartNew();
         Guid? runId = null;
         var items = new List<Proposed>();
-        var unmapped = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> unmapped = [with(StringComparer.OrdinalIgnoreCase)];
         string state = "proposed", detail;
         var dropped = 0;
         try

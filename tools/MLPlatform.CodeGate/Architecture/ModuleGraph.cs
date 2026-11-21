@@ -31,8 +31,8 @@ public static partial class ModuleGraph
 
     private static Dictionary<string, string> SqlMethodOwners(IEnumerable<(string Path, string Module, string Text)> files)
     {
-        var owners = new Dictionary<string, string>(StringComparer.Ordinal);
-        var ambiguous = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, string> owners = [with(StringComparer.Ordinal)];
+        HashSet<string> ambiguous = [with(StringComparer.Ordinal)];
         foreach (var (_, module, text) in files)
             foreach (Match m in SqlDeclaration().Matches(text))
                 if (!owners.TryAdd(m.Groups[1].Value, module) && owners[m.Groups[1].Value] != module) ambiguous.Add(m.Groups[1].Value);

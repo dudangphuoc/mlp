@@ -8,7 +8,7 @@ public static partial class MigrationRules
 {
     public static IEnumerable<Finding> Check(RepoFiles repo)
     {
-        var stamps = new Dictionary<string, string>(StringComparer.Ordinal);
+        Dictionary<string, string> stamps = [with(StringComparer.Ordinal)];
         foreach (var file in repo.Under("db", "*.sql"))
         {
             var name = Path.GetFileName(file);

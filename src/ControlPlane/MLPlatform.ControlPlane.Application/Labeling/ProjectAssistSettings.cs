@@ -19,7 +19,7 @@ public sealed record ProjectAssistSettings(List<(string Kind, Guid Id)> Sources,
                 if (n?["kind"]?.ToString() is { } k && Guid.TryParse(n["id"]?.ToString(), out var id)) sources.Add((k, id));
         }
         catch (System.Text.Json.JsonException) { }
-        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> map = [with(StringComparer.OrdinalIgnoreCase)];
         try
         {
             if (JsonNode.Parse(r.ClassMappingJson) is JsonObject o)

@@ -186,7 +186,7 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
     private async Task<List<SourceFile>> ListUrlsAsync(string[] urls, CancellationToken ct)
     {
         var client = http.CreateClient("import");
-        var used = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> used = [with(StringComparer.Ordinal)];
         var list = new List<SourceFile>();
         foreach (var u in urls)
         {

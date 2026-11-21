@@ -30,7 +30,7 @@ public static class TypeSplitter
         var header = SourceFiles.Header(root);
         var ns = SourceFiles.NamespaceOf(root);
         var types = SourceFiles.TopLevelTypes(root).ToList();
-        var outputs = new Dictionary<string, StringBuilder>(StringComparer.Ordinal);
+        Dictionary<string, StringBuilder> outputs = [with(StringComparer.Ordinal)];
         var removed = new List<MemberDeclarationSyntax>();
         foreach (var (typeName, target) in moves)
         {
