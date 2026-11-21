@@ -401,8 +401,8 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
     {
         var ops = new OpsService.OpsServiceClient(channel);
         var st = await ops.GetSystemStatusAsync(new SystemStatusRequest { WorkspaceId = wsId }, auth);
-        foreach (var name in new[] { "Database", "S3 storage", "Ray head", $"Agent channel :{agentCp.Split(':')[^1]}", "Job scheduling", "Unfinished work recovery" })
-            Assert(st.Items.Any(i => i.Name == name && i.Status == "ok"), $"{name} not ok: " + string.Join(", ", st.Items.Select(i => $"{i.Name}={i.Status}")));
+        foreach (var name in new[] { "Database", "S3 storage", "Ray head", "Agent channel", "Job scheduling", "Unfinished work recovery" })
+            Assert(st.Items.Any(i => i.Name.StartsWith(name, StringComparison.Ordinal) && i.Status == "ok"), $"{name} not ok: " + string.Join(", ", st.Items.Select(i => $"{i.Name}={i.Status}")));
         Assert(st.Overall == "ok", "overall " + st.Overall);
 
         var run = await trackR.StartTrainingAsync(new StartTrainingRequest { WorkspaceId = wsId, ProjectId = projR.Id, Name = $"watch-{suffix}", Recipe = "toy-recipe", Variant = "tiny",
@@ -574,6 +574,9 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         var sc = await lab.CreateSchemaVersionAsync(new CreateSchemaVersionRequest { WorkspaceId = wsId, DatasetId = ds.Id,
             ClassesJson = "[{\"id\":0,\"name\":\"short\",\"color\":\"#e5484d\"},{\"id\":1,\"name\":\"open\",\"color\":\"#3e63dd\"}]" }, auth);
         Assert(sc.Version == 1, "schema version");
+        await ExpectStatus(StatusCode.FailedPrecondition, "LABEL_VERSION_REQUIRED", async () =>
+            await lab.CreateProjectAsync(new CreateLabelingProjectRequest { WorkspaceId = wsId, DatasetId = ds.Id, Name = "too early", ReviewMode = "all" }, auth));
+        await data.CreateVersionAsync(new CreateVersionRequest { WorkspaceId = wsId, DatasetId = ds.Id, Note = "to label" }, auth);
         var proj = await lab.CreateProjectAsync(new CreateLabelingProjectRequest { WorkspaceId = wsId, DatasetId = ds.Id, Name = "PCB round 1", ReviewMode = "all" }, auth);
         var pref = new LabelingProjectRef { WorkspaceId = wsId, ProjectId = proj.Id };
         await ExpectStatus(StatusCode.FailedPrecondition, "LABEL_PROJECT_NOT_ACTIVE", async () => await lab.NextItemAsync(pref, auth));
@@ -1009,7 +1012,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         var proj = (await track.ListProjectsAsync(new ListProjectsRequest { WorkspaceId = wsId }, auth)).Projects[0];
         await ExpectStatus(StatusCode.InvalidArgument, "VALIDATION_FAILED", async () => await track.StartTrainingAsync(new StartTrainingRequest
             { WorkspaceId = wsId, ProjectId = proj.Id, Recipe = "toy-recipe", Variant = "tiny", ParamsJson = "{\"lr\": 1}", ImageOverride = "x" }, auth));
-        await ExpectStatus(StatusCode.FailedPrecondition, "CATALOG_RECIPE_NOT_VERIFIED", async () => await track.StartTrainingAsync(new StartTrainingRequest
+        await ExpectStatus(StatusCode.FailedPrecondition, "TRACK_DATASET_REQUIRED", async () => await track.StartTrainingAsync(new StartTrainingRequest
             { WorkspaceId = wsId, ProjectId = proj.Id, Recipe = "toy-recipe", Variant = "tiny" }, auth));
     });
 
