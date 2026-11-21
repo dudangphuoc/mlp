@@ -61,7 +61,6 @@ start_api() {
 }
 
 remove_stale_workloads() {
-  docker ps -aq --filter network=mlp-verify --format '{{.Names}}' | grep -v '^mlp-verify-' | xargs -r docker rm -f >/dev/null 2>&1 || true
   docker ps -aq --filter network=mlp-verify | while read -r id; do
     name=$(docker inspect -f '{{.Name}}' "$id" | tr -d /); [[ $name == mlp-verify-* ]] || docker rm -f "$id" >/dev/null 2>&1 || true
   done
