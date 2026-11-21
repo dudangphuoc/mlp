@@ -1,0 +1,2 @@
+{"label":"baseline-net11","at":"2026-11-21T18:14:18Z","startup_ms":1207,"rss_mb":99,"ready_p50_ms":0.62,"ready_p95_ms":0.81,"binary_mb":56}
+{"label":"runtime-async","at":"2026-11-21T18:15:14Z","startup_ms":1071,"rss_mb":88,"ready_p50_ms":0.62,"ready_p95_ms":0.73,"binary_mb":44}

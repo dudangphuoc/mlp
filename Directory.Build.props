@@ -12,6 +12,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);RS0030;IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091;IL3050;IL3051</WarningsAsErrors>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Features>$(Features);runtime-async=on</Features>
   </PropertyGroup>
 
   <!-- Thư viện runtime (không phải generator netstandard2.0) khai AOT-compatible -->
