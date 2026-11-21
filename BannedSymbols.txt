@@ -5,6 +5,6 @@ P:System.DateTimeOffset.UtcNow;UTC-only: dùng IClock.UtcNow
 T:Npgsql.NpgsqlBatch;SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
 M:Npgsql.NpgsqlConnection.CreateBatch;SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
 M:Npgsql.NpgsqlDataSource.CreateCommand(System.String);SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
-M:System.Reflection.Assembly.GetTypes;Không AOT: đăng ký bằng source generator (20/02 §4)
-M:System.Activator.CreateInstance(System.Type);Không AOT
-M:System.Type.GetType(System.String);Không AOT
+M:System.Reflection.Assembly.GetTypes;Not AOT-safe: register through a source generator (20/02 §4)
+M:System.Activator.CreateInstance(System.Type);Not AOT-safe
+M:System.Type.GetType(System.String);Not AOT-safe

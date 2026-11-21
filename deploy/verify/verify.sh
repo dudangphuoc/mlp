@@ -60,7 +60,15 @@ start_api() {
   grep -o "mlpb_[a-z0-9]*" "$STATE/api.log" | tail -1 > "$STATE/token" || true
 }
 
+remove_stale_workloads() {
+  docker ps -aq --filter network=mlp-verify --format '{{.Names}}' | grep -v '^mlp-verify-' | xargs -r docker rm -f >/dev/null 2>&1 || true
+  docker ps -aq --filter network=mlp-verify | while read -r id; do
+    name=$(docker inspect -f '{{.Name}}' "$id" | tr -d /); [[ $name == mlp-verify-* ]] || docker rm -f "$id" >/dev/null 2>&1 || true
+  done
+}
+
 test_all() {
+  remove_stale_workloads
   docker exec mlp-verify-pg psql -U postgres -d mlp -qc "TRUNCATE identity.memberships, identity.workspaces, identity.sessions, identity.users, sched.jobs CASCADE; UPDATE identity.instance_settings SET bootstrapped_at=NULL;"
   (cd "$ROOT" && nice -n 19 dotnet build src/Hosts/MLPlatform.Api -m:1 -v q -clp:ErrorsOnly \
     && nice -n 19 dotnet build tools/MLPlatform.Scenarios -m:1 -v q -clp:ErrorsOnly && nice -n 19 dotnet build src/Hosts/MLPlatform.Agent -m:1 -v q -clp:ErrorsOnly)

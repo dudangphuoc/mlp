@@ -1,12 +1,11 @@
-using MLPlatform.Cqrs;
-using MLPlatform.Data;
+using System.Collections.Frozen;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
 /// <summary>Permission matrix M01 §4.1 (implemented part).</summary>
 public static class Permissions
 {
-    private static readonly Dictionary<string, string[]> Matrix = new()
+    private static readonly Dictionary<string, string[]> Declared = new()
     {
         ["workspace.manage"] = ["owner"],
         ["member.manage"] = ["owner", "admin"],
@@ -26,6 +25,9 @@ public static class Permissions
         ["labeling.annotate"] = ["owner", "admin", "editor", "reviewer", "annotator"],
     };
 
+    public static readonly FrozenDictionary<string, FrozenSet<string>> RolesByPermission =
+        Declared.ToFrozenDictionary(p => p.Key, p => p.Value.ToFrozenSet(StringComparer.Ordinal), StringComparer.Ordinal);
+
     public static bool Allows(string role, string permission) =>
-        Matrix.TryGetValue(permission, out var roles) && roles.Contains(role);
+        RolesByPermission.TryGetValue(permission, out var roles) && roles.Contains(role);
 }

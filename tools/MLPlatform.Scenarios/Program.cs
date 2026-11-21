@@ -1135,6 +1135,20 @@ await Step("M16: failed-job + offline-machine notifications for the owner; mergi
     await ExpectStatus(StatusCode.InvalidArgument, "NOTIFY_KIND_MANDATORY", async () => await notify.UpdatePreferencesAsync(bad, auth));
 });
 
+await Step("6.0: every workspace RPC refuses an outsider and an anonymous caller", async () =>
+{
+    var other = await ws.CreateWorkspaceAsync(new CreateWorkspaceRequest { Slug = $"outside-{suffix}", Name = "Outside" }, auth);
+    var inv = await ws.CreateInvitationAsync(new CreateInvitationRequest { WorkspaceId = other.Id, Email = $"out{suffix}@x.io", Role = "owner" }, auth);
+    await iam.RegisterAsync(new RegisterRequest { Email = $"out{suffix}@x.io", Password = password, Username = $"out{suffix}", InvitationToken = inv.Token });
+    var outsider = new Metadata { { "authorization", "Bearer " + (await iam.LoginAsync(new LoginRequest { Email = $"out{suffix}@x.io", Password = password })).SessionToken } };
+    var target = (await iam.GetMeAsync(new Empty(), auth)).Workspaces[0].WorkspaceId;
+    var outcomes = await PermissionMatrix.RunAsync(channel, target, outsider);
+    var leaks = outcomes.Where(o => o.Outsider == StatusCode.OK || o.Anonymous == StatusCode.OK).Select(o => $"{o.Method} outsider={o.Outsider} anonymous={o.Anonymous}").ToList();
+    Console.WriteLine($"     permission matrix: {outcomes.Count} RPCs, outsider {string.Join(" ", outcomes.GroupBy(o => o.Outsider).Select(g => $"{g.Key}={g.Count()}"))}");
+    Assert(outcomes.Count > 100, "too few workspace RPCs found: " + outcomes.Count);
+    Assert(leaks.Count == 0, "RPCs answered OK without membership: " + string.Join("; ", leaks));
+});
+
 await Step("M06: audit records user commands, valid hash chain, includes denied records", async () =>
 {
     var auditClient = new AuditService.AuditServiceClient(channel);
