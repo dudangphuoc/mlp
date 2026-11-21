@@ -16,6 +16,7 @@ if (cd proto && "$BUF" breaking --against ../gates/proto-baseline.binpb); then o
 nice -n 19 dotnet build tools/MLPlatform.CodeGate -m:1 -v q >/dev/null
 if dotnet tools/MLPlatform.CodeGate/bin/Debug/net11.0/mlp-codegate.dll "$ROOT"; then ok "CodeGate"; else fail "CodeGate"; fi
 if nice -n 19 dotnet build MLPlatform.slnx -m:1 -v q -warnaserror >/dev/null; then ok "build -warnaserror"; else fail "build -warnaserror"; fi
+if dotnet tools/MLPlatform.DocGen/bin/Debug/net11.0/mlp-docgen.dll "$ROOT" --check; then ok "docs and OpenAPI match the code"; else fail "docs and OpenAPI are stale (run mlp-docgen)"; fi
 if (cd web && npx tsc --noEmit -p tsconfig.json); then ok "tsc web"; else fail "tsc web"; fi
 if [[ " $* " == *" --aot "* ]]; then
   for p in src/Hosts/MLPlatform.Api src/Hosts/MLPlatform.Agent src/Hosts/MLPlatform.Shim; do

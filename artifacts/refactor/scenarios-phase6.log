@@ -1,0 +1,71 @@
+NOTICE:  truncate cascades to table "job_attempts"
+NOTICE:  truncate cascades to table "invitations"
+NOTICE:  truncate cascades to table "checkpoints"
+NOTICE:  truncate cascades to table "attempt_allocations"
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:21.30
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.07
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.54
+OK   M01: instance needs setup
+OK   M01: bad bootstrap token is rejected
+OK   M01: /setup creates the Instance Admin
+OK   M01: reopening /setup → IAM_SETUP_DONE
+OK   M01: self sign-up is disabled
+OK   M01: wrong password → IAM_INVALID_CREDENTIALS
+OK   M01: sign in + GetMe with Bearer
+OK   M01: not signed in → IAM_UNAUTHENTICATED
+OK   M01: create team workspace + duplicate slug
+OK   M02: create plug-in command + run agent → online with the real OS
+OK   M02: plug-in token is single-use
+OK   M02: BrowseHostPath lists within data_path
+OK   M02: BrowseHostPath blocks escaping data_path
+OK   M02: stop agent → offline; restart with credential → online, same host_id
+OK   M02: Disconnect → agent exits, credential deleted
+OK   M03: successful job → placement group + holder → container → succeeded
+OK   M03: exit code 2 → failed (user_error), no retry
+mlp-w-01a1ff65-7e9b-74fc-b8a8-5270b8de9c89-0
+OK   D-36: container killed midway → retry on the same machine from the local checkpoint; continuous metrics; progress + timeline (D-35)
+OK   D-36: agent process dies → attempt suspect → agent returns and reattaches the container → job finishes with nothing lost
+mlp-w-01a1ff66-e5f4-7010-8037-a6ef1be7631d-0
+mlp-w-01a1ff66-e5f4-7010-8037-a6ef1be7631d-0
+OK   20/10: system status, WatchWorkspace (realtime progress + events + logs), cluster map, lost signal when a container is frozen
+mlp-w-01a1ff68-35e6-7a18-adc7-7efe5a5fa79c-0
+mlp-ray-node-85c2af53d4d0
+mlp-ray-node-330ca5b46044
+OK   D-36: machine dies completely → suspect → move now → continue on a second machine from the durable checkpoint
+OK   M09: train a recipe from a project → shim in the container → metrics to TrackingService → run succeeded
+OK   M04+M09: upload dataset (presigned) → commit version → training uses exactly that data
+OK   M05: invite annotator → schema → project → non-overlapping queue → save/etag/schema → return → accept → label set
+OK   M11: register a model from a run (model directory in S3) → production → previous version archived
+OK   M14: pipeline train → gate → register → promote; closed gate; failure → rerun from the failed step; invalid DAG rejected; drift-triggered pipeline
+OK   M12+M13+M15+M07: deploy → keyed REST → predictions → PSI/KS drift, ground truth, alerts → prompt versions, guardrails, chat REST, eval, token usage
+OK   M08: notebook via the scheduler → /nb/{id}/ proxy over the data channel (HTTP + WebSocket, token attached automatically) → owner only → home persists after stop
+OK   M09: unknown parameters and unsupported from-scratch training are rejected
+OK   M10: 3-trial grid sweep (each trial is an M09 run) → picks the best trial; input validation; stopping the sweep cancels running trials
+OK   M03: resources are released — the next job can run
+OK   M17: task catalog has every tasks.yaml key (including semantic, depth, audio-classify)
+OK   M17: catalog syncs builtin recipes, all selfchecks pass
+OK   M17: filtering by the detect task returns several model families and no audio recipes
+OK   M17: D-FINE details list 9 variants; DEIMv2 needs zoo files + a license warning
+OK   M17: preview the train command with/without weights (template 20/08 §4)
+OK   M16: failed-job + offline-machine notifications for the owner; merging; mark as read; regular kinds can be turned off, mandatory ones cannot
+     permission matrix: 220 RPCs, outsider NotFound=208 FailedPrecondition=1 Unavailable=1 InvalidArgument=10
+OK   6.0: every workspace RPC refuses an outsider and an anonymous caller
+OK   M06: audit records user commands, valid hash chain, includes denied records
+OK   M01: sign-out revokes the session
+
+ALL OK

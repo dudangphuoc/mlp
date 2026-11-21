@@ -2,6 +2,7 @@ using MLPlatform.Api.Http.Health;
 using MLPlatform.Api.Http.Install;
 using MLPlatform.Api.Http.Mcp;
 using MLPlatform.Api.Http.Notebooks;
+using MLPlatform.Api.Http.OpenApi;
 using MLPlatform.Api.Http.Overlay;
 using MLPlatform.Api.Middleware;
 using MLPlatform.Api.Http.Inference;
@@ -21,5 +22,6 @@ public static class HttpApi
         app.MapOverlayPeers(cfg);
         app.MapInstallScripts(cfg);
         app.MapAgentBuilds();
+        app.MapOpenApi();
     }
 }

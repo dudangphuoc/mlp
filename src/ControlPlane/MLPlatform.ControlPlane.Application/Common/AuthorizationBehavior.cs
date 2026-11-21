@@ -2,7 +2,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
-/// <summary>Enforces [RequiresPermission] on the request's workspace before the handler runs; denials still reach the audit.</summary>
+/// <summary>Enforces [RequiresPermission] on the request's workspace before the handler runs; denials still reach the
+/// audit.</summary>
 public sealed class AuthorizationBehavior(WorkspaceAuthorizer authorizer) : IRequestBehavior
 {
     public async ValueTask<object?> Handle(RequestContext context, Func<ValueTask<object?>> next, CancellationToken ct)

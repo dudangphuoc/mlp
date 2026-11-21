@@ -33,4 +33,7 @@
     <ProjectReference Include="../../ControlPlane/MLPlatform.ControlPlane.Application/MLPlatform.ControlPlane.Application.csproj" />
     <ProjectReference Include="../../ControlPlane/MLPlatform.ControlPlane.Infrastructure/MLPlatform.ControlPlane.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="OpenApi/openapi.json" LogicalName="openapi.json" />
+  </ItemGroup>
 </Project>

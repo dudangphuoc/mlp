@@ -4,7 +4,8 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
 
-/// <summary>Calls every unary RPC that takes a workspace_id as an outsider and anonymously; any OK answer is a leak.</summary>
+/// <summary>Calls every unary RPC that takes a workspace_id as an outsider and anonymously; any OK answer is a
+/// leak.</summary>
 public static class PermissionMatrix
 {
     public sealed record Outcome(string Method, StatusCode Outsider, StatusCode Anonymous);
