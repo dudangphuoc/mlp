@@ -343,6 +343,8 @@ flowchart LR
 
 ## 3. Kiến trúc đích
 
+Kiểu kiến trúc: **modular monolith + CQRS theo vertical slice** (handler chứa logic nghiệp vụ, dữ liệu là record lấy thẳng từ SQL). **Không phải DDD**: không có aggregate, entity, value object hay repository. "Module" chỉ là ranh giới sở hữu schema và code; "interface" ở module dưới là điểm mở rộng để module trên cắm vào.
+
 ### 3.1 Project
 
 ```mermaid
@@ -416,9 +418,9 @@ flowchart TB
 Application/<Module>/
   <Area>/<UseCase>.cs           request + handler + các type chỉ slice này dùng
   Domain/<Type>.cs              logic thuần (PipelineDefinition, Guardrails, EvalMath…)
-  Persistence/<Module>Sql.cs    partial class [SqlQuery]; tách partial theo aggregate nếu > 200 dòng
+  Persistence/<Module>Sql.cs    partial class [SqlQuery]; tách partial theo nhóm bảng nếu > 200 dòng
   Persistence/<Row>.cs          row dùng chung cho nhiều slice
-  Ports/I<Port>.cs              interface do Infrastructure hoặc module trên cài đặt
+  Interfaces/I<Name>.cs         interface do Infrastructure hoặc module trên cài đặt
 ```
 
 - Namespace đặt theo module (`MLPlatform.ControlPlane.Application.LlmOps`), không thêm cấp theo thư mục con.
@@ -430,7 +432,7 @@ Ví dụ `LlmOps/LlmOps.cs` (430 dòng, 40 type) sau khi tách:
 ```
 LlmOps/
   Persistence/LlmSql.cs, PromptRow.cs, PromptVersionRow.cs, EvalSetRow.cs, EvalRunRow.cs
-  Ports/ILlmInvoker.cs
+  Interfaces/ILlmInvoker.cs
   Domain/Guardrails.cs, PromptTemplate.cs, LlmCall.cs
   Prompts/CreatePrompt.cs, ListPrompts.cs, GetPrompt.cs, CreatePromptVersion.cs, RunPrompt.cs, PromptLookup.cs
   Settings/GetLlmSettings.cs, UpdateLlmSettings.cs
@@ -596,7 +598,7 @@ Khi gặp phụ thuộc "ngược lên", chọn cách xử lý theo thứ tự �
 | 4.1 ✅ | Cqrs | thêm hàng đợi sau commit (`IAfterCommit.Enqueue`), sinh tĩnh, an toàn với AOT. Chuyển các side effect như `StopRun`/`CancelTrial` → `launcher.StopJobAsync` từ `TrackingGrpc` sang hàng đợi này. | command lồng nhau dùng chung transaction (`Context.cs:34`): hàng đợi chỉ được xả ở lớp ngoài cùng | scenario stop/cancel |
 | 4.2 ✅ | Data→Labeling, Data→Registry, Labeling→Registry | chuyển các truy vấn ghép (`Browse.cs:97,117`) về module ở tầng trên | trung bình | scenario dataset browse, label |
 | 4.3 ✅ | Scheduling→Serving, Scheduling→Notebooks | Serving và Notebooks đọc lý do chờ từ job thay vì Scheduling ghi vào bảng của chúng (`SchedHandlers.cs:127-130`) | UI phải hiển thị giống hệt | scenario deploy/notebook chờ GPU; xem trên web |
-| 4.4 ✅ | Tracking→Registry, Registry→Serving | port veto `IRunDeletionGuard` (Tracking khai báo, Registry cài đặt); phần Exports cần Serving chuyển lên Serving | trung bình | scenario xoá run, export |
+| 4.4 ✅ | Tracking→Registry, Registry→Serving | interface chặn `IRunDeletionGuard` (Tracking khai báo, Registry cài đặt); phần Exports cần Serving chuyển lên Serving | trung bình | scenario xoá run, export |
 | 4.5 ✅ | Serving→Features, Monitoring, LlmOps | dọn dữ liệu khi xoá deployment bằng event fan-out `DeploymentDeleted` | xoá thiếu dữ liệu | scenario xoá deployment rồi kiểm bảng |
 | 4.6 ✅ | Monitoring→Pipelines | event `DriftDetected` | | scenario drift → pipeline |
 | 4.7 ✅ | Analyzer | `MLPARCH001` và `MLPARCH002` chuyển thành lỗi cứng, baseline rỗng | | build xanh |
