@@ -5,11 +5,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Middleware;
 
-/// <summary>
-/// Public subdomains under <c>Routes:Domain</c> (e.g. mlp.hexbox.vn, wildcard DNS + cert at Traefik):
-///   nb-{id:N}.{domain}            → notebook (proxy /nb/{id}/…, notebook owner only; the session cookie is shared across *.{domain})
-///   {slug}--{workspace}.{domain}  → deployment: POST /predict, /feedback (endpoint key mlpd_…)
-/// </summary>
+/// <summary>Public subdomains under Routes:Domain (e.g.</summary>
 public sealed partial class PublicRoutes(IServiceScopeFactory scopes, MLPlatform.Security.IClock clock)
 {
     public static string Domain { get; private set; } = "";

@@ -12,7 +12,6 @@ public sealed class MarkAttemptRunningCommandHandler(IWriteSession db, IClock cl
 {
     public async ValueTask<bool> Handle(MarkAttemptRunningCommand c, CancellationToken ct)
     {
-        // The job was cancelled while its container was being prepared: do not bring it back — the caller stops the container.
         if (await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct) is { } ws && (await db.GetJobAsync(c.JobId, ws, ct))?.State == "cancelled")
         {
             await db.SetAttemptStateAsync(c.AttemptId, "cancelled", null, "cancelled", null, clock.UtcNow, ct);

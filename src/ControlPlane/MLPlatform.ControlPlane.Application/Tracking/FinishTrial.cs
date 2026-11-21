@@ -13,13 +13,11 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// The hidden run's job finished (called next to <see cref="SyncRunStateCommand"/>): records the stages and measurements from the attempt's
-/// <c>[mlp-trial]</c> lines, the machine it ran on, and passed / failed. <paramref name="Headline"/> = the error line of the log, if any.
-/// </summary>
+/// <summary>The hidden run's job finished (called next to SyncRunStateCommand): records the stages and measurements
+/// from the attempt's [mlp-trial] lines, the machine it ran on, and passed / failed.</summary>
 public sealed record FinishTrialCommand(Guid JobId, Guid? AttemptId, string JobState, IReadOnlyList<string> Lines, string? Headline) : ICommand<bool>;
 
-/// <summary>Passed = the job succeeded and no stage failed. A retry (job back to queued) leaves the trial waiting.</summary>
+/// <summary>Passed = the job succeeded and no stage failed.</summary>
 public sealed class FinishTrialCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<FinishTrialCommand, bool>
 {
     public async ValueTask<bool> Handle(FinishTrialCommand c, CancellationToken ct)
@@ -39,7 +37,6 @@ public sealed class FinishTrialCommandHandler(IWriteSession db, IClock clock) : 
                 : stages.Count == 0 && c.JobState == "succeeded" ? "The trial reported no stages (the recipe image may have an old mlp-shim)"
                 : $"The trial job {c.JobState}";
         }
-        // Stages that never ended (the process died mid-stage) are failed, so the canvas does not show them running forever.
         if (state != "passed")
             stages = stages.Select(s => s.State is "running" ? s with { State = state == "cancelled" ? "skipped" : "failed" } : s.State is "pending" ? s with { State = "skipped" } : s).ToList();
         Guid? host = c.AttemptId is { } a ? (await db.GetAttemptAsync(a, ct))?.HostIds.FirstOrDefault() : null;

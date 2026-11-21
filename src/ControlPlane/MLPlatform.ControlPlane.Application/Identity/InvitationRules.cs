@@ -7,7 +7,8 @@ namespace MLPlatform.ControlPlane.Application.Identity;
 
 internal static class InvitationRules
 {
-    /// <summary>Checks the invitation before creating the account (token used/expired/wrong email → IAM_INVITATION_INVALID).</summary>
+    /// <summary>Checks the invitation before creating the account (token used/expired/wrong email →
+    /// IAM_INVITATION_INVALID).</summary>
     public static async Task<InvitationRow> ValidateAsync(IWriteSession db, IClock clock, TokenService tokens, string token, string email, CancellationToken ct)
     {
         var inv = await db.GetInvitationAsync(tokens.Hash(token), ct);

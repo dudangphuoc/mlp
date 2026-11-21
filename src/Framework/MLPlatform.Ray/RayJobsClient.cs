@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MLPlatform.Ray;
 
-/// <summary>Ray Jobs REST API on the head (127.0.0.1:8265, called only by the api; 20/06 §4). JSON is an allowed exception (20/03 §1).</summary>
+/// <summary>Ray Jobs REST API on the head (127.0.0.1:8265, called only by the api; 20/06 §4).</summary>
 public sealed class RayJobsClient(HttpClient http)
 {
     public async Task SubmitAsync(string submissionId, string entrypoint, IDictionary<string, string>? metadata, CancellationToken ct)
@@ -21,7 +21,6 @@ public sealed class RayJobsClient(HttpClient http)
     public async Task StopAsync(string submissionId, CancellationToken ct)
     {
         using var res = await http.PostAsync($"api/jobs/{submissionId}/stop", null, ct);
-        // 404 = the job no longer exists → treat it as stopped
     }
 
     /// <summary>Forget a finished job so its submission id can be used again.</summary>

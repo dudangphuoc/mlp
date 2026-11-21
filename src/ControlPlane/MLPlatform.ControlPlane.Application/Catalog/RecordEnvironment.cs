@@ -10,10 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>
-/// Internal (launcher, environment builds): records the state of an image on a machine. <c>building</c> starts the clock;
-/// <c>ready</c> / <c>failed</c> on a machine with no record yet also creates one (the launcher built or found the image itself).
-/// </summary>
+/// <summary>Internal (launcher, environment builds): records the state of an image on a machine.</summary>
 public sealed record RecordEnvironmentCommand(Guid WorkspaceId, string RecipeName, string EnvTag, Guid HostId, string State, string Error) : ICommand<bool>;
 
 /// <summary>Upserts on (workspace, tag, machine); finishing a build keeps its start time.</summary>

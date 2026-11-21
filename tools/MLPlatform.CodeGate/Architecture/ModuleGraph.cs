@@ -2,7 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.CodeGate.Architecture;
 
-/// <summary>Cross-module references in Application: namespace imports, qualified names and calls to another module's SQL methods.</summary>
+/// <summary>Cross-module references in Application: namespace imports, qualified names and calls to another module's
+/// SQL methods.</summary>
 public static partial class ModuleGraph
 {
     private const string NamespacePrefix = "MLPlatform.ControlPlane.Application.";

@@ -4,12 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace MLPlatform.Recipes;
 
-/// <summary>
-/// Standard template grammar (cookbook 20/08 §4):
-/// <c>{x}</c>, <c>{x?TEXT}</c>, <c>{x|a=T1|b=T2|*=T}</c>, <c>{{</c>/<c>}}</c>.
-/// An empty/null value in bare form is an error; in <c>?</c>/<c>|</c> form it is a valid falsy value.
-/// Shell: values (not static text) are quoted if they contain characters outside <c>[A-Za-z0-9_./:=@%+,-]</c>.
-/// </summary>
+/// <summary>Standard template grammar (cookbook 20/08 §4): {x} , {x?TEXT} , {x|a=T1|b=T2|*=T} , {{ / }} .</summary>
 public static class Template
 {
     public delegate bool Resolver(string name, out JsonNode? value);
@@ -43,7 +38,7 @@ public static class Template
             if (c == '}') throw new TemplateException("template_syntax", "", $"Unmatched '}}' at position {i}");
             if (c != '{') { sb.Append(c); i++; continue; }
 
-            i++; // sau '{'
+            i++;
             var start = i;
             while (i < t.Length && (char.IsLetterOrDigit(t[i]) || t[i] is '_' or '.' or '-')) i++;
             var name = t[start..i];

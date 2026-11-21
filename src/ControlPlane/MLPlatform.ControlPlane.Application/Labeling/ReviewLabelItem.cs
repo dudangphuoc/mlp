@@ -26,7 +26,6 @@ public sealed class ReviewLabelItemCommandHandler(IWriteSession db, LabelAccess 
             throw new InvalidArgumentException("LABEL_REJECT_COMMENT_REQUIRED", "A reason is required when rejecting");
         var now = clock.UtcNow;
         if (!string.IsNullOrWhiteSpace(c.Comment)) await db.InsertCommentAsync(Ids.New(), p.Id, c.Path, uid, c.Comment.Trim(), now, ct);
-        // Rejected → goes back to the same annotator (annotator_id unchanged), with high priority.
         var next = c.Accept ? "accepted" : "rejected";
         await db.UpdateItemStateAsync(p.Id, c.Path, next, null, null, uid, null, false, true, now, ct);
         await db.InsertHistoryAsync(Ids.New(), p.DatasetId, c.Path, c.Accept ? "accept" : "reject", null, null, uid, now, ct);

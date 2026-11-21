@@ -12,13 +12,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Makes a new version with a fixed train/val/test split: the same files (referenced, not copied) plus <c>mlp-split.json</c>.
-/// Group "folder" keeps every image of one directory in the same split (frames of one video).
-/// </summary>
+/// <summary>Makes a new version with a fixed train/val/test split: the same files (referenced, not copied) plus
+/// mlp-split.json .</summary>
 public sealed record SplitVersionCommand(Guid WorkspaceId, Guid VersionId, int TrainPct, int ValPct, int TestPct, string GroupBy, string Note) : ICommand<VersionRow>;
 
-/// <summary>Assigns each image by the hash of its path (or folder), writes the split file into storage and records the new version.</summary>
+/// <summary>Assigns each image by the hash of its path (or folder), writes the split file into storage and records the
+/// new version.</summary>
 public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, S3Client s3) : ICommandHandler<SplitVersionCommand, VersionRow>
 {
     public async ValueTask<VersionRow> Handle(SplitVersionCommand c, CancellationToken ct)
@@ -40,7 +39,6 @@ public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, W
         var seed = src.DatasetId.ToString();
         var groups = images.Select(Key).Distinct().ToDictionary(k => k, k => SplitRules.Bucket(seed, k));
         var of = groups.ToDictionary(g => g.Key, g => g.Value < train * 100 ? "train" : g.Value < (train + val) * 100 ? "val" : "test");
-        // A small dataset can leave a part empty although the ratios are fine: move the train group with the lowest hash over.
         foreach (var need in test > 0 ? new[] { "val", "test" } : ["val"])
             if (!of.ContainsValue(need) && of.Count(g => g.Value == "train") > 1)
                 of[of.Where(g => g.Value == "train").MinBy(g => groups[g.Key]).Key] = need;
@@ -75,7 +73,6 @@ public sealed class SplitVersionCommandHandler(IWriteSession db, IClock clock, W
         var note = string.IsNullOrWhiteSpace(c.Note) ? $"v{src.Number} split {train}/{val}/{test}{(byFolder ? " by folder" : "")}" : c.Note.Trim();
         var size = files.Sum(f => f.SizeBytes) + body.Length;
         await db.InsertVersionAsync(id, src.DatasetId, n, prefix, files.Count + 1, size, note, uid, now, ct);
-        // The files stay where they are: the new version points at them, so a split costs no copy.
         await db.CopyVersionFilesAsReferencesAsync(id, src.Id, $"s3://{Buckets.Datasets}/{src.Prefix}", SplitRules.File, ct);
         await db.InsertVersionFileAsync(id, SplitRules.File, body.Length, ct);
         await db.SetVersionSplitAsync(id, "file", SplitRules.CountsJson(counts), valHash, ct);

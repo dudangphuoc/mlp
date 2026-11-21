@@ -3,7 +3,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
-/// <summary>Turns a stored source address into a URL a workload can download: s3://bucket/key is presigned, https:// is used as is.</summary>
+/// <summary>Turns a stored source address into a URL a workload can download: s3://bucket/key is presigned, https:// is
+/// used as is.</summary>
 public static class SourceUrls
 {
     public static string Resolve(S3Client s3, string url)

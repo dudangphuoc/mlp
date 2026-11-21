@@ -112,7 +112,6 @@ public sealed class FleetGrpc(IMediator mediator, AgentRegistry agents, IConfigu
         if (!agents.TryGet(hostId, out var s)) throw new UnavailableException("FLEET_HOST_OFFLINE", "Host is offline");
         var volume = await mediator.Send(new MLPlatform.ControlPlane.Application.Ops.DeleteDataCacheCommand(G(r.WorkspaceId, "workspace_id"), hostId,
             G(r.DatasetId, "dataset_id")), ctx.CancellationToken);
-        // No container carries this label: only the volume is removed.
         var rm = new ContainerRemove { Label = "mlp.none=" + Guid.NewGuid().ToString("N") };
         rm.Volumes.Add(volume);
         var res = await s.SendCommandAsync(new AgentCommand { ContainerRemove = rm }, TimeSpan.FromMinutes(2), ctx.CancellationToken);
@@ -144,7 +143,8 @@ public sealed class FleetGrpc(IMediator mediator, AgentRegistry agents, IConfigu
         return res;
     }
 
-    /// <summary>D-38 OTA: upgrade the agent on the selected hosts (empty = every online host on a different version).</summary>
+    /// <summary>D-38 OTA: upgrade the agent on the selected hosts (empty = every online host on a different
+    /// version).</summary>
     public override async Task<ListAgentUpgradesResponse> UpgradeAgents(UpgradeAgentsRequest r, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");

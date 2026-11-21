@@ -3,10 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.Recipes;
 
-/// <summary>
-/// Manifest selfcheck (M17 R2a): every template renders with sample values, placeholders are in the 20/08 §4.1 catalog,
-/// parameters are declared, `{input.*}` is declared, and no bare `{weights}` remains where it may be empty.
-/// </summary>
+/// <summary>Manifest selfcheck (M17 R2a): every template renders with sample values, placeholders are in the 20/08 §4.1
+/// catalog, parameters are declared, `{input.*}` is declared.</summary>
 public static partial class RecipeChecker
 {
     [GeneratedRegex(@"^(data|data\.(train|val|test)|dataset\.classes\.(count|names_csv|json_path)|dataset\.target_column|output|checkpoint|weights|weights\.ref|model|model\.weights|base_weights|zoo\.[a-z0-9_]+|recipe\.src|variant\.[a-z_]+|task|format|params\.[a-z0-9_]+|params\.json|input\.[a-z_]+|nnodes|node_rank|gpus_per_node|gpu_ids_csv|master_addr|master_port|device|gpu\.compute_capability|gpu\.supports_bf16|converter\.(src|dst))$")]

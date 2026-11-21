@@ -16,7 +16,7 @@ public sealed class AiCallException(string outcome, string message, int status =
 {
     public string Outcome { get; } = outcome;
     public int Status { get; } = status;
-    /// <summary>Tokens the provider billed even though the call failed (e.g. an empty answer) — still shown and costed.</summary>
+    /// <summary>Tokens the provider billed even though the call failed (e.g.</summary>
     public int TokensIn { get; } = tokensIn;
     public int TokensOut { get; } = tokensOut;
 }

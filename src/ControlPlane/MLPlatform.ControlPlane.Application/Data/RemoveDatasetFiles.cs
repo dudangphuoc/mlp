@@ -6,10 +6,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Remove files from what the next version will contain: a file added since the latest version is dropped at once (and its upload deleted);
-/// a file of the latest version is marked, and leaves with the next version. Versions themselves never change.
-/// </summary>
+/// <summary>Remove files from what the next version will contain: a file added since the latest version is dropped at
+/// once (and its upload deleted); a file of the latest version is marked, and leaves with the next version.</summary>
 public sealed record RemoveDatasetFilesCommand(Guid WorkspaceId, Guid DatasetId, IReadOnlyList<string> Paths) : ICommand<int>;
 
 /// <summary>Deletes pending uploads, marks frozen files; returns how many paths it took.</summary>

@@ -112,7 +112,8 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
         return ToProto(trial);
     }
 
-    /// <summary>The "[mlp-trial]" lines the job's current attempt has logged so far (the log lives in this host, not in the database).</summary>
+    /// <summary>The "[mlp-trial]" lines the job's current attempt has logged so far (the log lives in this host, not in
+    /// the database).</summary>
     private async Task<IReadOnlyList<string>> LiveTrialLines(Guid jobId)
     {
         var attempt = (await mediator.Query(new MLPlatform.ControlPlane.Application.Scheduling.ListActiveAttemptsQuery(), CancellationToken.None))
@@ -145,7 +146,6 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
     public override async Task<Empty> DeleteRun(GetRunRequest r, ServerCallContext ctx)
     {
         var prefix = await mediator.Send(new DeleteRunCommand(G(r.WorkspaceId, "workspace_id"), G(r.RunId, "run_id")), ctx.CancellationToken);
-        // The record is gone; files are removed best effort (a leftover object is invisible and harmless).
         try
         {
             foreach (var o in await s3.ListAsync(MLPlatform.ControlPlane.Application.Data.Buckets.Artifacts, prefix, ctx.CancellationToken))
@@ -287,7 +287,6 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
             DatasetName = v.Dataset?.DatasetName ?? "", DatasetVersionNumber = v.Dataset?.Number ?? 0, FromScratch = r.FromScratch, Gpus = r.Gpus, Cpus = r.Cpus,
             JobState = v.Job?.State ?? "", StateReason = v.Job?.StateReason ?? "", AttemptCount = v.Job?.AttemptCount ?? 0, CreatedBy = v.UserName ?? "",
         };
-        // Runs from before revisions keep only the from-scratch flag; say how they started the same way as new ones.
         run.StartKind = v.Extra?.StartKind ?? (r.FromScratch ? "backbone" : "pretrained");
         if (v.Extra is { } x)
         {
@@ -296,7 +295,6 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
         }
         if (v.Job?.StartedAt is { } started) run.StartedAt = Timestamp.FromDateTimeOffset(started);
         if (r.EndedAt is { } ended) run.EndedAt = Timestamp.FromDateTimeOffset(ended);
-        // Progress is only meaningful while the job is alive; a finished run keeps none.
         if (!RunRules.Finished(r.State) && v.Job?.Progress is { } pj && System.Text.Json.Nodes.JsonNode.Parse(pj) is System.Text.Json.Nodes.JsonObject p)
         {
             double D(string k) => p[k] is System.Text.Json.Nodes.JsonValue jv && jv.TryGetValue<double>(out var d) ? d : 0;

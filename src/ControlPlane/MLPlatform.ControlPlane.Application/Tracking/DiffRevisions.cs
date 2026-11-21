@@ -10,7 +10,8 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 /// <summary>What changed between two revisions of a project recipe.</summary>
 public sealed record DiffRevisionsQuery(Guid WorkspaceId, Guid ProjectRecipeId, int From, int To) : IQuery<RevisionDiffView>;
 
-/// <summary>Same rows as the canvas's change list (variant, parameters by pane); a changed manifest is flagged, not diffed as text.</summary>
+/// <summary>Same rows as the canvas's change list (variant, parameters by pane); a changed manifest is flagged, not
+/// diffed as text.</summary>
 public sealed class DiffRevisionsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<DiffRevisionsQuery, RevisionDiffView>
 {
     public async ValueTask<RevisionDiffView> Handle(DiffRevisionsQuery q, CancellationToken ct)

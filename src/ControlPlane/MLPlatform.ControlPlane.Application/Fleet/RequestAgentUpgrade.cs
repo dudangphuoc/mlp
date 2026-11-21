@@ -5,7 +5,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
-/// <summary>A user requests an upgrade of one machine: checks permission, records the job (one running job per machine). Returns the job id, or null if a job is already in progress.</summary>
+/// <summary>A user requests an upgrade of one machine: checks permission, records the job (one running job per
+/// machine).</summary>
 public sealed record RequestAgentUpgradeCommand(Guid WorkspaceId, Guid HostId, string FromVersion, string ToVersion, bool Skip, string Message) : ICommand<Guid>;
 
 /// <summary>Handles <see cref="RequestAgentUpgradeCommand"/>.</summary>

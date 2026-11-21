@@ -22,7 +22,7 @@ public sealed class SetLabelingProjectStateCommandHandler(IWriteSession db, Labe
         _ = roles;
         var ok = (p.State, c.State) switch
         {
-            ("draft" or "paused" or "completed", "active") => true,   // a finished project can be opened again
+            ("draft" or "paused" or "completed", "active") => true,
             ("active", "paused") => true,
             ("active" or "paused", "completed") => true,
             _ => false,
@@ -31,7 +31,6 @@ public sealed class SetLabelingProjectStateCommandHandler(IWriteSession db, Labe
         if (c.State == "active")
         {
             var task = (await db.GetDatasetAsync(p.DatasetId, p.WorkspaceId, ct))?.Task ?? "";
-            // A project made before projects always labelled a version has none: it takes the dataset's latest, or it would open with no items.
             var versionId = p.VersionId;
             if (versionId is null && await db.LatestVersionAsync(p.DatasetId, c.WorkspaceId, ct) is { } latest)
             {

@@ -29,7 +29,6 @@ public sealed class ReportProgressCommandHandler(IWriteSession db, IClock clock,
             ["rate"] = c.Rate, ["eta_seconds"] = Math.Round(c.EtaSeconds), ["message"] = c.Message, ["attempt_id"] = a.Id.ToString(),
             ["stall_after_min"] = c.StallAfterMin > 0 ? c.StallAfterMin : 30,
         };
-        // R24: training detail from the shim (epoch/step, train|validate, loss, stages); a malformed value is dropped, never stored as text.
         if (c.DetailJson.Length is > 0 and < 8192)
             try { if (JsonNode.Parse(c.DetailJson) is JsonObject d) progress["detail"] = d; } catch (System.Text.Json.JsonException) { }
         if (c.Phase == "preparing_data" && progress["detail"]?["sync"] is JsonObject sync) await DataSyncRecorder.RecordAsync(db, clock, a, sync, ct);

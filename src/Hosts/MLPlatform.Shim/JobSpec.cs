@@ -3,39 +3,37 @@ using MLPlatform.Recipes;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Specification of one attempt (the control plane writes the JSON, the agent mounts it into the container; 20/08 §5.1).
-/// Path fields are paths **inside the container** prepared by the agent/shim.
-/// </summary>
+/// <summary>Specification of one attempt (the control plane writes the JSON, the agent mounts it into the container;
+/// 20/08 §5.1).</summary>
 public sealed class JobSpec
 {
     public required JsonObject Manifest { get; init; }
-    public required string Entrypoint { get; init; }          // train | eval | export | predict | inspect
+    public required string Entrypoint { get; init; }
     public string Task { get; init; } = "";
     public JsonObject Variant { get; init; } = [];
     public JsonObject Params { get; init; } = [];
     public required string Output { get; init; }
-    public string? Data { get; set; }   // the converter may point it at a converted copy
+    public string? Data { get; set; }
     public string? Weights { get; init; }
     public string? WeightsRef { get; init; }
     public string? Model { get; init; }
     public string? BaseWeights { get; init; }
-    public string? Checkpoint { get; set; }                   // present → resume (spec or MLP_RESUME_FROM, 20/10 §4.6)
+    public string? Checkpoint { get; set; }
     public string? Format { get; init; }
     public JsonObject Inputs { get; init; } = [];
-    public JsonObject Dataset { get; init; } = [];            // classes.count, classes.names_csv, classes.json_path, target_column
-    public JsonObject Hardware { get; init; } = [];           // nnodes, node_rank, gpus_per_node, gpu_ids_csv, master_addr, master_port, device, gpu.*
-    public JsonObject Zoo { get; init; } = [];                // key → path
+    public JsonObject Dataset { get; init; } = [];
+    public JsonObject Hardware { get; init; } = [];
+    public JsonObject Zoo { get; init; } = [];
     public string RecipeSrc { get; init; } = "/opt/recipe/src";
     public string? ConverterSrc { get; init; }
     public string? ConverterDst { get; init; }
     public JsonArray DataFiles { get; init; } = [];
-    public string? DataFilesUrl { get; init; }                // large file lists are stored in object storage, not in the env var
-    public string? DataCache { get; init; }                   // mounted host cache volume of the dataset (objects + per-run views), see DataSync.cs
+    public string? DataFilesUrl { get; init; }
+    public string? DataCache { get; init; }
     public string? DatasetId { get; init; }
     public string? DatasetVersionId { get; init; }
-    public string? WeightsUrl { get; init; }                  // pretrained variant weights, downloaded to {weights} when missing
-    public JsonObject? Trial { get; init; }                   // present → trial mode: {overrides, resumeOverrides} from entrypoints.train.trial
+    public string? WeightsUrl { get; init; }
+    public JsonObject? Trial { get; init; }
 
     public static JobSpec Load(string path) => Parse(File.ReadAllText(path));
 

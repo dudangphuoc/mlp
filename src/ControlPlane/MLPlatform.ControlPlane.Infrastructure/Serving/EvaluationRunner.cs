@@ -9,11 +9,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Runs model evaluations (Models → Evaluate): ensures a replica of the model version (reused or a test replica), then for each
-/// sample downloads the image + ground truth, calls the replica and stores the per-sample result; at the end the metrics are
-/// computed from the stored samples. Resumable: samples already stored are skipped after an api restart.
-/// </summary>
+/// <summary>Runs model evaluations (Models → Evaluate): ensures a replica of the model version (reused or a test
+/// replica), then for each sample downloads the image + ground truth.</summary>
 public sealed class EvaluationRunner(IServiceScopeFactory scopes, ModelServerClients clients, IHttpClientFactory http, SystemHealth health,
     ILogger<EvaluationRunner> log) : BackgroundService
 {
@@ -66,7 +63,7 @@ public sealed class EvaluationRunner(IServiceScopeFactory scopes, ModelServerCli
             await using var s2 = scopes.CreateAsyncScope();
             var m2 = s2.ServiceProvider.GetRequiredService<IMediator>();
             var now = await m2.Query(new ListActiveEvaluationsQuery(), stop);
-            if (now.All(x => x.Id != e.Id)) return;   // cancelled meanwhile
+            if (now.All(x => x.Id != e.Id)) return;
             await m2.Send(new CompleteEvaluationCommand(e.Id), stop);
             log.LogInformation("Evaluation {Id} finished", e.Id);
         }
@@ -130,7 +127,7 @@ public sealed class EvaluationRunner(IServiceScopeFactory scopes, ModelServerCli
             var size = output?.Detect is { Width: > 0, Height: > 0 } d ? (d.Width, d.Height) : EvalMath.ImageSize(bytes) ?? (0, 0);
             List<EvalBox> gt;
             if (coco is not null) gt = coco.GetValueOrDefault(Path.GetFileName(s.Image)) ?? [];
-            else if (s.LabelUrl is null) gt = [];   // no label file → negative image
+            else if (s.LabelUrl is null) gt = [];
             else
             {
                 try { gt = EvalMath.ParseYolo(System.Text.Encoding.UTF8.GetString(await DownloadAsync(s.LabelUrl, stop)), classes, size.Item1, size.Item2); }

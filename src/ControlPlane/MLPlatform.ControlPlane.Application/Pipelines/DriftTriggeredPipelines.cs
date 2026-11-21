@@ -5,7 +5,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
-/// <summary>Runs every pipeline of the workspace that has a deployment.drift event trigger, with the deployment as a parameter.</summary>
+/// <summary>Runs every pipeline of the workspace that has a deployment.drift event trigger, with the deployment as a
+/// parameter.</summary>
 public sealed class DriftTriggeredPipelines(IWriteSession db, IClock clock) : IDriftListener
 {
     public Task OnDriftAlertAsync(Guid workspaceId, JsonObject deployment, CancellationToken ct) =>

@@ -8,7 +8,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ai;
 
-/// <summary>Catalog for the runtime (internal; no permission check — used while serving a request that was already authorized).</summary>
+/// <summary>Catalog for the runtime (internal; no permission check — used while serving a request that was already
+/// authorized).</summary>
 public sealed record GetAiCatalogInternalQuery : IQuery<AiOverview>;
 
 public sealed class GetAiCatalogInternalQueryHandler(IReadSession db, IClock clock) : IQueryHandler<GetAiCatalogInternalQuery, AiOverview>

@@ -15,7 +15,7 @@ public sealed class ListRecipesQueryHandler(IReadSession db, WorkspaceAuthorizer
 {
     public async ValueTask<IReadOnlyList<RecipeRow>> Handle(ListRecipesQuery q, CancellationToken ct)
     {
-        await auth.RequireAsync(q.WorkspaceId, "dataset.read", ct);   // every member can view the catalog
+        await auth.RequireAsync(q.WorkspaceId, "dataset.read", ct);
         return await db.ListRecipesAsync(q.WorkspaceId, q.Task, ct);
     }
 }

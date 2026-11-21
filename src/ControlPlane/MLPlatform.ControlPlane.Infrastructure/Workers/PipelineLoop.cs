@@ -8,7 +8,8 @@ using Pipeline = MLPlatform.Contracts.V1.Pipeline;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Pipeline engine (M14, D-21): every 3 s fire due periodic triggers, then advance each run in a scope acting as the user who started it.</summary>
+/// <summary>Pipeline engine (M14, D-21): every 3 s fire due periodic triggers, then advance each run in a scope acting
+/// as the user who started it.</summary>
 public sealed class PipelineLoop(IServiceScopeFactory scopes, SystemHealth health, ILogger<PipelineLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stop)

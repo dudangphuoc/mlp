@@ -13,10 +13,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// One trial. <paramref name="LiveLines"/> returns the <c>[mlp-trial]</c> lines the running attempt of a job has logged so far
-/// (the host keeps the log; the application cannot read it itself).
-/// </summary>
+/// <summary>One trial.</summary>
 public sealed record GetTrialQuery(Guid WorkspaceId, Guid TrialId, Func<Guid, Task<IReadOnlyList<string>>>? LiveLines = null) : IQuery<TrialView>;
 
 /// <summary>Reads the trial and, while it is active, its live stages.</summary>

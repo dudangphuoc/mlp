@@ -13,5 +13,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>A project recipe with what the list needs from the Catalog: its display name and whether the origin changed since it was taken.</summary>
+/// <summary>A project recipe with what the list needs from the Catalog: its display name and whether the origin changed
+/// since it was taken.</summary>
 public sealed record ProjectRecipeView(ProjectRecipeRow Row, string DisplayName, bool OriginChanged);

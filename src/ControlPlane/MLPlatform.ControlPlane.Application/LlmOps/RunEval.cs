@@ -10,7 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>Runs an eval set against a prompt version (synchronous, ≤ 100 cases) → score = share of cases passing every condition; each call records `eval` usage.</summary>
+/// <summary>Runs an eval set against a prompt version (synchronous, ≤ 100 cases) → score = share of cases passing every
+/// condition; each call records `eval` usage.</summary>
 public sealed record RunEvalCommand(Guid WorkspaceId, Guid SetId, string PromptKey, int Version, Guid? DeploymentId) : ICommand<EvalRunRow>;
 
 public sealed class RunEvalCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, ILlmInvoker invoker) : ICommandHandler<RunEvalCommand, EvalRunRow>

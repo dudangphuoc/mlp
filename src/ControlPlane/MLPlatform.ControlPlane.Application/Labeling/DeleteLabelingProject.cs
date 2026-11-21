@@ -9,7 +9,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Delete a labeling project. The labels stay with the dataset (they belong to its files, not to the project).</summary>
+/// <summary>Delete a labeling project.</summary>
 public sealed record DeleteLabelingProjectCommand(Guid WorkspaceId, Guid ProjectId) : ICommand<bool>;
 
 /// <summary>Marks the project deleted; it leaves every list.</summary>

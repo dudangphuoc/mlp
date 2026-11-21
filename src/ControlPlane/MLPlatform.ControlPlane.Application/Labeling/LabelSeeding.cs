@@ -9,7 +9,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Which files of a dataset become items: images for image tasks; for other tasks every file except metadata (yaml, json).</summary>
+/// <summary>Which files of a dataset become items: images for image tasks; for other tasks every file except metadata
+/// (yaml, json).</summary>
 public static class LabelSeeding
 {
     private static readonly string[] TextTasks = ["text", "tabular", "generate", "asr", "tts", "audio", "speech"];
@@ -23,8 +24,8 @@ public static class LabelSeeding
         return versionId is { } v ? db.SeedItemsFromVersionAsync(projectId, datasetId, v, images, exts, ct) : db.SeedItemsAsync(projectId, datasetId, images, exts, ct);
     }
 
-
-    /// <summary>"class cx cy w h" lines (normalized centre) → platform boxes {x, y, w, h} (normalized top-left); malformed lines are skipped.</summary>
+    /// <summary>"class cx cy w h" lines (normalized centre) → platform boxes {x, y, w, h} (normalized top-left);
+    /// malformed lines are skipped.</summary>
     public static List<AnnotationInput> ParseYolo(string text, IReadOnlySet<int>? classes)
     {
         var res = new List<AnnotationInput>();

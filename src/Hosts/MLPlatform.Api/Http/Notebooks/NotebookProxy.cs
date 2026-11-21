@@ -6,16 +6,14 @@ using System.Net.WebSockets;
 using MLPlatform.AgentProtocol;
 using MLPlatform.ControlPlane.Application.Notebooks;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 using MLPlatform.Cqrs;
 using MLPlatform.Security;
 
 namespace MLPlatform.Api.Http.Notebooks;
 
-/// <summary>
-/// HTTP `/nb/{id}/…` (M08 §5 step 2, R2): notebook owner only (others → 404); forwards HTTP + WebSocket over the data channel to
-/// 127.0.0.1:&lt;port&gt; on the host; the api attaches the Jupyter token itself and does not forward the platform session cookie.
-/// </summary>
+/// <summary>HTTP `/nb/{id}/…` (M08 §5 step 2, R2): notebook owner only (others → 404); forwards HTTP + WebSocket over
+/// the data channel to 127.0.0.1:<port> on the host.</summary>
 public sealed class NotebookProxy
 {
     private static readonly HashSet<string> HopHeaders = new(StringComparer.OrdinalIgnoreCase)
@@ -35,7 +33,6 @@ public sealed class NotebookProxy
         _log = log;
         _scopes = scopes;
         _tokens = tokens;
-        // Virtual host name "x{hostId:N}-{port}.nb" → one connection pool per (host, port); each TCP connection = one data channel.
         _invoker = new HttpMessageInvoker(new SocketsHttpHandler
         {
             UseCookies = false, AllowAutoRedirect = false, AutomaticDecompression = DecompressionMethods.None, UseProxy = false,
@@ -76,7 +73,8 @@ public sealed class NotebookProxy
         }
     }
 
-    /// <summary>R4: activity marker; written at most once per 30 s, in a separate scope with no user (no audit generated).</summary>
+    /// <summary>R4: activity marker; written at most once per 30 s, in a separate scope with no user (no audit
+    /// generated).</summary>
     private async Task TouchAsync(Guid id)
     {
         var now = Environment.TickCount64;
@@ -117,7 +115,6 @@ public sealed class NotebookProxy
         var b = PumpAsync(upstream, down, cts.Token);
         var first = await Task.WhenAny(a, b);
         if (first.Exception is { } ex) _log.LogDebug(ex.GetBaseException(), "Notebook WebSocket closed due to an error");
-        // One side sent Close → already forwarded to the other side; wait for its Close reply to complete the closing handshake on both ends.
         await Task.WhenAny(Task.WhenAll(a, b), Task.Delay(TimeSpan.FromSeconds(5)));
         await cts.CancelAsync();
     }

@@ -7,7 +7,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>One file of a version for a job: signed link, size, and the cache id (null = the bytes behind the address may change → never cached).</summary>
+/// <summary>One file of a version for a job: signed link, size, and the cache id (null = the bytes behind the address
+/// may change → never cached).</summary>
 public sealed record VersionFileLink(string Path, string Url, long Size, string? Id)
 {
     public System.Text.Json.Nodes.JsonObject ToJson()

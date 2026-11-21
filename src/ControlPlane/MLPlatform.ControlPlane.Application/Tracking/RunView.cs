@@ -12,5 +12,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>A run with what other modules know about it: its job (state, reason, progress), the dataset version it trained on, who started it.</summary>
+/// <summary>A run with what other modules know about it: its job (state, reason, progress), the dataset version it
+/// trained on, who started it.</summary>
 public sealed record RunView(RunRow Run, JobInfoRow? Job, VersionNameRow? Dataset, string? UserName, RunExtraRow? Extra = null);

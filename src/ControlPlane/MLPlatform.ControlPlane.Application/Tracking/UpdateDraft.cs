@@ -13,10 +13,11 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Saves the caller's draft. <paramref name="Etag"/> is the one the client last read; a stale one is refused.</summary>
+/// <summary>Saves the caller's draft.</summary>
 public sealed record UpdateDraftCommand(Guid WorkspaceId, DraftInput Draft, int Etag) : ICommand<DraftView>;
 
-/// <summary>Checks the shape of the values (unknown parameters, kinds, limits); whether they can train is the gate's job, not a save error.</summary>
+/// <summary>Checks the shape of the values (unknown parameters, kinds, limits); whether they can train is the gate's
+/// job, not a save error.</summary>
 public sealed class UpdateDraftCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator) : ICommandHandler<UpdateDraftCommand, DraftView>
 {
     public async ValueTask<DraftView> Handle(UpdateDraftCommand c, CancellationToken ct)
@@ -36,7 +37,6 @@ public sealed class UpdateDraftCommandHandler(IWriteSession db, IClock clock, Wo
         if (i.StartKind == "backbone" && manifest["entrypoints"]?["train"]?["fromScratch"]?.GetValue<bool>() != true)
             throw new PreconditionException("CATALOG_FROM_SCRATCH_UNSUPPORTED", "Recipe does not support training from scratch (20/08 §4.2)");
         if (i.TrainKind is not ("fine_tune" or "retrain")) throw new InvalidArgumentException("TRACK_DRAFT_INVALID", "train_kind is fine_tune or retrain");
-        // R5: train again is entered only through "Train again from #n" (ResetDraft); while in it, the recipe content stays the revision of #n.
         Guid? retrainOf = null;
         if (i.TrainKind == "retrain")
         {

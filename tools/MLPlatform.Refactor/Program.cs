@@ -4,6 +4,7 @@ return args switch
 {
     ["split", var mapFile] => TypeSplitter.Run(Path.GetFullPath(mapFile)),
     ["inventory", var file] => TypeInventory.Print(Path.GetFullPath(file)),
+    ["clean-comments", .. var roots] => CommentCleaner.Run(roots.SelectMany(r => Directory.EnumerateFiles(r, "*.cs", SearchOption.AllDirectories)).Where(f => !f.Contains("/obj/") && !f.Contains("/bin/"))),
     _ => Usage(),
 };
 

@@ -10,10 +10,12 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>Internal (after the RPC checked the permission): the recorded environments of a recipe in a workspace.</summary>
+/// <summary>Internal (after the RPC checked the permission): the recorded environments of a recipe in a
+/// workspace.</summary>
 public sealed record ListEnvironmentRowsQuery(Guid WorkspaceId, string RecipeName) : IQuery<IReadOnlyList<EnvironmentRow>>;
 
-/// <summary>A build that has been running longer than the limit was lost with an api restart and reads as failed.</summary>
+/// <summary>A build that has been running longer than the limit was lost with an api restart and reads as
+/// failed.</summary>
 public sealed class ListEnvironmentRowsQueryHandler(IReadSession db, IClock clock) : IQueryHandler<ListEnvironmentRowsQuery, IReadOnlyList<EnvironmentRow>>
 {
     public async ValueTask<IReadOnlyList<EnvironmentRow>> Handle(ListEnvironmentRowsQuery q, CancellationToken ct) =>

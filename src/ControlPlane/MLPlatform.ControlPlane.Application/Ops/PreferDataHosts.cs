@@ -7,10 +7,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Scheduler: orders the machines that fit a job so the one already holding most of the job's dataset comes first (the data does not
-/// travel again), and records the choice on the job's timeline. Machines without the data keep their original order after it.
-/// </summary>
+/// <summary>Scheduler: orders the machines that fit a job so the one already holding most of the job's dataset comes
+/// first (the data does not travel again), and records the choice on the job's timeline.</summary>
 public sealed record PreferDataHostsCommand(Guid WorkspaceId, Guid JobId, Guid DatasetId, IReadOnlyList<Guid> Candidates) : ICommand<IReadOnlyList<Guid>>, IInternalCommand;
 
 /// <summary>Sorts candidate hosts by cached bytes of the dataset and emits a `data.placement` event.</summary>

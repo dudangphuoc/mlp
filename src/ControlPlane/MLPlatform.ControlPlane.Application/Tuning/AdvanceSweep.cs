@@ -11,10 +11,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tuning;
 
-/// <summary>
-/// One orchestrator step (M10 §5): sync trial state/values from M09 runs → update the best trial → done when the budget is used up and every
-/// trial has finished → if there is room (parallel), generate new trials via StartTraining on behalf of the sweep creator (the host sets the user for the scope).
-/// </summary>
+/// <summary>One orchestrator step (M10 §5): sync trial state/values from M09 runs → update the best trial → done when
+/// the budget is used up and every trial has finished → if there is room (parallel).</summary>
 public sealed record AdvanceSweepCommand(Guid WorkspaceId, Guid SweepId) : ICommand<int>, IInternalCommand;
 
 public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, IMediator mediator) : ICommandHandler<AdvanceSweepCommand, int>
@@ -40,7 +38,6 @@ public sealed class AdvanceSweepCommandHandler(IWriteSession db, IClock clock, I
                    : $"Sweep \"{s.Name}\" failed", $"#/sweeps/{s.Id}", $"sweep/{s.Id}", ok ? "success" : "error", ct);
             return 0;
         }
-        // Repeated failures right from the start (e.g. wrong recipe/params) → stop early instead of burning the whole budget.
         if (failed >= 3 && scored.Count == 0 && trials.Count == failed)
         {
             await db.FinishSweepAsync(s.Id, "failed", "The first 3 trials all failed", clock.UtcNow, ct);

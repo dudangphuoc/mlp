@@ -11,7 +11,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>Remove a conversion and its file (a running one: its job keeps running; cancel it on the Jobs page).</summary>
+/// <summary>Remove a conversion and its file (a running one: its job keeps running; cancel it on the Jobs
+/// page).</summary>
 public sealed record DeleteExportCommand(Guid WorkspaceId, Guid ExportId) : ICommand<bool>;
 
 /// <summary>Deletes the stored objects, then the row.</summary>

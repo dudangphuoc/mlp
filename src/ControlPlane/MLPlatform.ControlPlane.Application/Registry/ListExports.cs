@@ -14,10 +14,8 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 /// <summary>The conversions of a model version, newest first; running ones are settled from their job first.</summary>
 public sealed record ListExportsCommand(Guid WorkspaceId, Guid ModelVersionId) : ICommand<IReadOnlyList<ExportRow>>;
 
-/// <summary>
-/// A running conversion whose job succeeded becomes <c>ready</c> (the uploaded file takes its real name), one whose job failed or was
-/// cancelled becomes <c>failed</c> with the job's reason. Settled here, on read, so no scheduler hook is needed.
-/// </summary>
+/// <summary>A running conversion whose job succeeded becomes ready (the uploaded file takes its real name), one whose
+/// job failed or was cancelled becomes failed with the job's reason.</summary>
 public sealed class ListExportsCommandHandler(IWriteSession db, S3Client s3, WorkspaceAuthorizer auth) : ICommandHandler<ListExportsCommand, IReadOnlyList<ExportRow>>
 {
     public async ValueTask<IReadOnlyList<ExportRow>> Handle(ListExportsCommand c, CancellationToken ct)

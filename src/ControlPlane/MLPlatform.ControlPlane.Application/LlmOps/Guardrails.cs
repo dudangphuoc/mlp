@@ -10,10 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>
-/// Gateway guardrails (M15 §4): PII (email, VN phone number, CCCD/CMND national ID, card) → off / redact / block; prompt injection (English + Vietnamese patterns) → block;
-/// Admin-defined banned terms → block. Applied to input, and to output when `check_output` is on.
-/// </summary>
+/// <summary>Gateway guardrails (M15 §4): PII (email, VN phone number, CCCD/CMND national ID, card) → off / redact /
+/// block; prompt injection (English + Vietnamese patterns) → block; Admin-defined banned terms → block.</summary>
 public static partial class Guardrails
 {
     [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")] private static partial Regex Email();

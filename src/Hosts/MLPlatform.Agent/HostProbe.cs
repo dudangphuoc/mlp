@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Agent;
 
-/// <summary>Collects HostInfo; the agent is the source of truth about the host (D-12, 20/04 §4). External commands are read-only, with timeouts.</summary>
+/// <summary>Collects HostInfo; the agent is the source of truth about the host (D-12, 20/04 §4).</summary>
 public static class HostProbe
 {
     public static async Task<HostInfo> CollectAsync(AgentOptions o, CancellationToken ct)

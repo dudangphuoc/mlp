@@ -7,10 +7,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Audit;
 
-/// <summary>
-/// Audits every user command (20/06 §6, M06): success is written in the same transaction; denied/failed is written in a separate transaction
-/// (the main transaction has rolled back). Internal commands without a user (heartbeat, scheduler) are not recorded.
-/// </summary>
+/// <summary>Audits every user command (20/06 §6, M06): success is written in the same transaction; denied/failed is
+/// written in a separate transaction (the main transaction has rolled back).</summary>
 public sealed class AuditBehavior(IWriteSession session, ICurrentUser user, IClock clock, DataSources sources) : IRequestBehavior
 {
     /// <summary>Audited commands currently running in this call chain (1 = outermost).</summary>
@@ -32,13 +30,9 @@ public sealed class AuditBehavior(IWriteSession session, ICurrentUser user, IClo
             var outcome = e is ForbiddenException or UnauthenticatedException ? "denied" : "failed";
             if (depth > 1 && session.InTransaction)
             {
-                // A child command failed inside its parent's transaction: the parent may catch it and go on, so record it there.
-                // (A separate connection would wait for the chain lock this very transaction may hold — a self-deadlock.)
                 await AuditChain.AppendAsync(session, clock, ctx.WorkspaceId, user.UserId, ctx.Name, outcome, e.Reason, ct);
                 throw;
             }
-            // Outermost command: its work is void anyway. Release the transaction (and the chain lock a child command took) before
-            // writing the failure separately; the unit of work's own rollback is then a no-op.
             await session.RollbackAsync(ct);
             await using var separate = new WriteSession(sources);
             await separate.BeginAsync(ct);

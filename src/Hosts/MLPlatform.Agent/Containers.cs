@@ -8,11 +8,8 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Container ground truth (D-38): follows <c>docker events</c> for every <c>mlp.managed=1</c> container (start / die) and reports on the current
-/// channel; on reconnect it sends a <see cref="ContainerSnapshot"/> (running + exited but not yet removed; the control plane removes them after recording).
-/// Containers labeled <c>mlp.logs</c> (= attempt id) have their logs followed continuously. The agent keeps no business state.
-/// </summary>
+/// <summary>Container ground truth (D-38): follows docker events for every mlp.managed=1 container (start / die) and
+/// reports on the current channel.</summary>
 public sealed class Containers(LogShipper logs, ILogger<Containers> log)
 {
     private Func<Connection<ControlToAgent, AgentToControl>?> _conn = () => null;
@@ -60,7 +57,8 @@ public sealed class Containers(LogShipper logs, ILogger<Containers> log)
         return doc.RootElement.GetArrayLength() > 0 ? FromInspect(doc.RootElement[0]) : null;
     }
 
-    /// <summary>Right after hello: follow logs of running containers (from ~1 minute back; the api deduplicates) + send a snapshot.</summary>
+    /// <summary>Right after hello: follow logs of running containers (from ~1 minute back; the api deduplicates) + send
+    /// a snapshot.</summary>
     public async Task OnConnectedAsync(Connection<ControlToAgent, AgentToControl> conn, CancellationToken ct)
     {
         await logs.FlushSpoolAsync(conn, ct);
@@ -105,8 +103,8 @@ public sealed class Containers(LogShipper logs, ILogger<Containers> log)
         var st = await InspectAsync(name, CancellationToken.None);
         if (st is null || !HostOwnership.Owns(st.Labels)) return;
         if (action == "start" && st.Labels.TryGetValue("mlp.logs", out var attempt)) logs.Follow(name, attempt);
-        if (action == "die") await logs.DrainAsync(name, TimeSpan.FromSeconds(3));   // complete logs before reporting the exit
-        if (_conn() is not { } conn) return;   // disconnected: the next reconnect sends it in the snapshot
+        if (action == "die") await logs.DrainAsync(name, TimeSpan.FromSeconds(3));
+        if (_conn() is not { } conn) return;
         try { await conn.SendAsync(new AgentToControl { ContainerEvent = new ContainerEvent { Container = st, Action = action } }); }
         catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException) { }
     }

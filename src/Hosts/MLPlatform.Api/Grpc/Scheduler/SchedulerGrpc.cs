@@ -53,7 +53,6 @@ public sealed class SchedulerGrpc(IMediator mediator, LogStore logs) : Scheduler
     {
         var ws = G(r.WorkspaceId, "workspace_id"); var id = G(r.JobId, "job_id");
         await mediator.Send(new MLPlatform.ControlPlane.Application.Ops.ResumeJobCommand(ws, id), ctx.CancellationToken);
-        // A training run follows its job: without this it would stay "failed" while the job trains again.
         await mediator.Send(new MLPlatform.ControlPlane.Application.Tracking.SyncRunStateCommand(id, "queued"), ctx.CancellationToken);
         return ToProto(await mediator.Query(new GetJobQuery(ws, id), ctx.CancellationToken));
     }
@@ -68,7 +67,6 @@ public sealed class SchedulerGrpc(IMediator mediator, LogStore logs) : Scheduler
         foreach (var a in attempts)
         {
             var lines = logs.Tail(a, r.AfterTsMs, tail);
-            // Memory holds only the newest lines (none after an api restart): a first load completes them from storage.
             if (r.AfterTsMs == 0 && lines.Count < tail)
             {
                 var stored = await logs.ReadPersistedAsync(ws, job, a, tail, ctx.CancellationToken);

@@ -12,7 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
-/// <summary>Marks a replica as used now (keeps a test replica alive). Internal: no audit row per playground call.</summary>
+/// <summary>Marks a replica as used now (keeps a test replica alive).</summary>
 public sealed record TouchDeploymentCommand(Guid DeploymentId) : ICommand<bool>, IInternalCommand;
 
 public sealed class TouchDeploymentCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<TouchDeploymentCommand, bool>

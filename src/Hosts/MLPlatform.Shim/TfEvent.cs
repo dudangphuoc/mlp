@@ -6,7 +6,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.Shim;
 
-/// <summary>Decode Event{step=2, summary=5{value=1{tag=1, simple_value=2, tensor=8{float_val=5, double_val=6, tensor_content=4}}}}.</summary>
+/// <summary>Decode Event{step=2, summary=5{value=1{tag=1, simple_value=2, tensor=8{float_val=5, double_val=6,
+/// tensor_content=4}}}}.</summary>
 internal static class TfEvent
 {
     public static IEnumerable<MetricPoint> Parse(ReadOnlySpan<byte> ev)

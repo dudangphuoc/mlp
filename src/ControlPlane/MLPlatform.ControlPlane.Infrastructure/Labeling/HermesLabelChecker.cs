@@ -10,13 +10,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/*
- * Hermes label check (phase 2). Fast and visible:
- *   1. rules (instant): labels present, classes valid, shapes plausible, duplicates;
- *   2. decision model (≈ 0.3 s, typed answer with confidence) — for text items, whose content the model can read;
- *   3. auto-accept — only on submit, only when the project threshold is set, the verdict passes and the model is confident enough.
- * Every step is stored with its outcome, detail and time; the model call is an AI run anyone can open. Nothing is decided silently.
- */
+// Hermes label check (phase 2).
 public sealed class HermesLabelChecker(AiRuntime ai, ItemContent content, ILogger<HermesLabelChecker> log)
 {
     private static readonly string[] TextExt = ["txt", "md", "json", "jsonl", "html", "xml", "csv", "tsv"];
@@ -32,7 +26,7 @@ public sealed class HermesLabelChecker(AiRuntime ai, ItemContent content, ILogge
             : e is "mp4" or "webm" or "mov" or "mkv" or "avi" ? "video" : "image";
     }
 
-    /// <summary>Runs a check. trigger = submit (automatic, may auto-accept) | manual (never changes the item). Returns null when Hermes is off for an automatic check.</summary>
+    /// <summary>Runs a check.</summary>
     public async Task<HermesCheckRow?> CheckAsync(IMediator mediator, Guid ws, Guid projectId, string path, string trigger, CancellationToken ct)
     {
         var ctx = await mediator.Query(new GetHermesContextQuery(ws, projectId, path), ct);
@@ -132,7 +126,6 @@ public sealed class HermesLabelChecker(AiRuntime ai, ItemContent content, ILogge
             verdict = "error";
         }
 
-        // Auto-accept (submit only). Every reason it does or does not happen is a visible step.
         var action = "none";
         var threshold = p.AutoAcceptThreshold;
         string? skip = trigger != "submit" ? "Manual checks never change the item"

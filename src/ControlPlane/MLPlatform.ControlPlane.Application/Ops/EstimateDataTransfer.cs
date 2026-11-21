@@ -7,10 +7,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Estimate for every machine that has a cache of the dataset (machines without one would download everything). Cached = files of the version
-/// whose cache id belongs to a whole version previously synced on that machine. Trial samples are not counted, so the estimate errs on the high side.
-/// </summary>
+/// <summary>Estimate for every machine that has a cache of the dataset (machines without one would download
+/// everything).</summary>
 public sealed record EstimateDataTransferQuery(Guid WorkspaceId, Guid VersionId) : IQuery<(long Files, long Bytes, IReadOnlyList<HostDataEstimate> Hosts)>;
 
 /// <summary>Computes the per-machine transfer estimate from sync history and the versions' file ids.</summary>

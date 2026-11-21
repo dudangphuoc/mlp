@@ -10,10 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>
-/// Rules of the recipe inspection (round 1 slice 2, D-44): which parameters make a new cache entry, the command the image runs
-/// (<c>canvas.inspect</c> of the manifest) and how its one <c>MLP_INSPECT {json}</c> line is read.
-/// </summary>
+/// <summary>Rules of the recipe inspection (round 1 slice 2, D-44): which parameters make a new cache entry, the
+/// command the image runs ( canvas.inspect of the manifest) and how its one MLP_INSPECT {json} line is read.</summary>
 public static class InspectionRules
 {
     public const string Marker = "MLP_INSPECT ";
@@ -22,7 +20,7 @@ public static class InspectionRules
     public static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan BuildLimit = TimeSpan.FromMinutes(70);
 
-    /// <summary>The values a person set: a JSON object without nulls (null = "as the variant has it"). Empty text = no values.</summary>
+    /// <summary>The values a person set: a JSON object without nulls (null = "as the variant has it").</summary>
     public static JsonObject ParseParams(string json)
     {
         var res = new JsonObject();
@@ -36,28 +34,22 @@ public static class InspectionRules
         return res;
     }
 
-    /// <summary>SHA-256 of the canonical JSON (keys in ordinal order) of the set parameters the manifest marks <c>affectsInspect: true</c>.</summary>
+    /// <summary>SHA-256 of the canonical JSON (keys in ordinal order) of the set parameters the manifest marks
+    /// affectsInspect: true .</summary>
     public static string ParamsHash(JsonObject manifest, JsonObject set)
     {
         var defs = manifest["params"] as JsonObject;
         var canon = new JsonObject();
         foreach (var (k, v) in set.OrderBy(kv => kv.Key, StringComparer.Ordinal))
             if (v is not null && defs?[k]?["affectsInspect"] is JsonValue f && f.TryGetValue<bool>(out var on) && on) canon[k] = v.DeepClone();
-        // "v2": inspections made before the defaults were passed (2026-11-20) showed the variant's own schedule — never reuse them.
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes("v2:" + canon.ToJsonString())));
     }
 
     public static JsonObject? Variant(JsonObject manifest, string name) =>
         (manifest["variants"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(v => v["name"]?.ToString() == name);
 
-    /// <summary>
-    /// The shell command of <c>canvas.inspect</c>: <c>{variant.x}</c> from the variant, <c>{dataset.classes.count}</c> = the class count
-    /// (0 = keep the variant's own), <c>{params.json}</c> = every set value, <c>{params.x}</c> = the set value or the manifest default.
-    /// </summary>
-    /// <summary>
-    /// The values a training would run with: what was set, plus every non-null manifest default. Without the defaults the inspection would
-    /// show the variant's own schedule (e.g. 132 epochs) while the training scales it to the recipe default (72).
-    /// </summary>
+    /// <summary>The shell command of canvas.inspect : {variant.x} from the variant, {dataset.classes.count} = the class
+    /// count (0 = keep the variant's own), {params.json} = every set value.</summary>
     public static JsonObject WithDefaults(JsonObject manifest, JsonObject set)
     {
         var res = new JsonObject();
@@ -89,7 +81,7 @@ public static class InspectionRules
         });
     }
 
-    /// <summary>Reads the last <c>MLP_INSPECT</c> line of stdout. <paramref name="stderr"/> explains a failed run.</summary>
+    /// <summary>Reads the last MLP_INSPECT line of stdout.</summary>
     public static InspectionOutput Parse(string stdout, bool exitOk, string stderr, Func<IReadOnlyList<string>, string?> headline)
     {
         static InspectionOutput Fail(string error) => new(false, error.Length > 500 ? error[..500] + "…" : error, "", "", "[]");
@@ -112,10 +104,7 @@ public static class InspectionRules
             Sources(doc["sources_gz"]?.ToString()));
     }
 
-    /// <summary>
-    /// <c>sources_gz</c> = base64 of gzipped JSON <c>{pane: [{name, file, line, code}]}</c>. Only that shape is kept; anything unreadable
-    /// gives <c>{}</c> (the canvas then has no Code level for the pane).
-    /// </summary>
+    /// <summary>sources_gz = base64 of gzipped JSON {pane: [{name, file, line, code}]} .</summary>
     public static string Sources(string? gz)
     {
         if (string.IsNullOrEmpty(gz)) return "{}";

@@ -5,13 +5,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Agent OTA (D-38, blogic-tunnels pattern): the control plane decides and orchestrates; the agent only offers generic operations (FileWrite, RunScript
-/// detached from itself, FileRead). Steps: build the right RID (agent-builder) → generate a script (sh/ps1) with a 1-hour signed URL + SHA-256 → the agent runs
-/// the script via the service manager → read status.txt every 3 s → once the new agent has been connected ≥ 30 s, write final-ok → the script cleans up and reports done;
-/// without final-ok within 240 s the script restores the old version on its own. Running containers are not touched (the agent is only a bridge).
-/// At most 4 hosts at a time; jobs are stored in the DB (tracking resumes after an api restart).
-/// </summary>
+/// <summary>Agent OTA (D-38, blogic-tunnels pattern): the control plane decides and orchestrates; the agent only offers
+/// generic operations (FileWrite, RunScript detached from itself, FileRead).</summary>
 public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, IServiceScopeFactory scopes, IConfiguration cfg, TimeProvider time,
     SystemHealth health, ILogger<AgentUpgrader> log) : BackgroundService
 {
@@ -29,7 +24,8 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
 
     public string? LatestVersion => builds.Version;
 
-    /// <summary>Upgrade request (RPC): host offline / already on the version (unless forced) → job skipped with a reason.</summary>
+    /// <summary>Upgrade request (RPC): host offline / already on the version (unless forced) → job skipped with a
+    /// reason.</summary>
     public async Task<IReadOnlyList<Guid>> RequestAsync(IMediator m, Guid workspaceId, IReadOnlyList<Guid> hostIds, bool force, CancellationToken ct)
     {
         var to = builds.Version ?? throw new MLPlatform.Cqrs.PreconditionException("FLEET_AGENT_BUILDER_MISSING", "The control plane has no agent-builder yet");
@@ -84,7 +80,6 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
         var script = (win ? PsTemplate : ShTemplate).Replace("__EXE__", info.AgentExe).Replace("__URL__", url)
             .Replace("__SHA__", st["sha256"]!.ToString()).Replace("__SVC__", info.ServiceManager);
         var path = $"{Dir(job)}/upgrade.{(win ? "ps1" : "sh")}";
-        // PowerShell 5.1 reads a BOM-less .ps1 using the ANSI code page → non-ASCII text is garbled: write it with a UTF-8 BOM.
         var bytes = win ? [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(script)] : System.Text.Encoding.UTF8.GetBytes(script);
         var w = await s.SendCommandAsync(new AgentCommand { FileWrite = new FileWrite { Path = path, Content = ByteString.CopyFrom(bytes), Executable = !win } }, TimeSpan.FromMinutes(1), ct);
         if (!w.Ok) { await UpdateAsync(job, "failed", "", "Could not write the script: " + w.Message); return; }
@@ -95,7 +90,7 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
         await MonitorAsync(job, hostId, to, ct);
     }
 
-    /// <summary>Watch status.txt; confirm the new version; finalize the job. Also used when the api restarts midway.</summary>
+    /// <summary>Watch status.txt; confirm the new version; finalize the job.</summary>
     private async Task MonitorAsync(Guid job, Guid hostId, string to, CancellationToken ct)
     {
         var deadline = time.GetUtcNow().AddMinutes(25);
@@ -104,7 +99,7 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
         while (time.GetUtcNow() < deadline)
         {
             await Task.Delay(TimeSpan.FromSeconds(3), ct);
-            if (!agents.TryGet(hostId, out var s)) continue;   // agent is restarting
+            if (!agents.TryGet(hostId, out var s)) continue;
             try
             {
                 if (!okWritten && s.AgentVersion == to && time.GetUtcNow() - s.ConnectedAt >= TimeSpan.FromSeconds(30))
@@ -116,7 +111,7 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
                 if (!f.Ok || !f.Exists) continue;
                 var last = f.Data.ToStringUtf8().Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "";
                 var sp = last.IndexOf(' ');
-                var text = (sp > 0 ? last[(sp + 1)..] : last).Trim().TrimStart('\uFEFF');   // drop the timestamp
+                var text = (sp > 0 ? last[(sp + 1)..] : last).Trim().TrimStart('\uFEFF');
                 if (text.StartsWith("failed", StringComparison.Ordinal) || text.StartsWith("rolled back", StringComparison.Ordinal))
                 {
                     await UpdateAsync(job, "failed", text.StartsWith("rolled", StringComparison.Ordinal) ? "rolled back" : lastPhase, text);

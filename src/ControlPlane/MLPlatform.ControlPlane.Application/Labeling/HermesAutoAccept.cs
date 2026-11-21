@@ -6,10 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>
-/// Auto-accept after a passing check (internal). Applies only if the item is still waiting for review at the checked revision —
-/// otherwise nothing changes and the caller records why.
-/// </summary>
+/// <summary>Auto-accept after a passing check (internal).</summary>
 public sealed record HermesAutoAcceptCommand(Guid ProjectId, Guid DatasetId, string Path, int Revision, Guid ActorId) : ICommand<string?>, IInternalCommand;
 
 public sealed class HermesAutoAcceptCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<HermesAutoAcceptCommand, string?>

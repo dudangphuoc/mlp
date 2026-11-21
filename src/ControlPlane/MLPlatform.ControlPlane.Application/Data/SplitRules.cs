@@ -12,10 +12,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Fixed dataset splits (D-49). The same rule lives in <c>recipes/_shared/converters/to_coco.py</c>: an image's split is
-/// <c>sha256("{seed}:{key}")</c> (first 8 bytes, big endian) mod 10 000, compared with the ratios — so it depends on the path only.
-/// </summary>
+/// <summary>Fixed dataset splits (D-49).</summary>
 public static class SplitRules
 {
     public const string File = "mlp-split.json";

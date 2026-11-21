@@ -7,10 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MLPlatform.Cqrs.Generators;
 
-/// <summary>
-/// Generates explicit DI registration + a type-switch mediator dispatch (no reflection; 20/02 §4).
-/// Output: <c>{RootNamespace}.Generated.CqrsRegistration.AddGeneratedHandlers()</c> and <c>GeneratedMediator</c>.
-/// </summary>
+/// <summary>Generates explicit DI registration + a type-switch mediator dispatch (no reflection; 20/02 §4).</summary>
 [Generator]
 public sealed class CqrsGenerator : IIncrementalGenerator
 {

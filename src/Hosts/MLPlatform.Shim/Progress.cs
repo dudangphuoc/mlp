@@ -4,11 +4,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Training progress read from the recipe's own output lines (round 1 R24): `progress.pattern` gives epoch e/E, step i/n and the line's loss;
-/// `progress.validatePattern` marks the validation sub-phase. Epochs are 0-based in the pattern (D-FINE prints "Epoch: [3/24]" for the 4th epoch).
-/// ETA = measured seconds per epoch (training + validation) × epochs left; before a full epoch was seen, the step rate of the current epoch.
-/// </summary>
+/// <summary>Training progress read from the recipe's own output lines (round 1 R24): `progress.pattern` gives epoch
+/// e/E, step i/n and the line's loss; `progress.validatePattern` marks the validation sub-phase.</summary>
 public sealed class TrainProgress
 {
     private readonly Regex? _train;
@@ -29,7 +26,7 @@ public sealed class TrainProgress
     /// <summary>Epochs whose training part finished (the last step line of the epoch was seen).</summary>
     public long CompletedEpochs { get; private set; }
     public double? EpochSeconds { get; private set; }
-    /// <summary>Stage boundaries (e.g. D-FINE stop_epoch) read from the generated config: key, label, epoch it ends at.</summary>
+    /// <summary>Stage boundaries (e.g.</summary>
     public JsonArray? Stages { get; set; }
 
     public TrainProgress(JsonObject? def)
@@ -59,7 +56,6 @@ public sealed class TrainProgress
                 if (e != Epoch)
                 {
                     _epochStart.TryAdd(e.Value, now);
-                    // Epoch duration (train + validation) from two consecutive starts seen by this process.
                     if (_epochStart.TryGetValue(e.Value - 1, out var prev)) EpochSeconds = (now - prev).TotalSeconds;
                     _stepClockAt = null;
                 }
@@ -86,7 +82,8 @@ public sealed class TrainProgress
         }
     }
 
-    /// <summary>Seconds left: per-epoch time once measured, otherwise the current epoch's step rate (validation not included yet).</summary>
+    /// <summary>Seconds left: per-epoch time once measured, otherwise the current epoch's step rate (validation not
+    /// included yet).</summary>
     public double EtaSeconds()
     {
         lock (_gate)
@@ -123,10 +120,7 @@ public sealed class TrainProgress
     private static long? L(Match m, string group) =>
         m.Groups[group] is { Success: true } g && long.TryParse(g.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : null;
 
-    /// <summary>
-    /// `canvas.phases[].untilKey` (e.g. train_dataloader.collate_fn.stop_epoch) → the epoch each stage ends at, read from the generated config
-    /// (`progress.config`) by the key's last segment — the platform writes that file itself, so a flat `name: value` line is enough.
-    /// </summary>
+    /// <summary>`canvas.phases[].untilKey` (e.g.</summary>
     public static JsonArray? ReadStages(JsonArray? phases, string? configPath, long epochs)
     {
         if (phases is null || phases.Count == 0 || configPath is null || !File.Exists(configPath)) return null;

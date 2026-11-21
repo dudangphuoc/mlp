@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>Cancel a job (notebook/deployment stopped, user cancelled): mark it before stopping the container so FinishAttempt does not retry.</summary>
+/// <summary>Cancel a job (notebook/deployment stopped, user cancelled): mark it before stopping the container so
+/// FinishAttempt does not retry.</summary>
 public sealed record CancelJobCommand(Guid JobId, string Reason) : ICommand<bool>;
 
 public sealed class CancelJobCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<CancelJobCommand, bool>

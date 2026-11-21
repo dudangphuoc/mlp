@@ -14,7 +14,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Encryption of integration secrets (AES-GCM, key derived from the instance pepper); the DB stores only ciphertext (M01 R10).</summary>
+/// <summary>Encryption of integration secrets (AES-GCM, key derived from the instance pepper); the DB stores only
+/// ciphertext (M01 R10).</summary>
 public sealed class SecretBox(IConfiguration cfg)
 {
     private byte[] Key => HMACSHA256.HashData(Encoding.UTF8.GetBytes(cfg["Secrets:TokenPepper"] ?? "dev"), "mlp-integrations"u8);

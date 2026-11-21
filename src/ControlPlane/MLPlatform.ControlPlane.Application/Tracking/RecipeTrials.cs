@@ -13,14 +13,16 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Rules shared by the trial handlers (round 1 R15–R22): the data subset, reading the shim's lines, building the view.</summary>
+/// <summary>Rules shared by the trial handlers (round 1 R15–R22): the data subset, reading the shim's lines, building
+/// the view.</summary>
 public static class RecipeTrials
 {
     public const string Marker = "[mlp-trial] ";
     public const int MinTrainImages = 160;
     public const int ValImages = 128;
 
-    /// <summary>Stages (last state per key, in first-seen order) and the measurement from the shim's <c>[mlp-trial]</c> lines.</summary>
+    /// <summary>Stages (last state per key, in first-seen order) and the measurement from the shim's [mlp-trial]
+    /// lines.</summary>
     public static (List<TrialStageView> Stages, TrialMeasure? Measure) Parse(IEnumerable<string> lines)
     {
         var order = new List<string>();
@@ -56,10 +58,7 @@ public static class RecipeTrials
         (JsonNode.Parse(string.IsNullOrEmpty(json) ? "[]" : json) as JsonArray ?? []).OfType<JsonObject>()
         .Select(o => new TrialStageView(o["key"]?.ToString() ?? "", o["state"]?.ToString() ?? "", D(o["seconds"]) ?? 0, o["detail"]?.ToString() ?? "")).ToList();
 
-    /// <summary>
-    /// The view of a trial. While it waits or runs, <paramref name="liveLines"/> (the attempt's <c>[mlp-trial]</c> lines from the log) give the stages,
-    /// and a running job shows the trial as running.
-    /// </summary>
+    /// <summary>The view of a trial.</summary>
     public static async Task<TrialView> ViewAsync(IReadSession db, TrialRow t, IReadOnlyList<string>? liveLines, CancellationToken ct)
     {
         var job = t.JobId is { } j ? (await db.JobsByIdsAsync(t.WorkspaceId, [j], ct)).FirstOrDefault() : null;
@@ -77,11 +76,8 @@ public static class RecipeTrials
         return new TrialView(t, state, stages, steps, peak, estimated, train, val, job, host);
     }
 
-    /// <summary>
-    /// The subset a trial trains on: per split, images in the order of their hash with seed "trial" — train = max(160, 10 × batch), val = 128
-    /// (fewer when the split is smaller). The split comes from the version's <c>mlp-split.json</c>, else from train/val folders.
-    /// Non-image files are kept when their stem matches a chosen image (labels) or no image at all (classes.txt, data.yaml, the split file).
-    /// </summary>
+    /// <summary>The subset a trial trains on: per split, images in the order of their hash with seed "trial" — train =
+    /// max(160, 10 × batch), val = 128 (fewer when the split is smaller).</summary>
     public static async Task<(HashSet<string> Files, int Train, int Val)> SubsetAsync(IReadSession db, S3Client s3, VersionRow version, string splitState, int batch,
         CancellationToken ct)
     {

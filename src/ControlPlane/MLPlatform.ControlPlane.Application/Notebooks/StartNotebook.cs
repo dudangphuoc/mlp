@@ -6,10 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
-/// <summary>
-/// Restarts a stopped/failed notebook: a new job with the same config (the home volume is kept, so files remain), on the previous machine by default.
-/// The image follows the current profile (picking up new images); an overridden image (dev) is kept.
-/// </summary>
+/// <summary>Restarts a stopped/failed notebook: a new job with the same config (the home volume is kept, so files
+/// remain), on the previous machine by default.</summary>
 public sealed record StartNotebookCommand(Guid WorkspaceId, Guid ServerId, Guid? HostId) : ICommand<ServerRow>;
 
 public sealed class StartNotebookCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, TokenService tokens, IMediator mediator)

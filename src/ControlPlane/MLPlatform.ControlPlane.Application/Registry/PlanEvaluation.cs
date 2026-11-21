@@ -11,7 +11,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>Builds the sample list (deterministic shuffle by evaluation id, then the first max_samples) with internal download URLs.</summary>
+/// <summary>Builds the sample list (deterministic shuffle by evaluation id, then the first max_samples) with internal
+/// download URLs.</summary>
 public sealed record PlanEvaluationQuery(Guid EvaluationId) : IQuery<EvaluationPlan>;
 
 public sealed class PlanEvaluationQueryHandler(IReadSession db, S3Client s3) : IQueryHandler<PlanEvaluationQuery, EvaluationPlan>
@@ -26,14 +27,12 @@ public sealed class PlanEvaluationQueryHandler(IReadSession db, S3Client s3) : I
         string Url(string p) => DatasetFileUrls.For(s3, v, p, urls.GetValueOrDefault(p), Audience.Internal);
         var classes = Evaluations.Classes((await db.GetCurrentSchemaAsync(v.DatasetId, ct))?.Classes);
         var specs = EvalMath.FindSamples(mv.Task, urls.Keys, e.PathFilter);
-        // COCO ground truth: one annotations json (preferring one whose path matches the filter, e.g. val/annotations.json).
         string? coco = null;
         if (EvalMath.DetectTasks.Contains(mv.Task) && specs.All(s => s.LabelPath is null))
             coco = urls.Keys.Where(p => p.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && (p.Contains("annotation", StringComparison.OrdinalIgnoreCase) || p.Contains("instances", StringComparison.OrdinalIgnoreCase)))
                 .OrderByDescending(p => !string.IsNullOrEmpty(e.PathFilter) && p.Contains(e.PathFilter, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
         if (EvalMath.DetectTasks.Contains(mv.Task) && coco is null && specs.All(s => s.LabelPath is null))
             throw new PreconditionException("EVAL_NO_GROUND_TRUTH", "No labels found next to the images (YOLO txt or COCO json)");
-        // Same dataset version, filter and sample count → the same images, so two versions (e.g. a model and its optimized copy) are compared fairly.
         var seed = $"{e.DatasetVersionId}|{e.PathFilter}|{e.MaxSamples}";
         var chosen = specs.OrderBy(s => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(seed + ":" + s.ImagePath))), StringComparer.Ordinal)
             .Take(e.MaxSamples).ToList();

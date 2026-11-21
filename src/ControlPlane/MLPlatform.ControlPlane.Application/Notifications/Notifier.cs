@@ -5,10 +5,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
-/// <summary>
-/// Writes notifications in the same transaction as the source event (M16 §5; replaces the outbox for P1): skips users who turned that kind off (R3),
-/// merges the same kind on the same resource within 5 minutes (R1). Links are relative web hash routes (R2: no sensitive data).
-/// </summary>
+/// <summary>Writes notifications in the same transaction as the source event (M16 §5; replaces the outbox for P1):
+/// skips users who turned that kind off (R3), merges the same kind on the same resource within 5 minutes
 public static class Notifier
 {
     public static async Task SendAsync(IWriteSession db, IClock clock, Guid workspaceId, IEnumerable<Guid> users, string kind, string title,
@@ -27,7 +25,8 @@ public static class Notifier
     public static async Task<IEnumerable<Guid>> AdminsAsync(IReadSession db, Guid workspaceId, CancellationToken ct) =>
         (await db.WorkspaceAdminsAsync(workspaceId, ct)).Select(r => r.Id);
 
-    /// <summary>Job finished: train → run.finished/failed (to the run creator); other jobs → job.failed, job.succeeded only when it ran > 10 minutes.</summary>
+    /// <summary>Job finished: train → run.finished/failed (to the run creator); other jobs → job.failed, job.succeeded
+    /// only when it ran > 10 minutes.</summary>
     public static async Task JobFinishedAsync(IWriteSession db, IClock clock, Guid jobId, string jobState, string? reason, CancellationToken ct)
     {
         if (jobState is not ("succeeded" or "failed")) return;

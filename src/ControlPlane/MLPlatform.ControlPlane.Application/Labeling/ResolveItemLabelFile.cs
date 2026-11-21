@@ -9,10 +9,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Where the label file paired with an item lives (null = none, or labels were already made or imported for it).</summary>
+/// <summary>Where the label file paired with an item lives (null = none, or labels were already made or imported for
+/// it).</summary>
 public sealed record ResolveItemLabelFileQuery(Guid WorkspaceId, Guid ProjectId, string Path) : IQuery<string?>;
 
-/// <summary>Only for items without platform labels that were never imported, in a project that labels a version.</summary>
+/// <summary>Only for items without platform labels that were never imported, in a project that labels a
+/// version.</summary>
 public sealed class ResolveItemLabelFileQueryHandler(IReadSession db, LabelAccess access, S3Client s3) : IQueryHandler<ResolveItemLabelFileQuery, string?>
 {
     public async ValueTask<string?> Handle(ResolveItemLabelFileQuery q, CancellationToken ct)

@@ -11,8 +11,6 @@ public sealed class DataSources(NpgsqlDataSource read, NpgsqlDataSource write)
     public static DataSources Create(string connectionString)
     {
         static NpgsqlDataSource Build(string cs) => new NpgsqlSlimDataSourceBuilder(cs).EnableArrays().Build();
-        // The database server is shared (max_connections is small); two default pools of 100 each can exhaust it.
-        // Cap each pool unless the connection string sets its own limit; excess requests queue instead of failing.
         var rw = new NpgsqlConnectionStringBuilder(connectionString);
         if (!connectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase)
             && !connectionString.Contains("MaxPoolSize", StringComparison.OrdinalIgnoreCase))

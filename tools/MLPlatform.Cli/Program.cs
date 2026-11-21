@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using MLPlatform.Recipes;
 
-// mlp recipe check <recipes directory>
 if (args is ["recipe", "check", var dir])
 {
     var tasksDoc = YamlJson.Parse(File.ReadAllText(Path.Combine(dir, "_tasks", "tasks.yaml")))!;
@@ -17,7 +16,6 @@ if (args is ["recipe", "check", var dir])
     }
     return errors == 0 ? 0 : 1;
 }
-// mlp s3 smoke <endpoint> <access> <secret>: tests the S3 client against real storage (D-34)
 if (args is ["s3", "smoke", var ep, var ak, var sk])
 {
     using var http = new HttpClient();

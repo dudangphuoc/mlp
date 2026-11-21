@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Stores a finished check (internal: called by the api checker after the caller was authorized by GetHermesContextQuery).</summary>
+/// <summary>Stores a finished check (internal: called by the api checker after the caller was authorized by
+/// GetHermesContextQuery).</summary>
 public sealed record RecordHermesCheckCommand(Guid Id, Guid WorkspaceId, Guid ProjectId, string Path, int Revision, string Trigger, string Verdict,
     double? Confidence, string DecidedBy, string Summary, string StepsJson, string? Suggestion, Guid? AiRunId, string Action, Guid? ActorId)
     : ICommand<bool>, IInternalCommand;

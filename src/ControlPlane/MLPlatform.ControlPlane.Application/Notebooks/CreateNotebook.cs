@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
-/// <summary>§5 step 1: server = `notebook` job via the scheduler (a holder reserves CPU/GPU, D-15) → the agent runs the JupyterLab container.</summary>
+/// <summary>§5 step 1: server = `notebook` job via the scheduler (a holder reserves CPU/GPU, D-15) → the agent runs the
+/// JupyterLab container.</summary>
 public sealed record CreateNotebookCommand(Guid WorkspaceId, string Name, string Profile, string Ide, double Cpus, int MemoryGb, int Gpus,
     int IdleTimeoutMin, string? ImageOverride, string? Network, Guid? HostId = null) : ICommand<ServerRow>;
 
@@ -21,7 +22,6 @@ public sealed class CreateNotebookCommandHandler(IWriteSession db, IClock clock,
         var ide = string.IsNullOrEmpty(c.Ide) ? "jupyterlab" : c.Ide;
         if (await db.CountActiveServersAsync(c.WorkspaceId, uid, ct) >= NotebookRules.MaxActivePerUser)
             throw new ResourceExhaustedException("NB_QUOTA_EXCEEDED", $"Each user can have at most {NotebookRules.MaxActivePerUser} running notebooks");
-        // The notebook runs on the machine the user picked (Fleet) — it must belong to the workspace and be online.
         if (c.HostId is not { } hostId) throw new ValidationException(new Dictionary<string, string> { ["host_id"] = "Select a machine to run the notebook" });
         var host = await mediator.Query(new MLPlatform.ControlPlane.Application.Fleet.GetHostQuery(c.WorkspaceId, hostId), ct);
         if (host.State is not ("online" or "busy")) throw new PreconditionException("NB_HOST_OFFLINE", $"Machine {host.Name} is {host.State} — choose an online machine");

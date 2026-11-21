@@ -3,11 +3,8 @@ using System.Text.Json.Nodes;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>
-/// Model-agnostic evaluation math: how ground truth is found in a dataset version (YOLO, COCO, class folders) and the
-/// standard metrics (COCO mAP@[.50:.95] with 101-point interpolation; precision/recall/F1 at a confidence threshold, IoU 0.5;
-/// accuracy/macro F1/confusion matrix for classification).
-/// </summary>
+/// <summary>Model-agnostic evaluation math: how ground truth is found in a dataset version (YOLO, COCO, class folders)
+/// and the standard metrics (COCO mAP@[.50:.95] with 101-point interpolation.</summary>
 public static class EvalMath
 {
     public static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".webp"];
@@ -17,10 +14,7 @@ public static class EvalMath
 
     public static bool IsImage(string path) => ImageExtensions.Contains(Path.GetExtension(path).ToLowerInvariant());
 
-    /// <summary>
-    /// Pairs images with their ground truth. Detection: YOLO txt next to the image (…/images/x.jpg ↔ …/labels|yololabels/x.txt,
-    /// or the same folder) or one COCO json (handled by the caller); classification: the parent folder name is the class.
-    /// </summary>
+    /// <summary>Pairs images with their ground truth.</summary>
     public static List<EvalSampleSpec> FindSamples(string task, IReadOnlyCollection<string> paths, string filter)
     {
         var set = new HashSet<string>(paths, StringComparer.Ordinal);
@@ -66,7 +60,6 @@ public static class EvalMath
             var name = id >= 0 && id < classes.Count ? classes[id] : id.ToString(CultureInfo.InvariantCulture);
             if (p.Length > 5 && p.Length % 2 == 1)
             {
-                // Segmentation polygon (class x1 y1 x2 y2 …): use its bounding box.
                 var xs = new List<double>(); var ys = new List<double>();
                 for (var i = 1; i + 1 < p.Length; i += 2)
                 {
@@ -158,7 +151,8 @@ public static class EvalMath
             p, r, p + r == 0 ? 0 : 2 * p * r / (p + r), TP, FP, FN, per);
     }
 
-    /// <summary>Overall precision/recall/F1 for confidence thresholds 0.05…0.95 — the best F1 suggests the deployment threshold.</summary>
+    /// <summary>Overall precision/recall/F1 for confidence thresholds 0.05…0.95 — the best F1 suggests the deployment
+    /// threshold.</summary>
     public static List<(double Conf, double Precision, double Recall, double F1)> ThresholdSweep(
         IReadOnlyList<(IReadOnlyList<EvalBox> Gt, IReadOnlyList<EvalBox> Pred)> images)
     {
@@ -175,7 +169,8 @@ public static class EvalMath
         return res;
     }
 
-    /// <summary>COCO-style AP for one class at one IoU threshold: greedy matching by score, 101-point interpolated precision.</summary>
+    /// <summary>COCO-style AP for one class at one IoU threshold: greedy matching by score, 101-point interpolated
+    /// precision.</summary>
     private static double AveragePrecision(IReadOnlyList<(IReadOnlyList<EvalBox> Gt, IReadOnlyList<EvalBox> Pred)> images, string cls,
         List<(int Img, EvalBox Box)> preds, int nGt, double iouT)
     {

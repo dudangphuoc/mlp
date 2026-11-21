@@ -4,11 +4,7 @@ using Npgsql;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// StreamBroker (P0-7, 20/02 §5.5): one `LISTEN mlp_ws` connection per api; PostgreSQL triggers send `NOTIFY` when a workspace's jobs/events/notifications
-/// change → wake the `Watch*` streams waiting on that key (correct with multiple api replicas). Logs live in api memory,
-/// so <see cref="LogStore"/> signals locally via <see cref="Pulse"/>. Streams still re-poll at least every 5 s in case a NOTIFY is lost.
-/// </summary>
+/// <summary>StreamBroker (P0-7, 20/02 §5.5): one `LISTEN mlp_ws` connection per api.</summary>
 public sealed class StreamBroker(DataSources db, SystemHealth health, ILogger<StreamBroker> log) : BackgroundService
 {
     private readonly ConcurrentDictionary<string, TaskCompletionSource> _signals = new();
@@ -29,7 +25,7 @@ public sealed class StreamBroker(DataSources db, SystemHealth health, ILogger<St
         tasks.Add(Task.Delay(max, ct));
         await Task.WhenAny(tasks);
         ct.ThrowIfCancellationRequested();
-        await Task.Delay(150, ct);   // coalesce changes close together into a single send
+        await Task.Delay(150, ct);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stop)
@@ -49,7 +45,6 @@ public sealed class StreamBroker(DataSources db, SystemHealth health, ILogger<St
             {
                 health.Component("stream-broker", false, "LISTEN lost; streams re-poll every 5 s");
                 log.LogWarning("StreamBroker lost its connection: {Msg}", e.Message);
-                // Wake everyone so streams re-poll on their own while reconnecting.
                 foreach (var k in _signals.Keys) Pulse(k);
                 await Task.Delay(TimeSpan.FromSeconds(3), stop);
             }

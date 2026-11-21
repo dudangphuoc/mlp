@@ -7,5 +7,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>One line that differs between the compared runs (or revisions): field, canvas pane, one shown value per item.</summary>
+/// <summary>One line that differs between the compared runs (or revisions): field, canvas pane, one shown value per
+/// item.</summary>
 public sealed record CompareRow(string Field, string Pane, IReadOnlyList<string> Values);

@@ -7,11 +7,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Commit a version (M04 R5, R6): the latest version, minus the paths marked for removal, plus the files added since (the working copy).
-/// Added files are copied to the version's own `v{n}/` folder; files that stay point at where they already are (no copy). The result is
-/// immutable, and the working copy is empty again — it always holds only what changes in the next version.
-/// </summary>
+/// <summary>Commit a version (M04 R5, R6): the latest version, minus the paths marked for removal, plus the files added
+/// since (the working copy).</summary>
 public sealed record CreateVersionCommand(Guid WorkspaceId, Guid DatasetId, string Note) : ICommand<VersionRow>;
 
 public sealed class CreateVersionCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth)
@@ -36,7 +33,6 @@ public sealed class CreateVersionCommandHandler(IWriteSession db, S3Client s3, I
         foreach (var f in files) await db.InsertVersionFileAsync(id, f.Path, f.SizeBytes, ct);
         if (baseVersion is not null)
         {
-            // The split file belongs to the old file set: the new version is split again (an image keeps its split — it depends on its path only).
             string[] skip = [.. files.Select(f => f.Path), .. removed, SplitRules.File];
             await db.InsertVersionFilesFromBaseAsync(id, baseVersion.Id, $"s3://{Buckets.Datasets}/{baseVersion.Prefix}", skip, ct);
         }

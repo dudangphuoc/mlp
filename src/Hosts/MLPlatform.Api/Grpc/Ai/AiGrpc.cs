@@ -140,7 +140,7 @@ public sealed class AiGrpc(IMediator mediator, AiRuntime ai, AiProviders provide
 
     public override async Task<DiscoverAiModelsResponse> DiscoverModels(DiscoverAiModelsRequest r, ServerCallContext ctx)
     {
-        var o = await mediator.Query(new GetAiOverviewQuery(), ctx.CancellationToken);   // Instance Admin check
+        var o = await mediator.Query(new GetAiOverviewQuery(), ctx.CancellationToken);
         var c = o.Connections.FirstOrDefault(x => x.Id == G(r.ConnectionId, "connection_id"))
             ?? throw new NotFoundException("AI_CONNECTION_NOT_FOUND", "Connection not found");
         var w = System.Diagnostics.Stopwatch.StartNew();
@@ -179,7 +179,7 @@ public sealed class AiGrpc(IMediator mediator, AiRuntime ai, AiProviders provide
 
     public override async Task<AiRun> TestModel(TestAiModelRequest r, ServerCallContext ctx)
     {
-        await mediator.Query(new GetAiOverviewQuery(), ctx.CancellationToken);   // Instance Admin check
+        await mediator.Query(new GetAiOverviewQuery(), ctx.CancellationToken);
         var result = await ai.TestAsync(G(r.ModelId, "model_id"), r.Prompt, user.RequireUser(), "manual", ctx.CancellationToken);
         return Map(await mediator.Query(new GetAiRunQuery(result.RunId), ctx.CancellationToken), true);
     }

@@ -12,13 +12,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>Save a candidate as a new version of the source's model (recipe generic-onnx), with lineage, report and checksums.</summary>
+/// <summary>Save a candidate as a new version of the source's model (recipe generic-onnx), with lineage, report and
+/// checksums.</summary>
 public sealed record PromoteOptimizationCommand(Guid WorkspaceId, Guid Id, string Candidate) : ICommand<ModelVersionRow>;
 
-/// <summary>
-/// Copies into <c>models/{model}/v{n}/</c>: weights/model.onnx, config/onnx.json, classes.json (from the source), signature.json, report.json,
-/// pipeline.py and SHA256SUMS. The version keeps the source's run so it shows in the project, and its device decides GPU or CPU when deployed.
-/// </summary>
+/// <summary>Copies into models/{model}/v{n}/ : weights/model.onnx, config/onnx.json, classes.json (from the source),
+/// signature.json, report.json, pipeline.py and SHA256SUMS.</summary>
 public sealed class PromoteOptimizationCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<PromoteOptimizationCommand, ModelVersionRow>
 {
     public async ValueTask<ModelVersionRow> Handle(PromoteOptimizationCommand c, CancellationToken ct)

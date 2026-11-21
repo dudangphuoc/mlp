@@ -4,7 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MLPlatform.CodeGate.Comments;
 
-/// <summary>Finds every comment in hand-written C# and decides whether it sits inside a body or on a declaration.</summary>
+/// <summary>Finds every comment in hand-written C# and decides whether it sits inside a body or on a
+/// declaration.</summary>
 public static class CommentScanner
 {
     private static readonly CSharpParseOptions ParseOptions = new(LanguageVersion.Preview);

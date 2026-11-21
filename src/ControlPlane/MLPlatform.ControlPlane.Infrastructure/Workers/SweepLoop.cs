@@ -7,10 +7,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Sweep orchestrator (M10, D-21): every 3 s advances each running sweep in a scope acting as the sweep's creator; trials are ordinary M09 runs,
-/// audited as that user's StartTraining. Trials do not run inside Ray Tune.
-/// </summary>
+/// <summary>Sweep orchestrator (M10, D-21): every 3 s advances each running sweep in a scope acting as the sweep's
+/// creator; trials are ordinary M09 runs, audited as that user's StartTraining.</summary>
 public sealed class SweepLoop(IServiceScopeFactory scopes, SystemHealth health, ILogger<SweepLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stop)

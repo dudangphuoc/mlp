@@ -11,7 +11,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>What each annotator delivered (submitted, accepted, returned, last submit) — shown next to the member list.</summary>
+/// <summary>What each annotator delivered (submitted, accepted, returned, last submit) — shown next to the member
+/// list.</summary>
 public sealed record ListLabelingMemberProgressQuery(Guid WorkspaceId, Guid ProjectId) : IQuery<IReadOnlyList<MemberProgressRow>>;
 
 /// <summary>Counts per annotator from the item states.</summary>

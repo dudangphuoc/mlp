@@ -12,10 +12,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// Train from the UI (M09 §5.1): recipe + variant + task + params → run + job running `mlp-shim` in the recipe's image.
-/// The shim spec is passed via the `MLP_JOB_SPEC` environment variable (JSON) — the shim reads it itself (20/08 §5.1).
-/// </summary>
+/// <summary>Train from the UI (M09 §5.1): recipe + variant + task + params → run + job running `mlp-shim` in the
+/// recipe's image.</summary>
 public sealed record StartTrainingCommand(Guid WorkspaceId, Guid ProjectId, string Name, string Recipe, string Variant, string Task,
     string ParamsJson, bool FromScratch, double Cpus, int Gpus, string? ImageOverride, string? Network, Guid? DatasetVersionId = null,
     string? ManifestOverride = null, Guid? HostId = null, TrialSpec? Trial = null, int GpuMemoryMb = 0) : ICommand<RunRow>;
@@ -29,7 +27,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
         var project = await db.GetProjectAsync(c.ProjectId, c.WorkspaceId, ct)
                       ?? throw new NotFoundException("TRACK_PROJECT_NOT_FOUND", "Project not found");
         var recipe = await mediator.Query(new GetRecipeQuery(c.WorkspaceId, c.Recipe), ct);
-        // Canvas path (D-49): the run cooks the manifest its revision froze, not whatever the Catalog holds today.
         var manifest = JsonNode.Parse(c.ManifestOverride ?? recipe.Manifest)!.AsObject();
         var task = string.IsNullOrEmpty(c.Task) ? project.Task : c.Task;
         if (!recipe.Tasks.Contains(task))
@@ -42,7 +39,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
                       ?? throw new NotFoundException("CATALOG_VARIANT_NOT_FOUND", $"Variant {c.Variant} not found");
         string image;
         if (!string.IsNullOrEmpty(c.ImageOverride)) image = c.ImageOverride;
-        // Builtin recipes are built on the machine that runs the job (recipe Dockerfile + platform layer); only an invalid manifest is refused.
         else if (recipe.State != "invalid") image = $"recipes/{recipe.Name}:current";
         else throw new PreconditionException("CATALOG_RECIPE_NOT_VERIFIED", $"Recipe {recipe.Name} is not valid ({recipe.State})");
 
@@ -55,7 +51,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
         var invalid = TrainParams.Validate(parameters, manifest["params"] as JsonObject ?? []);
         if (invalid.Count > 0)
             throw new InvalidArgumentException("TRACK_PARAMS_INVALID", invalid.First().Value, invalid);
-        // A recipe that trains on data cannot start without a dataset version (dev/test image overrides are exempt: they bring their own data).
         if (c.DatasetVersionId is null && string.IsNullOrEmpty(c.ImageOverride) && TrainParams.NeedsData(manifest, task))
             throw new PreconditionException("TRACK_DATASET_REQUIRED", "Pick a dataset version — this recipe trains on data");
         if (c.Gpus < 0 || c.Gpus > 16)
@@ -67,12 +62,11 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
         if (primary.Contains('{')) primary = MLPlatform.Recipes.Template.Render(primary, (string n, out JsonNode? v) =>
         { v = n == "task" ? JsonValue.Create(task) : null; return n == "task"; }, MLPlatform.Recipes.RenderMode.Raw);
 
-        // Data: dataset version (immutable) → presigned GET per file, shim downloads into {data} (20/08 §5.1 step 2)
         JsonArray? dataFiles = null;
         var datasetInfo = new JsonObject();
         var runId = Ids.New();
         string? dataFilesUrl = null;
-        string? dataCache = null;   // host cache volume of the dataset, mounted by the scheduler (DataCacheRules)
+        string? dataCache = null;
         Guid? datasetId = null;
         if (c.DatasetVersionId is { } dvId)
         {
@@ -82,7 +76,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
             dataFiles = new JsonArray(files.Select(f => (JsonNode)f.ToJson()).ToArray());
             dataCache = MLPlatform.ControlPlane.Application.Data.DataCacheRules.Mount(version.DatasetId);
             datasetId = version.DatasetId;
-            // An env var holds at most 128 KB → a long file list goes to storage and the shim reads it from a signed link.
             if (dataFiles.ToJsonString().Length > 64 * 1024)
             {
                 var key = $"{c.WorkspaceId}/runs/{runId}/data-files.json";
@@ -90,7 +83,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
                 dataFilesUrl = s3.Presign(HttpMethod.Get, Buckets.Artifacts, key, TimeSpan.FromDays(7), MLPlatform.Storage.Audience.Workload);
                 dataFiles = null;
             }
-            // Classes from the dataset's label schema (ids 0..N-1) → {dataset.classes.*} and params declared `from: dataset.classes.count`.
             if (await db.GetCurrentSchemaAsync(version.DatasetId, ct) is { } schema)
             {
                 var names = ClassNames(schema.Classes);
@@ -102,7 +94,6 @@ public sealed partial class StartTrainingCommandHandler(IWriteSession db, IClock
             }
         }
         var weightsUrl = !c.FromScratch && variant["weights"]?.ToString() is { } wu && wu.StartsWith("https://", StringComparison.Ordinal) ? wu : null;
-        // Spec for the shim; pretrained weights are provided by the Model Zoo (next P1)
         var shimSpec = new JsonObject
         {
             ["manifest"] = manifest.DeepClone(), ["entrypoint"] = "train", ["task"] = task, ["variant"] = variant.DeepClone(),

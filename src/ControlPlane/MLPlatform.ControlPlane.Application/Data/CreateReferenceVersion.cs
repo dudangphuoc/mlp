@@ -7,10 +7,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Reference version: records the files' source addresses without copying anything; the machine downloads them from the source
-/// when a job uses the version. Immutability comes from the source being pinned (HF commit sha, fixed URLs/keys).
-/// </summary>
+/// <summary>Reference version: records the files' source addresses without copying anything; the machine downloads them
+/// from the source when a job uses the version.</summary>
 public sealed record CreateReferenceVersionCommand(Guid WorkspaceId, Guid DatasetId, string Note, string SourceRef,
     IReadOnlyList<(string Path, long Size, string Url)> Files) : ICommand<VersionRow>;
 

@@ -11,10 +11,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tuning;
 
-/// <summary>
-/// Search space (M10 §2): each parameter is `{"values":[…]}` (discrete; grid enumerates all) or `{"min":a,"max":b,"log":bool,"int":bool}` (continuous; random only).
-/// Parameters are generated deterministically from (seed, trial number) → rerunning a sweep with the same seed yields the same trial sequence.
-/// </summary>
+/// <summary>Search space (M10 §2): each parameter is `{"values":[…]}` (discrete; grid enumerates all) or
+/// `{"min":a,"max":b,"log":bool,"int":bool}` (continuous; random only).</summary>
 public sealed class SearchSpace
 {
     private sealed record Dim(string Name, JsonNode?[]? Values, double Min, double Max, bool Log, bool Int);

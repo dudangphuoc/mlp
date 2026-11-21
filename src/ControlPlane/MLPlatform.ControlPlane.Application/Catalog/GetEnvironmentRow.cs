@@ -10,7 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>Internal: the environment of one image tag on one machine, or null when it was never built or checked from here.</summary>
+/// <summary>Internal: the environment of one image tag on one machine, or null when it was never built or checked from
+/// here.</summary>
 public sealed record GetEnvironmentRowQuery(Guid WorkspaceId, string EnvTag, Guid HostId) : IQuery<EnvironmentRow?>;
 
 /// <summary>Same staleness rule as the list.</summary>

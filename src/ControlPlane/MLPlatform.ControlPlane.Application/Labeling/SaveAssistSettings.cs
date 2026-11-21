@@ -16,7 +16,6 @@ public sealed class SaveAssistSettingsCommandHandler(IWriteSession db, LabelAcce
     {
         var (uid, p, _) = await AssistAccess.ManageAsync(access, auth, c.WorkspaceId, c.ProjectId, ct);
         if (c.MinConfidence is < 0 or > 1) throw LabelRules.Invalid("min_confidence", "Minimum confidence must be between 0 and 1");
-        // Normalize: only known kinds, valid ids, no duplicates; mapping values must be schema class ids.
         var sources = new JsonArray();
         var seen = new HashSet<string>();
         try

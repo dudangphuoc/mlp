@@ -15,7 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 /// <summary>Delete a run and its files (versions already saved from it stay).</summary>
 public sealed record DeleteOptimizationCommand(Guid WorkspaceId, Guid Id) : ICommand<bool>;
 
-/// <summary>Removes every object under the run's folder, then the row. A running job keeps running; stop it on the Jobs page.</summary>
+/// <summary>Removes every object under the run's folder, then the row.</summary>
 public sealed class DeleteOptimizationCommandHandler(IWriteSession db, S3Client s3, WorkspaceAuthorizer auth) : ICommandHandler<DeleteOptimizationCommand, bool>
 {
     public async ValueTask<bool> Handle(DeleteOptimizationCommand c, CancellationToken ct)

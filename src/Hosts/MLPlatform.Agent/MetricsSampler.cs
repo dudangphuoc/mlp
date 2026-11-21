@@ -4,11 +4,12 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using MLPlatform.AgentProtocol;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Agent;
 
-/// <summary>Host + container + GPU metrics every 15 s (20/10 §2.5): `docker stats` for platform containers, `nvidia-smi` when a GPU is present.</summary>
+/// <summary>Host + container + GPU metrics every 15 s (20/10 §2.5): `docker stats` for platform containers,
+/// `nvidia-smi` when a GPU is present.</summary>
 public static class MetricsSampler
 {
     public static async Task<HostMetrics> SampleAsync(CancellationToken ct)
@@ -51,7 +52,7 @@ public static class MetricsSampler
                     m.Gpus.Add(new GpuSample { Uuid = p[0], UtilPercent = D(p[1]), MemoryUsedBytes = (ulong)(D(p[2]) * 1024 * 1024), TemperatureC = D(p[3]), PowerW = D(p[4]) });
                 }
         }
-        catch (System.ComponentModel.Win32Exception) { }   // no nvidia-smi
+        catch (System.ComponentModel.Win32Exception) { }
         return m;
     }
 

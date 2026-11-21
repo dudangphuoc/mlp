@@ -12,10 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Serving;
 
-/// <summary>
-/// Deploy model version (M12 §5.1, R1, R8): replica = `serve` job running `mlp-serve` in the recipe's image; the model directory is downloaded via
-/// presigned GET (user = container); the handler comes from the recipe's `entrypoints.serve.handler`.
-/// </summary>
+/// <summary>Deploy model version (M12 §5.1, R1, R8): replica = `serve` job running `mlp-serve` in the recipe's image;
+/// the model directory is downloaded via presigned GET (user = container).</summary>
 public sealed record CreateDeploymentCommand(Guid WorkspaceId, string Slug, Guid ModelVersionId, double Cpus, int Gpus, string? ImageOverride,
     string Purpose = "service", int? IdleStopMin = null) : ICommand<DeploymentRow>;
 
@@ -33,12 +31,10 @@ public sealed class CreateDeploymentCommandHandler(IWriteSession db, S3Client s3
         var manifest = JsonNode.Parse(recipe.Manifest)!.AsObject();
         var handler = manifest["entrypoints"]?["serve"]?["handler"]?.ToString()
                       ?? throw new PreconditionException("SERVE_NOT_SUPPORTED", $"Recipe {recipe.Name} does not declare entrypoints.serve (M12 R8)");
-        // Same rule as training: builtin recipes are built on the machine that runs the replica; only an invalid manifest is refused.
         var image = !string.IsNullOrEmpty(c.ImageOverride) ? c.ImageOverride
             : recipe.State != "invalid" ? $"recipes/{recipe.Name}:current"
             : throw new PreconditionException("CATALOG_RECIPE_NOT_VERIFIED", $"Recipe {recipe.Name} is not valid ({recipe.State})");
         var modelFiles = await ModelFiles.BuildAsync(db, s3, v.Id, c.WorkspaceId, ct);
-        // "By recipe": an optimized version runs on the device it was built and checked for; any other follows its recipe.
         var gpus = c.Gpus >= 0 ? c.Gpus : await db.GetVersionDeviceAsync(v.Id, c.WorkspaceId, ct) switch
         {
             "cuda" => 1,
@@ -55,7 +51,6 @@ public sealed class CreateDeploymentCommandHandler(IWriteSession db, S3Client s3
                 ["MLP_MODEL_VERSION"] = v.Id.ToString(),
             },
         };
-        // The name of a stopped deployment can be used again: it restarts that deployment (same id, keys and public address).
         if (await db.GetDeploymentBySlugAsync(c.WorkspaceId, c.Slug, ct) is { } old)
         {
             if (old.State is not ("stopped" or "failed")) throw new ConflictException("SERVE_SLUG_TAKEN", "Deployment name is already in use");

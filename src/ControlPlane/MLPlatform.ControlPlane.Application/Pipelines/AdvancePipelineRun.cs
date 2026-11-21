@@ -18,10 +18,8 @@ namespace MLPlatform.ControlPlane.Application.Pipelines;
 
 // ───────────── Engine ─────────────
 
-/// <summary>
-/// One engine tick for a run (M14 §5): checks running steps (M09 run / M03 job), starts eligible steps, skips branches after a failed step/closed gate,
-/// finalizes the run when every step has finished. The host dispatches it in a scope acting as the user who started the run (child commands are audited as that user).
-/// </summary>
+/// <summary>One engine tick for a run (M14 §5): checks running steps (M09 run / M03 job), starts eligible steps, skips
+/// branches after a failed step/closed gate, finalizes the run when every step has finished.</summary>
 public sealed record AdvancePipelineRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<bool>, IInternalCommand;
 
 public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock clock, IMediator mediator, IHubImportQueue imports) : ICommandHandler<AdvancePipelineRunCommand, bool>
@@ -34,7 +32,6 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         var (_, defs) = PipelineDef.Parse(pipeline.Definition);
         var runParams = JsonNode.Parse(run.Params) as JsonObject ?? [];
         var changed = true;
-        // Steps started in this tick are not committed yet → read queries (another connection) cannot see the run/job; only check from the next tick.
         var startedNow = new HashSet<string>();
         RetriedNow = startedNow;
         for (var guard = 0; changed && guard < defs.Count + 2; guard++)
@@ -170,7 +167,7 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         {
             var imp = (await mediator.Query(new ListHubImportsQuery(run.WorkspaceId), ct)).FirstOrDefault(x => x.Id == refId);
             state = imp?.State switch { "succeeded" => "succeeded", "failed" or null => "failed", _ => "running" };
-            if (imp?.State == "queued") imports.Enqueue(refId);   // the worker lost it (api restart) → hand it over again; a started import is not run twice
+            if (imp?.State == "queued") imports.Enqueue(refId);
             output["progress"] = imp is null ? "" : $"{imp.FilesDone}/{imp.FilesTotal} files · {imp.Message}";
             if (state == "succeeded" && imp!.TargetId is { } dsId)
             {
@@ -216,11 +213,8 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
 
     private HashSet<string>? RetriedNow;
 
-    /// <summary>
-    /// `dataset` step: the dataset named in config (slug from the name) is reused when it already has a version (reuse: false → import again);
-    /// otherwise an import starts (default: Hugging Face, reference mode — files stay at the pinned source commit). `classes` (names, index = class id)
-    /// becomes the dataset's label schema when it differs, so training gets {dataset.classes.*} and num_classes from it.
-    /// </summary>
+    /// <summary>`dataset` step: the dataset named in config (slug from the name) is reused when it already has a
+    /// version (reuse: false → import again); otherwise an import starts (default: Hugging Face.</summary>
     private async Task<(Guid DatasetId, Guid? VersionId, Guid? ImportId, string Note)> StartDatasetAsync(PipelineRunRow run, JsonObject cfg, CancellationToken ct)
     {
         var name = S(cfg, "name");
@@ -253,7 +247,8 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         return Key(a) == Key(b);
     }
 
-    /// <summary>`train` step with project_name: the project with that slug, created (with the step's task) on first use.</summary>
+    /// <summary>`train` step with project_name: the project with that slug, created (with the step's task) on first
+    /// use.</summary>
     private async Task<Guid> ProjectAsync(Guid workspaceId, string name, string task, CancellationToken ct)
     {
         var slug = new string(name.ToLowerInvariant().Select(ch => char.IsAsciiLetterOrDigit(ch) ? ch : '-').ToArray()).Trim('-');
@@ -262,7 +257,8 @@ public sealed class AdvancePipelineRunCommandHandler(IWriteSession db, IClock cl
         return (await mediator.Send(new CreateProjectCommand(workspaceId, slug, name, task), ct)).Id;
     }
 
-    /// <summary>Recipe params after reference resolution; numeric strings from run params become numbers ("24" → 24).</summary>
+    /// <summary>Recipe params after reference resolution; numeric strings from run params become numbers ("24" →
+    /// 24).</summary>
     private static string ParamsJson(JsonNode? node)
     {
         var o = node as JsonObject ?? [];

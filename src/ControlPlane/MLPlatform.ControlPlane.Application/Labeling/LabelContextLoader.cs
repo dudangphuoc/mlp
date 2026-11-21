@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Loads an item's context once the caller is authorized (shared by user requests and background jobs).</summary>
+/// <summary>Loads an item's context once the caller is authorized (shared by user requests and background
+/// jobs).</summary>
 public static class LabelContextLoader
 {
     public static async Task<HermesContext> LoadAsync(IReadSession db, ProjectRow p, string path, Guid actor, CancellationToken ct)

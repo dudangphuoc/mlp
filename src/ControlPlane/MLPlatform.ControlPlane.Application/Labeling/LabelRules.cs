@@ -39,7 +39,8 @@ public static class LabelRules
         return ids;
     }
 
-    /// <summary>Validates against the schema (R: class exists, geometry is well-formed, bbox is inside the image). Throws LABEL_SCHEMA_VIOLATION with the indexes of invalid labels.</summary>
+    /// <summary>Validates against the schema (R: class exists, geometry is well-formed, bbox is inside the
+    /// image).</summary>
     public static void Validate(IReadOnlyList<AnnotationInput> items, HashSet<int> classes)
     {
         var errors = new Dictionary<string, string>();
@@ -81,7 +82,7 @@ public static class LabelRules
                 case "span":
                     if (!Num(r, "start", out var s) || !Num(r, "end", out var e) || s < 0 || e <= s) return "span requires start < end";
                     break;
-                case "segment":   // audio/video time range in seconds
+                case "segment":
                     if (!Num(r, "start", out var ss) || !Num(r, "end", out var se) || ss < 0 || se <= ss) return "segment requires start < end (seconds)";
                     break;
                 case "keypoints":
@@ -91,7 +92,7 @@ public static class LabelRules
                         if (p.ValueKind != JsonValueKind.Array || p.GetArrayLength() < 2 || p[0].GetDouble() is < 0 or > 1 || p[1].GetDouble() is < 0 or > 1)
                             return "keypoint is outside the image";
                     break;
-                case "mask":      // run-length encoding over the image grid: {"rle": {"size": [h, w], "counts": [...]}}
+                case "mask":
                     if (!r.TryGetProperty("rle", out var rle) || !rle.TryGetProperty("size", out var size) || size.GetArrayLength() != 2
                         || !rle.TryGetProperty("counts", out var counts) || counts.ValueKind != JsonValueKind.Array)
                         return "mask requires rle.size [h, w] and rle.counts";
@@ -103,7 +104,7 @@ public static class LabelRules
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return "geometry/attributes is not valid JSON"; }
         if (a.Confidence is < 0 or > 1) return "confidence is outside [0, 1]";
-        return a.Source is "human" or "model" or "import" or "ai" ? null : "source must be human/model/import/ai";   // ai = AI proposal a person accepted
+        return a.Source is "human" or "model" or "import" or "ai" ? null : "source must be human/model/import/ai";
     }
 
     private static bool Num(JsonElement o, string name, out double v)

@@ -2,7 +2,8 @@ using System.Text;
 
 namespace MLPlatform.Data;
 
-/// <summary>Helpers for generated code: enum ↔ snake_case text (the DB stores `in_progress`, C# `InProgress`).</summary>
+/// <summary>Helpers for generated code: enum ↔ snake_case text (the DB stores `in_progress`, C#
+/// `InProgress`).</summary>
 public static class SqlMapping
 {
     public static string EnumToDb<TEnum>(TEnum value) where TEnum : struct, Enum

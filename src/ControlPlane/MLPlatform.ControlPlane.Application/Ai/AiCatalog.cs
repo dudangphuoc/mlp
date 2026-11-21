@@ -21,7 +21,7 @@ public static class AiCatalog
     /// <summary>Decision servers (System One wire format) — only decision/judge roles make sense there.</summary>
     public static bool IsDecisionServer(string providerType) => providerType is "systemone" or "typesafe";
 
-    /// <summary>Hosted APIs outside the platform: data sent to them leaves the platform. Default for new connections; the admin can change it.</summary>
+    /// <summary>Hosted APIs outside the platform: data sent to them leaves the platform.</summary>
     public static bool ExternalByDefault(string providerType) => providerType is "openai" or "anthropic" or "deepseek" or "typesafe";
 
     public static string[] Clean(IEnumerable<string> values, string[] allowed, string field)

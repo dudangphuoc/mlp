@@ -12,7 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
-/// <summary>Training data: point-in-time join (≤ 10,000 spine rows) → table [entity, ts, feature…] (no leakage of values after ts).</summary>
+/// <summary>Training data: point-in-time join (≤ 10,000 spine rows) → table [entity, ts, feature…] (no leakage of
+/// values after ts).</summary>
 public sealed record GetHistoricalFeaturesQuery(Guid WorkspaceId, IReadOnlyList<(string Key, DateTimeOffset Ts)> Spine, IReadOnlyList<string> Refs) : IQuery<FeatureTable>;
 
 public sealed class GetHistoricalFeaturesQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<GetHistoricalFeaturesQuery, FeatureTable>

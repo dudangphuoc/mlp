@@ -6,5 +6,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <param name="Stale">The attempt was already finalized (replaced, node-lost, fenced): its late exit must not change the job, run, deployment or notebook.</param>
+/// <summary>The attempt was already finalized (replaced, node-lost, fenced): its late exit must not change the job,
+/// run, deployment or notebook.</summary>
 public sealed record FinishResult(Guid JobId, string JobState, bool Retry, bool Stale = false);

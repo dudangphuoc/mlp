@@ -3,10 +3,7 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Files + scripts in the agent's state folder (D-38). The control plane uses these generic operations for OTA: write the upgrade script,
-/// run it detached from the agent via the service manager, read <c>status.txt</c>, write the confirmation file. Relative paths only, cannot escape the folder.
-/// </summary>
+/// <summary>Files + scripts in the agent's state folder (D-38).</summary>
 public static class HostFiles
 {
     public static string? Resolve(string root, string rel)
@@ -23,7 +20,7 @@ public static class HostFiles
         if (!File.Exists(p)) return new CommandResult { Ok = true, Exists = false };
         var max = r.MaxBytes > 0 ? r.MaxBytes : 1024 * 1024;
         await using var fs = new FileStream(p, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        if (fs.Length > max) fs.Seek(-max, SeekOrigin.End);   // file tail (status/log)
+        if (fs.Length > max) fs.Seek(-max, SeekOrigin.End);
         var buf = new byte[Math.Min(max, fs.Length - fs.Position)];
         await fs.ReadExactlyAsync(buf, ct);
         return new CommandResult { Ok = true, Exists = true, Data = Google.Protobuf.ByteString.CopyFrom(buf) };
@@ -48,10 +45,7 @@ public static class HostFiles
         return new CommandResult { Ok = true };
     }
 
-    /// <summary>
-    /// Run a script. <c>detached</c>: hand it to the service manager so the script survives the agent being stopped/its binary replaced:
-    /// Linux <c>systemd-run</c>, macOS <c>launchctl submit</c>, Windows a one-time Scheduled Task as SYSTEM.
-    /// </summary>
+    /// <summary>Run a script.</summary>
     public static async Task<CommandResult> RunScriptAsync(string root, RunScript r, CancellationToken ct)
     {
         if (Resolve(root, r.Path) is not { } path || !File.Exists(path)) return Outside();

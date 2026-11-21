@@ -35,10 +35,8 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
         return s;
     }
 
-    /// <summary>
-    /// One stream per tab (20/10 §2.7): my running work, system status, unread notification count, and, when subscribed to a job,
-    /// that job's new events + logs. Wakes when StreamBroker signals (workspace NOTIFY / new attempt logs), re-polls at least every 5 s; sends only on change; reconnect → full snapshot first.
-    /// </summary>
+    /// <summary>One stream per tab (20/10 §2.7): my running work, system status, unread notification count, and, when
+    /// subscribed to a job, that job's new events + logs.</summary>
     public override async Task WatchWorkspace(WatchWorkspaceRequest r, IServerStreamWriter<WorkspaceUpdate> stream, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");
@@ -55,7 +53,6 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
             {
                 var u = new WorkspaceUpdate();
                 var changed = false;
-                // Roles without run.read (e.g. Reviewer) still get notifications + system status; their job list stays empty instead of failing the stream.
                 List<ActiveJob> jobsMsg = [];
                 if (canSeeJobs)
                     try { jobsMsg = (await mediator.Query(new ActiveJobsQuery(ws), ctx.CancellationToken)).Select(ToActive).ToList(); }
@@ -114,11 +111,12 @@ public sealed class OpsGrpc(IMediator mediator, SystemHealth health, LogStore lo
         return a;
     }
 
-    /// <summary>Ray state API + cluster status merged per node and mapped to the platform's machines (label mlp.io/host-id).</summary>
+    /// <summary>Ray state API + cluster status merged per node and mapped to the platform's machines (label
+    /// mlp.io/host-id).</summary>
     public override async Task<RayHealth> GetRayHealth(ClusterMapRequest r, ServerCallContext ctx)
     {
         var ct = ctx.CancellationToken;
-        var (hosts, _) = await mediator.Query(new ClusterMapQuery(G(r.WorkspaceId, "workspace_id")), ct);   // also checks access
+        var (hosts, _) = await mediator.Query(new ClusterMapQuery(G(r.WorkspaceId, "workspace_id")), ct);
         var names = hosts.ToDictionary(h => h.Id.ToString(), h => h.Name);
         var res = new RayHealth();
         var version = await ray.GetJsonAsync("api/version", ct);

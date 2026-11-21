@@ -10,10 +10,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Anomaly detector (20/10 §2.3): shim signal lost (warning; too long → return the attempt so the host stops and retries),
-/// progress unchanged for longer than `stall_after_min` → "may be stalled" (warning only, no automatic stop).
-/// </summary>
+/// <summary>Anomaly detector (20/10 §2.3): shim signal lost (warning; too long → return the attempt so the host stops
+/// and retries), progress unchanged for longer than `stall_after_min` → "may be stalled" (warning only.</summary>
 public sealed record DetectAnomaliesCommand : ICommand<IReadOnlyList<Guid>>, IInternalCommand;
 
 public sealed class DetectAnomaliesCommandHandler(IWriteSession db, IClock clock, SignalOptions opts) : ICommandHandler<DetectAnomaliesCommand, IReadOnlyList<Guid>>

@@ -12,17 +12,15 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
-/// <summary>
-/// Drift statistics (M13 §2) — pure C#, no external library dependencies (AOT):
-/// numeric → 10 bins by baseline deciles, PSI + two-sample KS; categorical → PSI over frequencies (including an "other" bucket).
-/// Default PSI thresholds 0.1 (warning) / 0.25 (alert) per common practice.
-/// </summary>
+/// <summary>Drift statistics (M13 §2) — pure C#, no external library dependencies (AOT): numeric → 10 bins by baseline
+/// deciles, PSI + two-sample KS; categorical → PSI over frequencies (including an "other" bucket).</summary>
 public static class Drift
 {
     private const double Eps = 1e-4;
     private const int MaxSample = 5000;
 
-    /// <summary>Baseline from a table (header + rows): each numeric column stores bin edges + proportions + a sorted sample; text columns store frequencies; the label column → label distribution.</summary>
+    /// <summary>Baseline from a table (header + rows): each numeric column stores bin edges + proportions + a sorted
+    /// sample; text columns store frequencies; the label column → label distribution.</summary>
     public static JsonObject BuildBaseline(IReadOnlyList<string> header, IReadOnlyList<string[]> rows, string labelColumn)
     {
         var features = new JsonObject();
@@ -51,7 +49,8 @@ public static class Drift
         return new JsonObject { ["features"] = features, ["labels"] = labels };
     }
 
-    /// <summary>Compares current data with the baseline → [{feature, kind, psi, ks?, status}]; overall status = the worst.</summary>
+    /// <summary>Compares current data with the baseline → [{feature, kind, psi, ks?, status}]; overall status = the
+    /// worst.</summary>
     public static (JsonArray Results, string Status) Compare(JsonObject baseline, IReadOnlyList<JsonObject> features, IReadOnlyList<string?> predictedLabels,
         double warn, double alert)
     {

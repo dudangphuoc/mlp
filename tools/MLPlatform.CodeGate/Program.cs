@@ -19,7 +19,7 @@ if (options.CommentInventoryOutput is { } inventoryPath)
     return 0;
 }
 
-List<Finding> findings = [.. MigrationRules.Check(repo), .. SqlRules.Check(repo), .. ArchitectureRules.Check(repo), .. ApiPlacementRules.Check(repo), .. FileLayoutRules.Check(repo), .. CommentRules.Check(repo)];
+List<Finding> findings = [.. MigrationRules.Check(repo), .. SqlRules.Check(repo), .. ArchitectureRules.Check(repo), .. ApiPlacementRules.Check(repo), .. FileLayoutRules.Check(repo), .. MethodLengthRules.Check(repo), .. CommentRules.Check(repo)];
 var baseline = new Baseline(Path.Combine(options.Root, "gates", "baseline.txt"));
 
 if (options.UpdateBaseline)

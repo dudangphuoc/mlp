@@ -10,9 +10,10 @@ public static class NotebookRules
 {
     public const int ContainerPort = 8888;
     public const string HomeMount = "/home/mlp";
-    public const int MaxActivePerUser = 3;   // temporary until sched.quotas exists (R7)
+    public const int MaxActivePerUser = 3;
 
-    /// <summary>Jupyter token derived from the server key — not stored in the DB; the api attaches it when proxying (§5 step 2).</summary>
+    /// <summary>Jupyter token derived from the server key — not stored in the DB; the api attaches it when proxying (§5
+    /// step 2).</summary>
     public static string JupyterToken(TokenService tokens, Guid serverId) => tokens.Hash("nb-jupyter:" + serverId);
 
     public static string BaseUrl(Guid serverId) => $"/nb/{serverId}/";

@@ -13,10 +13,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Starts a trial of the caller's draft: freezes it, then trains it hidden on a small subset in two short passes.</summary>
+/// <summary>Starts a trial of the caller's draft: freezes it, then trains it hidden on a small subset in two short
+/// passes.</summary>
 public sealed record StartTrialCommand(Guid WorkspaceId, Guid ProjectRecipeId) : ICommand<TrialView>;
 
-/// <summary>Reuses the training path (job, volume, metrics, log, model upload) with a subset of the data and the recipe's trial overrides.</summary>
+/// <summary>Reuses the training path (job, volume, metrics, log, model upload) with a subset of the data and the
+/// recipe's trial overrides.</summary>
 public sealed class StartTrialCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator, S3Client s3)
     : ICommandHandler<StartTrialCommand, TrialView>
 {

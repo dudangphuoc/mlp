@@ -10,5 +10,6 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>How long to wait for a machine to come back before treating the attempt as `node_lost` (20/10 §4.4, default 5 minutes).</summary>
+/// <summary>How long to wait for a machine to come back before treating the attempt as `node_lost` (20/10 §4.4, default
+/// 5 minutes).</summary>
 public sealed record RecoveryOptions(TimeSpan Grace);

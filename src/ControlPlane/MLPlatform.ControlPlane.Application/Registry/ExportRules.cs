@@ -23,10 +23,8 @@ public static class ExportRules
     public static IReadOnlyList<string> Formats(JsonObject manifest) =>
         (manifest["entrypoints"]?["export"]?["formats"] as JsonArray)?.Select(f => f?.ToString() ?? "").Where(f => f.Length > 0).ToList() ?? [];
 
-    /// <summary>
-    /// Formats built from the version's ONNX file (any recipe that exports ONNX) by <see cref="DerivedScript"/> in the generic-onnx image:
-    /// FP16 ONNX for GPU runtimes, OpenVINO IR for Intel CPUs/iGPUs, TensorRT engines built on the target GPU (engines only run on that GPU model + driver).
-    /// </summary>
+    /// <summary>Formats built from the version's ONNX file (any recipe that exports ONNX) by DerivedScript in the
+    /// generic-onnx image: FP16 ONNX for GPU runtimes, OpenVINO IR for Intel CPUs/iGPUs.</summary>
     public static readonly string[] Derived = ["onnx-fp16", "openvino-fp32", "openvino-fp16", "tensorrt-fp16", "tensorrt-fp32"];
 
     public static IReadOnlyList<string> AllFormats(JsonObject manifest)
@@ -35,7 +33,8 @@ public static class ExportRules
         return native.Contains("onnx") ? [.. native, .. Derived.Where(d => !native.Contains(d))] : native;
     }
 
-    /// <summary>Converts the ONNX file at MLP_ONNX_URL to MLP_EXPORT_FORMAT, uploads one file (or a zip) and meta.json like <see cref="Script"/>.</summary>
+    /// <summary>Converts the ONNX file at MLP_ONNX_URL to MLP_EXPORT_FORMAT, uploads one file (or a zip) and meta.json
+    /// like Script.</summary>
     public const string DerivedScript = """
 import json, os, pathlib, subprocess, sys, time, urllib.request, zipfile
 fmt, base = os.environ["MLP_EXPORT_FORMAT"], os.environ["MLP_EXPORT_NAME"]
@@ -110,11 +109,8 @@ put(os.environ["MLP_EXPORT_META_PUT"], meta, len(meta))
 print(f"[mlp-export] uploaded {name} ({size} bytes)", flush=True)
 """;
 
-    /// <summary>
-    /// Runs inside the recipe image (python + mlp-shim are there): downloads the model version to /mnt/model, lets the shim run the recipe's
-    /// export command, then uploads the result — the single output file as it is, several files as one zip — and a small meta.json naming it.
-    /// Passed in an environment variable so that changing it never rebuilds a recipe image.
-    /// </summary>
+    /// <summary>Runs inside the recipe image (python + mlp-shim are there): downloads the model version to /mnt/model,
+    /// lets the shim run the recipe's export command, then uploads the result — the single output file as it
     public const string Script = """
 import json, os, pathlib, subprocess, sys, urllib.request, zipfile
 model, out = pathlib.Path("/mnt/model"), pathlib.Path("/mnt/output")

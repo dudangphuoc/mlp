@@ -7,7 +7,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>Browser/SDK uploads directly to S3 storage (the api only issues URLs — 20/01 §3). P1: single PUT ≤ 5 GiB; multipart later.</summary>
+/// <summary>Browser/SDK uploads directly to S3 storage (the api only issues URLs — 20/01 §3).</summary>
 public sealed record CreateUploadCommand(Guid WorkspaceId, Guid DatasetId, string Path, long SizeBytes) : ICommand<(string Url, DateTimeOffset ExpiresAt)>;
 
 public sealed class CreateUploadCommandHandler(IReadSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth)

@@ -11,7 +11,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>One circuit breaker per model, kept for the process lifetime: 3 failures in a row open it for 30 s, then one probe call.</summary>
+/// <summary>One circuit breaker per model, kept for the process lifetime: 3 failures in a row open it for 30 s, then
+/// one probe call.</summary>
 public sealed class AiCircuits(IClock clock)
 {
     private sealed class State { public int Failures; public DateTimeOffset OpenUntil; public bool Probing; }
@@ -32,7 +33,7 @@ public sealed class AiCircuits(IClock clock)
         {
             if (st.Failures < 3) return true;
             if (clock.UtcNow < st.OpenUntil || st.Probing) return false;
-            st.Probing = true;   // half-open: let exactly one call through
+            st.Probing = true;
             return true;
         }
     }

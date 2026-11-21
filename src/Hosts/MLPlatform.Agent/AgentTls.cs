@@ -4,10 +4,8 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Agent channel TLS (P0-8, 20/04 §3): with <see cref="AgentOptions.CertPin"/> (SHA-256 of the control plane certificate, printed in the install command)
-/// only that exact certificate is accepted, so self-signed certificates work; without a pin → normal CA chain validation.
-/// </summary>
+/// <summary>Agent channel TLS (P0-8, 20/04 §3): with CertPin (SHA-256 of the control plane certificate, printed in the
+/// install command) only that exact certificate is accepted, so self-signed certificates work.</summary>
 public static class AgentTls
 {
     public static async Task<Stream> WrapAsync(Stream stream, AgentOptions o, string host, CancellationToken ct)

@@ -7,11 +7,8 @@ using MLPlatform.Ray;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Workloads outlive the Ray head (D-40), but their reservation does not: after a head restart Ray believes every CPU and GPU is free and would
-/// give a busy GPU to the next job. Every 10 s this compares active attempts with Ray and submits a `--rehold` holder for each one Ray no longer
-/// knows. Scheduling pauses while Ray is unreachable and for a short settle time after a re-hold.
-/// </summary>
+/// <summary>Workloads outlive the Ray head (D-40), but their reservation does not: after a head restart Ray believes
+/// every CPU and GPU is free and would give a busy GPU to the next job.</summary>
 public sealed class ReservationKeeper(IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, ILogger<ReservationKeeper> log)
 {
     private readonly Dictionary<Guid, int> _tries = [];
@@ -38,7 +35,7 @@ public sealed class ReservationKeeper(IServiceScopeFactory scopes, RayJobsClient
                 var info = await ray.GetAsync(a.Id.ToString(), ct);
                 if (info?.Status is "PENDING" or "RUNNING") continue;
                 var n = _tries.GetValueOrDefault(a.Id);
-                if (n >= 5) continue;   // the holder keeps dying: leave it visible in the log instead of resubmitting forever
+                if (n >= 5) continue;
                 _tries[a.Id] = n + 1;
                 if (info is not null) await ray.DeleteAsync(a.Id.ToString(), ct);
                 var spec = JobSpecDto.Parse(a.Spec);

@@ -10,11 +10,7 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 /// <summary>Compare 2–8 runs of one project.</summary>
 public sealed record CompareRunsQuery(Guid WorkspaceId, IReadOnlyList<Guid> RunIds) : IQuery<ComparisonView>;
 
-/// <summary>
-/// Same val = every run trained on the same dataset version (its split is fixed, R8). Axis = where the primary metric's last point sits against
-/// the epochs the run asked for: beyond them it is on the step axis. Rows: recipe, variant, data, start, kind, revision and every parameter whose
-/// effective value (set, else the recipe default) differs.
-/// </summary>
+/// <summary>Same val = every run trained on the same dataset version (its split is fixed, R8).</summary>
 public sealed class CompareRunsQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<CompareRunsQuery, ComparisonView>
 {
     public async ValueTask<ComparisonView> Handle(CompareRunsQuery q, CancellationToken ct)

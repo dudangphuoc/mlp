@@ -5,7 +5,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
-/// <summary>P1 notification kind catalog (M16 §4) — groups shown in S-16-2; `Mandatory` cannot be turned off (R3).</summary>
+/// <summary>P1 notification kind catalog (M16 §4) — groups shown in S-16-2; `Mandatory` cannot be turned off
+/// (R3).</summary>
 public static class NotificationKinds
 {
     public sealed record Kind(string Key, string Group, string Label, bool Mandatory = false);

@@ -8,7 +8,8 @@ namespace MLPlatform.ControlPlane.Application.Identity;
 /// <summary>Sends a batch of due emails: on error → retry after 2^n minutes (up to 8 times, then `dead`).</summary>
 public sealed record DispatchEmailsCommand(string PublicUrl) : ICommand<int>, IInternalCommand;
 
-/// <summary>Handles <see cref="DispatchEmailsCommand"/> in one transaction (rows locked with SKIP LOCKED — safe with multiple api instances).</summary>
+/// <summary>Handles DispatchEmailsCommand in one transaction (rows locked with SKIP LOCKED — safe with multiple api
+/// instances).</summary>
 public sealed class DispatchEmailsCommandHandler(IWriteSession db, IClock clock, IEmailTransport smtp) : ICommandHandler<DispatchEmailsCommand, int>
 {
     public async ValueTask<int> Handle(DispatchEmailsCommand c, CancellationToken ct)

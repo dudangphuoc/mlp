@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Who may do what in assist: everyone in the project reads; Lead (or labeling.manage) configures and runs batches.</summary>
+/// <summary>Who may do what in assist: everyone in the project reads; Lead (or labeling.manage) configures and runs
+/// batches.</summary>
 internal static class AssistAccess
 {
     public static async Task<(Guid Uid, ProjectRow P, HashSet<string> Roles)> ManageAsync(LabelAccess access, WorkspaceAuthorizer auth, Guid ws, Guid pid, CancellationToken ct)

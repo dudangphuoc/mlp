@@ -3,7 +3,8 @@ using MLPlatform.Data;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
-/// <summary>Commands run in one transaction; nested commands join the outermost one, which also drains the after-commit queue.</summary>
+/// <summary>Commands run in one transaction; nested commands join the outermost one, which also drains the after-commit
+/// queue.</summary>
 public sealed class UnitOfWorkBehavior(IWriteSession session, AfterCommitQueue afterCommit) : IRequestBehavior
 {
     public async ValueTask<object?> Handle(RequestContext context, Func<ValueTask<object?>> next, CancellationToken ct)

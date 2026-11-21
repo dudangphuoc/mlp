@@ -2,10 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Finds the line of a container log that explains a failure, so the job, run or deployment can say "ModuleNotFoundError: No module named 'x'"
-/// instead of "exited with code 1". Launchers (torchrun, subprocess) wrap the real error in their own exception — those wrappers are skipped.
-/// </summary>
+/// <summary>Finds the line of a container log that explains a failure, so the job, run or deployment can say
+/// "ModuleNotFoundError: No module named 'x'" instead of "exited with code 1".</summary>
 public static partial class ErrorHeadline
 {
     private static readonly string[] Wrappers = ["ChildFailedError", "CalledProcessError", "ProcessRaisedException", "ProcessExitedException", "SystemExit"];

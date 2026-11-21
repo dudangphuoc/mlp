@@ -9,13 +9,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>
-/// Existing labels of an item (the YOLO txt next to it in the version) become editable platform labels, once — the first time the item is
-/// opened. Source "import". An item that already has platform labels is left alone.
-/// </summary>
+/// <summary>Existing labels of an item (the YOLO txt next to it in the version) become editable platform labels, once —
+/// the first time the item is opened.</summary>
 public sealed record ImportItemLabelsCommand(Guid WorkspaceId, Guid ProjectId, string Path, string YoloText) : ICommand<int>, IInternalCommand;
 
-/// <summary>Parses the text, stores the boxes, marks the item imported (also when the file held no valid box).</summary>
+/// <summary>Parses the text, stores the boxes, marks the item imported (also when the file held no valid
+/// box).</summary>
 public sealed class ImportItemLabelsCommandHandler(IWriteSession db, LabelAccess access, IClock clock) : ICommandHandler<ImportItemLabelsCommand, int>
 {
     public async ValueTask<int> Handle(ImportItemLabelsCommand c, CancellationToken ct)

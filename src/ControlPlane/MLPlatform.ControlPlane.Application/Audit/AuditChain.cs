@@ -15,7 +15,7 @@ public static class AuditChain
 
     public static async Task AppendAsync(IWriteSession db, IClock clock, Guid? ws, Guid? actor, string action, string outcome, string? reason, CancellationToken ct)
     {
-        await db.LockChainAsync(ct);   // serialize the hash chain (held until the transaction ends)
+        await db.LockChainAsync(ct);
         var prev = await db.LastHashAsync(ct) ?? "genesis";
         var id = Ids.New();
         var at = DateTimeOffset.FromUnixTimeMilliseconds(clock.UtcNow.ToUnixTimeMilliseconds());

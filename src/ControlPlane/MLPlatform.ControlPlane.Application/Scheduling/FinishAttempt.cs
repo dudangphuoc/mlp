@@ -15,7 +15,6 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
     {
         var a = await db.GetAttemptAsync(c.AttemptId, ct) ?? throw new NotFoundException("SCHED_ATTEMPT_NOT_FOUND", "Attempt not found");
         var now = clock.UtcNow;
-        // Already finalized (e.g. the agent reports exit after the attempt was deemed node-lost) → skip, do not retry twice.
         if (a.State is "succeeded" or "failed" or "cancelled" or "stopped")
         {
             var cur = await db.GetJobAsync(a.JobId, a.WorkspaceId, ct);
@@ -24,7 +23,7 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
         var (state, reason) = c.ExitCode switch
         {
             0 => ("succeeded", "succeeded"),
-            2 => ("failed", c.Reason ?? "user_error"),   // R26: a recipe-declared failure (loss_invalid …) names itself; never retried
+            2 => ("failed", c.Reason ?? "user_error"),
             3 => ("failed", "recipe_error"),
             137 => ("failed", "oom"),
             _ => ("failed", c.Reason ?? "failed"),
@@ -32,7 +31,6 @@ public sealed class FinishAttemptCommandHandler(IWriteSession db, IClock clock) 
         var job0 = await db.GetJobAsync(a.JobId, a.WorkspaceId, ct);
         if (job0?.State == "cancelled")
         {
-            // Deliberate stop (job cancelled, notebook/deployment stopped): the container exiting is not a failure, no retry.
             await db.SetAttemptStateAsync(a.Id, "cancelled", c.ExitCode, "cancelled", c.Message, now, ct);
             return new FinishResult(a.JobId, "cancelled", false);
         }

@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.CodeGate.Rules;
 
-/// <summary>MLPSQL001 query header, MLPSQL010 workspace filter, MLPSQL020 Sql/&lt;folder&gt; stays in its schema.</summary>
+/// <summary>MLPSQL001 query header, MLPSQL010 workspace filter, MLPSQL020 Sql/<folder> stays in its schema.</summary>
 public static partial class SqlRules
 {
     private static readonly HashSet<string> SharedSchemas = ["platform"];

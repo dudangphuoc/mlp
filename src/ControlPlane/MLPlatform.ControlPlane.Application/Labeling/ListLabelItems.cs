@@ -26,7 +26,6 @@ public sealed class ListLabelItemsQueryHandler(IReadSession db, LabelAccess acce
         var total = await db.CountItemsAsync(p.Id, q.Status ?? "", q.Search?.Trim() ?? "", mine, uid, ct);
         var ids = items.SelectMany(i => new[] { i.AnnotatorId, i.ReviewerId }).OfType<Guid>().Distinct().ToArray();
         var names = ids.Length == 0 ? [] : (await db.UserNamesAsync(ids, ct)).ToDictionary(u => u.Id, u => u.DisplayName);
-        // Thumbnails for the work strip: signed links of the page's files (same sources as GetItem), one version listing per page.
         var urls = new Dictionary<string, string>();
         if (p.VersionId is { } vid && await db.GetVersionAsync(vid, p.WorkspaceId, ct) is { } v)
         {

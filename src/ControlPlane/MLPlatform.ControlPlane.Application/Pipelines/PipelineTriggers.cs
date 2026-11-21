@@ -16,7 +16,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
-/// <summary>Schedule triggers (called from the background loop) and event triggers (M13 drift…): create a run on behalf of the pipeline creator.</summary>
+/// <summary>Schedule triggers (called from the background loop) and event triggers (M13 drift…): create a run on behalf
+/// of the pipeline creator.</summary>
 public static class PipelineTriggers
 {
     public static async Task<int> FireAsync(IWriteSession db, IClock clock, string eventKind, Guid workspaceId, JsonObject? eventParams, CancellationToken ct)

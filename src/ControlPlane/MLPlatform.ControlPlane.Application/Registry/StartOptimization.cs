@@ -12,11 +12,13 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>Start an optimization run: picks calibration (train split) and check (val split) images, stores the spec and submits the job.</summary>
+/// <summary>Start an optimization run: picks calibration (train split) and check (val split) images, stores the spec
+/// and submits the job.</summary>
 public sealed record StartOptimizationCommand(Guid WorkspaceId, Guid SourceVersionId, string Device, IReadOnlyList<string> Candidates, Guid? HostId,
     Guid CheckDatasetVersionId, int CheckImages, Guid? CalibDatasetVersionId, int CalibImages, double Conf, string CalibMethod) : ICommand<OptimizationRow>;
 
-/// <summary>Validates the device × candidate pairs, signs every download and upload link and submits a job in the generic-onnx image.</summary>
+/// <summary>Validates the device × candidate pairs, signs every download and upload link and submits a job in the
+/// generic-onnx image.</summary>
 public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth, IMediator mediator)
     : ICommandHandler<StartOptimizationCommand, OptimizationRow>
 {
@@ -65,7 +67,6 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
             ["classes_url"] = hasClasses ? Get(Buckets.Artifacts, srcPrefix + "classes.json") : null,
             ["calib"] = Files(calib), ["check"] = Files(check), ["uploads"] = uploads,
         };
-        // The spec (hundreds of links) and the script live in storage: an environment variable is limited to 128 KB.
         await s3.PutAsync(Buckets.Artifacts, prefix + "spec.json", Encoding.UTF8.GetBytes(spec.ToJsonString()), "application/json", ct);
         await s3.PutAsync(Buckets.Artifacts, prefix + "pipeline.py", Encoding.UTF8.GetBytes(OptimizationRules.Script()), "text/x-python", ct);
         var job = new JobSpecDto
@@ -78,7 +79,6 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
             {
                 ["MLP_OPT_SPEC_URL"] = Get(Buckets.Artifacts, prefix + "spec.json"), ["MLP_OPT_SCRIPT_URL"] = Get(Buckets.Artifacts, prefix + "pipeline.py"),
                 ["OMP_NUM_THREADS"] = "4",
-                // host dataset caches the images are read from / downloaded into (mounted by the scheduler)
                 ["MLP_DATA_CACHES"] = string.Join(',', check.Concat(calib).Where(f => f.Id is not null).Select(f => f.DatasetId.ToString("N")).Distinct()),
             },
         };
@@ -88,7 +88,8 @@ public sealed class StartOptimizationCommandHandler(IWriteSession db, S3Client s
         return (await db.GetOptimizationAsync(c.WorkspaceId, id, ct))!;
     }
 
-    /// <summary>Images of a dataset version in the wanted splits (folders or the version's mlp-split.json), else any image; deterministic pick.</summary>
+    /// <summary>Images of a dataset version in the wanted splits (folders or the version's mlp-split.json), else any
+    /// image; deterministic pick.</summary>
     private async Task<List<OptImage>> Images(Guid ws, Guid versionId, string[] splits, int n, string seed, CancellationToken ct)
     {
         await auth.RequireAsync(ws, "dataset.read", ct);

@@ -3,7 +3,7 @@ using MLPlatform.Data;
 
 namespace MLPlatform.ControlPlane.Application.Common;
 
-/// <summary>Permission matrix M01 §4.1 (implemented part). No read permission → NOT_FOUND; read but no write → PERMISSION_DENIED.</summary>
+/// <summary>Permission matrix M01 §4.1 (implemented part).</summary>
 public static class Permissions
 {
     private static readonly Dictionary<string, string[]> Matrix = new()

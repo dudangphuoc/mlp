@@ -21,7 +21,6 @@ public sealed class LabelAccess(IReadSession readDb, WorkspaceAuthorizer auth, I
         var uid = await auth.RequireAsync(ws, permission, ct);
         var p = await db.GetLabelProjectAsync(projectId, ws, ct) ?? throw new NotFoundException("LABEL_PROJECT_NOT_FOUND", "Labeling project not found");
         var roles = (await db.MemberRolesAsync(projectId, uid, ct)).Select(r => r.Role).ToHashSet();
-        // Whoever manages labeling in the workspace (owner, admin) leads every project: a project never ends up with nobody able to run it.
         if (await auth.HasAsync(ws, "labeling.manage", ct)) roles.Add("lead");
         return (uid, p, roles);
     }
@@ -41,7 +40,7 @@ public sealed class LabelAccess(IReadSession readDb, WorkspaceAuthorizer auth, I
         if (s.LockExpiresAt < clock.UtcNow) throw new PreconditionException("LABEL_LOCK_EXPIRED", "Item lock has expired");
     }
 
-    /// <summary>Reads an item with its labels. Inside a command, pass the write session so the lock just taken in the same transaction is visible.</summary>
+    /// <summary>Reads an item with its labels.</summary>
     public async Task<ItemView> ViewAsync(ProjectRow p, string path, S3Client s3, CancellationToken ct, IReadSession? session = null)
     {
         var db = session ?? this.db;
@@ -50,7 +49,6 @@ public sealed class LabelAccess(IReadSession readDb, WorkspaceAuthorizer auth, I
         string url;
         if (p.VersionId is { } vid)
         {
-            // Version project: reference files come from their source, copied files from the version folder in storage.
             var v = await db.GetVersionAsync(vid, p.WorkspaceId, ct) ?? throw new NotFoundException("DATA_VERSION_NOT_FOUND", "Dataset version not found");
             var f = await db.GetVersionFileAsync(vid, path, ct);
             url = f?.Url is { } u ? SourceUrls.Resolve(s3, u) : s3.Presign(HttpMethod.Get, Buckets.Datasets, v.Prefix + path, TimeSpan.FromHours(1));

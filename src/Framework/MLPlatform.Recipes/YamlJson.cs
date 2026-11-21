@@ -5,10 +5,7 @@ using YamlDotNet.Core.Events;
 
 namespace MLPlatform.Recipes;
 
-/// <summary>
-/// YAML → JsonNode using only YamlDotNet's event parser (no reflection serializer → AOT-safe).
-/// Unquoted scalars are typed per the YAML 1.2 core schema: null/bool/int/float; everything else is a string.
-/// </summary>
+/// <summary>YAML → JsonNode using only YamlDotNet's event parser (no reflection serializer → AOT-safe).</summary>
 public static class YamlJson
 {
     public static JsonNode? Parse(string yaml)

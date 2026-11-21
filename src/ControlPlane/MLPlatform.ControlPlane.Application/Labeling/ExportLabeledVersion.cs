@@ -11,14 +11,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>
-/// Labels → a dataset version a recipe can train on: the labeled files, a YOLO `.txt` next to every image (`class cx cy w h`, normalized, class =
-/// position in the schema), `data.yaml` + `classes.txt` with the class names, and `labels.jsonl` holding every label of any kind.
-/// Only finished items go in: accepted, or every submitted item when <paramref name="AllLabeled"/>.
-/// </summary>
+/// <summary>Labels → a dataset version a recipe can train on: the labeled files, a YOLO `.txt` next to every image
+/// (`class cx cy w h`, normalized, class = position in the schema).</summary>
 public sealed record ExportLabeledVersionCommand(Guid WorkspaceId, Guid ProjectId, bool AllLabeled, string Note) : ICommand<LabelExport>;
 
-/// <summary>Copies the labeled files inside storage, writes the label files next to them and records the new version.</summary>
+/// <summary>Copies the labeled files inside storage, writes the label files next to them and records the new
+/// version.</summary>
 public sealed class ExportLabeledVersionCommandHandler(IWriteSession db, IClock clock, LabelAccess access, WorkspaceAuthorizer auth, S3Client s3)
     : ICommandHandler<ExportLabeledVersionCommand, LabelExport>
 {
@@ -35,7 +33,6 @@ public sealed class ExportLabeledVersionCommandHandler(IWriteSession db, IClock 
         var schema = await db.GetSchemaVersionAsync(p.DatasetId, p.SchemaVersion, ct) ?? throw new PreconditionException("LABEL_SCHEMA_REQUIRED", "Dataset has no label schema yet");
         var (classIndex, classNames) = Classes(schema.Classes);
 
-        // Where each labeled file lives now: the project's version (copied or reference) or the uploaded files.
         VersionRow? src = p.VersionId is { } vid ? await db.GetVersionAsync(vid, c.WorkspaceId, ct) : null;
         var sizes = src is not null
             ? (await db.ListVersionFilesAsync(src.Id, ct)).ToDictionary(f => f.Path, f => (f.SizeBytes, f.Url))

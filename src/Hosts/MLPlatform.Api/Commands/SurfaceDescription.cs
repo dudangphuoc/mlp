@@ -3,7 +3,8 @@ using MLPlatform.ControlPlane.Application.Generated;
 
 namespace MLPlatform.Api.Commands;
 
-/// <summary>`mlp-api describe [file]`: writes the API surface and DI graph as JSON so refactors can be diffed.</summary>
+/// <summary>`mlp-api describe [file]`: writes the API surface and DI graph as JSON so refactors can be
+/// diffed.</summary>
 public static class SurfaceDescription
 {
     public static bool IsRequested(string[] args) => args is ["describe", ..];

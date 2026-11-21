@@ -12,7 +12,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Rules shared by run commands: what counts as finished, and the workspace check every command starts with.</summary>
+/// <summary>Rules shared by run commands: what counts as finished, and the workspace check every command starts
+/// with.</summary>
 public static class RunRules
 {
     public static bool Finished(string state) => state is "succeeded" or "failed" or "cancelled";

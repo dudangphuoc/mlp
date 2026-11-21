@@ -5,10 +5,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Middleware;
 
-/// <summary>
-/// AppException → gRPC status + trailers with the reason code and field errors (20/03 §4, 20/07 §3).
-/// Messages are always English; the web UI translates them (same template table as the rest of the UI).
-/// </summary>
+/// <summary>AppException → gRPC status + trailers with the reason code and field errors (20/03 §4, 20/07 §3).</summary>
 public sealed class ErrorInterceptor(ILogger<ErrorInterceptor> log) : Interceptor
 {
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request,

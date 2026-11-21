@@ -13,10 +13,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// Replaces the caller's draft: from a revision, from a run ("cook again from #n" — also its data, starting point and machine),
-/// or from the Catalog recipe as it is now (which also moves the project's copy to that manifest).
-/// </summary>
+/// <summary>Replaces the caller's draft: from a revision, from a run ("cook again from #n" — also its data, starting
+/// point and machine).</summary>
 public sealed record ResetDraftCommand(Guid WorkspaceId, Guid ProjectRecipeId, int RevisionNumber, Guid? RunId, bool Origin, bool Retrain = false) : ICommand<DraftView>;
 
 /// <summary>A run without a revision (older runs, pipelines, sweeps) is rebuilt from the fields the run kept.</summary>
@@ -45,12 +43,10 @@ public sealed class ResetDraftCommandHandler(IWriteSession db, IClock clock, Wor
             var rev = extra?.RevisionId is { } rid ? await db.GetRevisionAsync(rid, c.WorkspaceId, ct) : null;
             basis = rev?.Id;
             variant = rev?.Variant ?? run.Variant;
-            // Without a revision the run's stored parameters include values the platform filled in (class count): keep what a person can set.
             parameters = rev?.Params ?? RecipeDrafts.Normalise(RecipeDrafts.Parse(run.Params), schema).ToJsonString();
             (version, start, host, gpus, cpus) = (run.DatasetVersionId, run.FromScratch ? "backbone" : "pretrained", extra?.HostId, run.Gpus, run.Cpus);
             if (c.Retrain)
             {
-                // R5: only a finished run that cooked a revision; same recipe and start, the person picks another dataset version.
                 if (run.State != "succeeded") throw new PreconditionException("TRACK_RETRAIN_NOT_FINISHED", $"Run #{run.Number} has not finished successfully");
                 if (rev is null) throw new PreconditionException("TRACK_RETRAIN_NO_REVISION", $"Run #{run.Number} was trained before revisions existed — cook it again instead");
                 if (rev.ManifestSha256 != pr.OriginManifestSha256)

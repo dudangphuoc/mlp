@@ -6,10 +6,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Metric collection without changing the repo (20/08 §5.3): incrementally reads (by offset) the sources declared in the manifest, mapping keys
-/// via <c>metrics.map</c>. Call <see cref="Poll"/> periodically and once more when the process exits.
-/// </summary>
+/// <summary>Metric collection without changing the repo (20/08 §5.3): incrementally reads (by offset) the sources
+/// declared in the manifest, mapping keys via metrics.map .</summary>
 public sealed class MetricCollector
 {
     private readonly List<Func<IEnumerable<MetricPoint>>> _sources = [];
@@ -21,11 +19,13 @@ public sealed class MetricCollector
     private readonly List<MetricPoint> _pending = [];
     private readonly HashSet<(string, long)> _invalidSeen = [];
 
-    /// <summary>R25: epoch index → global step ((epoch + 1) × steps per epoch); null while steps per epoch is unknown (points wait).</summary>
+    /// <summary>R25: epoch index → global step ((epoch + 1) × steps per epoch); null while steps per epoch is unknown
+    /// (points wait).</summary>
     public Func<long, long?>? EpochToStep { get; set; }
     /// <summary>Step for values read from output lines (regex sources): the training's current global step.</summary>
     public Func<long>? CurrentStep { get; set; }
-    /// <summary>R26: a non-finite value (NaN/inf) is reported once per key and step instead of being dropped silently.</summary>
+    /// <summary>R26: a non-finite value (NaN/inf) is reported once per key and step instead of being dropped
+    /// silently.</summary>
     public Action<string, long>? OnInvalid { get; set; }
 
     public MetricCollector(JsonObject metrics, Func<string, string> render)
@@ -161,7 +161,8 @@ public sealed class MetricCollector
         };
     }
 
-    /// <summary>TensorBoard: TFRecord (len u64, crc, data, crc) containing Event protos; reads the minimal wire format.</summary>
+    /// <summary>TensorBoard: TFRecord (len u64, crc, data, crc) containing Event protos; reads the minimal wire
+    /// format.</summary>
     private static Func<IEnumerable<MetricPoint>> TensorBoard(string dir)
     {
         var offsets = new Dictionary<string, long>();
@@ -194,7 +195,7 @@ public sealed class MetricCollector
     {
         if (!File.Exists(path)) return [];
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        if (fs.Length < offset) offset = 0;   // file was rewritten
+        if (fs.Length < offset) offset = 0;
         fs.Position = offset;
         using var sr = new StreamReader(fs, Encoding.UTF8);
         var text = sr.ReadToEnd();

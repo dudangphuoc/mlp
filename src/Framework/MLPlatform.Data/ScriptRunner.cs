@@ -4,12 +4,7 @@ using Npgsql;
 
 namespace MLPlatform.Data;
 
-/// <summary>
-/// Applies migrations <c>db/&lt;schema&gt;/yyyyMMddHHmm_slug.sql</c> in file-name order (20/02 §5.5).
-/// One transaction per file with <c>lock_timeout 5s</c>. <c>platform.migrations</c> stores a checksum of the SQL with comments and
-/// whitespace removed ("v2:…"), so editing comments is allowed but changing an applied statement fails.
-/// Legacy checksums (raw file bytes) are upgraded to v2 automatically while the file is still byte-identical.
-/// </summary>
+/// <summary>Applies migrations db/<schema>/yyyyMMddHHmm_slug.sql in file-name order (20/02 §5.5).</summary>
 public sealed class ScriptRunner(NpgsqlDataSource dataSource, TextWriter log)
 {
     public sealed record Script(string Id, string Path, string Sql, string Checksum, string LegacyChecksum);

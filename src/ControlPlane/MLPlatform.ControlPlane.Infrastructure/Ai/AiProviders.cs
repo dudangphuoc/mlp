@@ -11,7 +11,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Wire clients. Endpoint = API base the user entered (e.g. https://api.openai.com/v1, http://host:11434/v1, https://api.anthropic.com).</summary>
+/// <summary>Wire clients.</summary>
 public sealed class AiProviders(IHttpClientFactory http)
 {
     public sealed record ChatReply(string Text, string? Reasoning, string? StopReason, int TokensIn, int TokensOut, int Status);
@@ -30,7 +30,7 @@ public sealed class AiProviders(IHttpClientFactory http)
     /// <summary>Decision servers: the user may paste the URL with or without /v1.</summary>
     private static string DecisionRoot(AiConnectionRow c) => Base(c).EndsWith("/v1", StringComparison.OrdinalIgnoreCase) ? Base(c)[..^3] : Base(c);
 
-    /// <summary>How much state a decision model accepts (tokens ≈ chars / 3). Checked before sending, with a clear message.</summary>
+    /// <summary>How much state a decision model accepts (tokens ≈ chars / 3).</summary>
     public static int StateTokenLimit(string model)
     {
         var name = model.Trim().ToLowerInvariant();
@@ -154,7 +154,8 @@ public sealed class AiProviders(IHttpClientFactory http)
         }
     }
 
-    /// <summary>System One wire format: POST /v1/systemone {model, state, questions{id:{type,instructions,criteria}}}.</summary>
+    /// <summary>System One wire format: POST /v1/systemone {model, state,
+    /// questions{id:{type,instructions,criteria}}}.</summary>
     public static JsonObject DecisionBody(string model, string state, IReadOnlyList<AiQuestion> questions)
     {
         var qs = new JsonObject();

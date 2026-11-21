@@ -65,7 +65,6 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
             else if (circuits.Describe(m.Id) == "open") why = $"Excluded: paused after {m.ConsecutiveFailures} failures in a row (circuit open, retries in 30 s)";
             if (why is not null) { list.Add((m, c, false, why, 0)); continue; }
 
-            // Rank: pinned > role default > health > measured speed > price. Lower is better.
             var score = 0.0;
             var reasons = new List<string>();
             if (spec.PinnedModel == m.Id) { score -= 1000; reasons.Add("Chosen for this call"); }
@@ -84,7 +83,6 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
 
     public Task<AiResult> ChatAsync(AiCallSpec spec, IReadOnlyList<AiMessage> messages, CancellationToken ct)
     {
-        // Images are not copied into the record (size); their type and size are, so the record still says exactly what was sent.
         var input = new JsonObject { ["messages"] = new JsonArray([.. messages.Select(m =>
         {
             var o = new JsonObject { ["role"] = m.Role, ["content"] = Store(m.Content) };
@@ -96,7 +94,6 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
         {
             var limit = Math.Min(spec.MaxTokens ?? cand.Model.MaxTokens, cand.Model.MaxTokens);
             var r = await providers.ChatAsync(cand.Connection, key, cand.Model.ModelId, messages, limit, token);
-            // An empty answer is a failure, never a silent success. Reasoning models can spend the whole budget thinking.
             if (string.IsNullOrWhiteSpace(r.Text))
                 throw new AiCallException("empty-answer", r.Reasoning is not null
                     ? $"The model returned no answer text: it used {r.TokensOut} of {limit} output tokens on reasoning (stop: {r.StopReason}). Raise Max output tokens or use a non-reasoning model. Reasoning: {AiProviders.Clip(r.Reasoning.ReplaceLineEndings(" "), 400)}"
@@ -107,7 +104,7 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
         }, null, ct);
     }
 
-    /// <summary>Typed decision with a hard deadline. heuristic = what to answer when no model can (recorded as decided_by heuristic).</summary>
+    /// <summary>Typed decision with a hard deadline.</summary>
     public Task<AiResult> DecideAsync(AiCallSpec spec, string state, IReadOnlyList<AiQuestion> questions, Func<JsonObject>? heuristic, CancellationToken ct)
     {
         var input = DecisionInput(state, questions);
@@ -144,7 +141,7 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
     {
         var cat = await CatalogAsync(ct);
         var cands = Select(cat, spec);
-        var eligible = cands.Where(c => c.Eligible).Take(spec.PinnedModel is null ? 2 : 1).ToList();   // at most one fallback model
+        var eligible = cands.Where(c => c.Eligible).Take(spec.PinnedModel is null ? 2 : 1).ToList();
         var first = eligible.FirstOrDefault();
         var selection = new JsonObject
         {
@@ -169,7 +166,7 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
         var attempts = new JsonArray();
         string? lastCode = null, lastError = null, fallback = null;
         var n = 0;
-        int spentIn = 0, spentOut = 0;   // tokens billed by failed attempts
+        int spentIn = 0, spentOut = 0;
         foreach (var cand in eligible)
         {
             n++;
@@ -275,7 +272,7 @@ public sealed class AiRuntime(IServiceScopeFactory scopes, AiProviders providers
         var cat = await CatalogAsync(ct);
         var m = cat.Models.FirstOrDefault(x => x.Id == modelId) ?? throw new NotFoundException("AI_MODEL_NOT_FOUND", "Model not found");
         var c = cat.Connections.First(x => x.Id == m.ConnectionId);
-        circuits.Reset(m.Id);   // a test is an explicit probe: it always goes out
+        circuits.Reset(m.Id);
         var decision = AiCatalog.IsDecisionServer(c.ProviderType);
         var spec = new AiCallSpec(decision ? "decision" : "chat", m.Roles.FirstOrDefault() ?? "analyst", "Model test", Label(m, c), trigger, null, actor,
             PinnedModel: m.Id, DeadlineMs: Math.Min(c.TimeoutMs, 60_000), MaxTokens: Math.Min(m.MaxTokens, 2048));

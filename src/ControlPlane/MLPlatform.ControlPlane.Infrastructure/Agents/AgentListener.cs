@@ -11,14 +11,12 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// TCP(+TLS) listener :7443 for the agent channel (20/04 §3). TLS is on when MLP__Agent__CertPath (PFX) is set;
-/// dev/test allows plain TCP when MLP__Agent__AllowPlaintext=true.
-/// </summary>
+/// <summary>TCP(+TLS) listener :7443 for the agent channel (20/04 §3).</summary>
 public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry registry, WorkloadLauncher launcher, DataChannelBroker dataChannels, LogStore logs, SystemHealth health, IConfiguration cfg,
     TimeProvider time, ILogger<AgentListener> log) : BackgroundService
 {
-    /// <summary>SHA-256 (hex) of the agent channel certificate, printed into the install command for the agent to pin (P0-8).</summary>
+    /// <summary>SHA-256 (hex) of the agent channel certificate, printed into the install command for the agent to pin
+    /// (P0-8).</summary>
     public static string? CertPin(IConfiguration cfg) =>
         cfg["Agent:CertPath"] is { } path && File.Exists(path)
             ? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(X509CertificateLoader.LoadPkcs12FromFile(path, cfg["Agent:CertPassword"]).RawData))
@@ -196,10 +194,8 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
         }
     }
 
-    /// <summary>
-    /// An agent that just (re)connected reports running/exited containers (20/10 §4.3, §4.7): finalize exited containers, re-adopt live ones,
-    /// a suspect attempt that lost its container → container_lost (retry from the local checkpoint on the same host); containers of superseded attempts → stop.
-    /// </summary>
+    /// <summary>An agent that just (re)connected reports running/exited containers (20/10 §4.3, §4.7): finalize exited
+    /// containers, re-adopt live ones.</summary>
     private async Task ReconcileAsync(AgentSession s, ContainerSnapshot snap)
     {
         try
@@ -221,7 +217,8 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
         catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Workload reconciliation for {Host} failed", s.HostId); }
     }
 
-    /// <summary>Workload container exited (die event or in the snapshot) → finalize the attempt, then remove the container (the control plane has recorded it).</summary>
+    /// <summary>Workload container exited (die event or in the snapshot) → finalize the attempt, then remove the
+    /// container (the control plane has recorded it).</summary>
     private async Task OnContainerExitAsync(AgentSession s, ContainerState c)
     {
         if (!c.Labels.ContainsKey("mlp.attempt")) return;
@@ -229,19 +226,18 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
         {
             var state = await launcher.OnExitAsync(c, CancellationToken.None);
             var rm = new ContainerRemove { Name = c.Name };
-            // Job fully finished → delete the per-run output volume (durable checkpoints are already in S3); keep it for resume if retries remain.
             if (state is "succeeded" or "failed" or "cancelled" or "stopped" && c.Labels.TryGetValue("mlp.volume", out var vol)) rm.Volumes.Add(vol);
             await s.SendCommandAsync(new AgentCommand { ContainerRemove = rm }, TimeSpan.FromMinutes(2), CancellationToken.None);
         }
         catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Handling exit of container {Name} failed", c.Name); }
     }
 
-    /// <summary>After hello: build the overlay network (if there is a hub), then the Ray node; keep it if already running to spec (reconnecting does not lose the placement group).</summary>
+    /// <summary>After hello: build the overlay network (if there is a hub), then the Ray node; keep it if already
+    /// running to spec (reconnecting does not lose the placement group).</summary>
     private async Task StartRayNodeAsync(AgentSession s, ConnectionHello hello, string overlayIp, CancellationToken ct)
     {
         var info = hello.KindCase == ConnectionHello.KindOneofCase.Enroll ? hello.Enroll.HostInfo : hello.Register.HostInfo;
         var overlay = await HostContainers.EnsureNetworkAsync(s, overlayIp, cfg, scopes, log, ct);
-        // With a hub (production): the node MUST go through the VPN; if it cannot join yet, do not build the Ray node (no work accepted), retry later.
         if (!overlay && Overlay.HubPublicKey(cfg) is not null)
         {
             log.LogWarning("Host {Host} has not joined the VPN; Ray node not built, retrying in 60 s", s.HostId);

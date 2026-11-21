@@ -2,7 +2,8 @@ using MLPlatform.CodeGate.Architecture;
 
 namespace MLPlatform.CodeGate.Rules;
 
-/// <summary>MLPARCH001 a module depends on a higher layer or an undeclared same-layer module; MLPARCH002 a module calls another module's SQL.</summary>
+/// <summary>MLPARCH001 a module depends on a higher layer or an undeclared same-layer module; MLPARCH002 a module calls
+/// another module's SQL.</summary>
 public static class ArchitectureRules
 {
     public static IEnumerable<Finding> Check(RepoFiles repo)

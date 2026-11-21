@@ -4,11 +4,12 @@ using System.Text.RegularExpressions;
 using Grpc.Core;
 using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Shim;
 
-/// <summary>Find new checkpoints that have finished writing (size + mtime unchanged ≥ 10 s) using the recipe's `checkpoints` glob.</summary>
+/// <summary>Find new checkpoints that have finished writing (size + mtime unchanged ≥ 10 s) using the recipe's
+/// `checkpoints` glob.</summary>
 public sealed class CheckpointWatcher(string output, IReadOnlyList<string> patterns, string statePath)
 {
     private readonly Dictionary<string, (long Size, DateTime Mtime, DateTimeOffset Since)> _seen = [];

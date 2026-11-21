@@ -13,7 +13,6 @@ public sealed class RequeueJobCommandHandler(IWriteSession db, IClock clock) : I
     public async ValueTask<bool> Handle(RequeueJobCommand c, CancellationToken ct)
     {
         await db.RequeueJobAsync(c.JobId, c.Reason, ct);
-        // Waiting for machines repeats every loop — only record an event when the reason changes (avoid flooding the timeline).
         var last = (await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.ListTimelineEventsAsync(db, c.JobId, ct)).LastOrDefault();
         if (last?.Kind != "job.waiting" || last.Message != c.Reason)
             await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, await MLPlatform.ControlPlane.Application.Timeline.TimelineSql.JobWorkspaceAsync(db, c.JobId, ct), "scheduler", "job", c.JobId,

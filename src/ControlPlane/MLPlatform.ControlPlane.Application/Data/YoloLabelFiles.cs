@@ -2,7 +2,8 @@ namespace MLPlatform.ControlPlane.Application.Data;
 
 public static class YoloLabelFiles
 {
-    /// <summary>The YOLO label file that may sit next to an image: …/images/x.jpg ↔ …/labels/x.txt (or yololabels), or x.txt in the same folder.</summary>
+    /// <summary>The YOLO label file that may sit next to an image: …/images/x.jpg ↔ …/labels/x.txt (or yololabels), or
+    /// x.txt in the same folder.</summary>
     public static IReadOnlyList<string> CandidatesFor(string imagePath)
     {
         var stem = imagePath[..^Path.GetExtension(imagePath).Length];

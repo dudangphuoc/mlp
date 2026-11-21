@@ -12,7 +12,8 @@ public sealed class HealthLoop(SystemHealth health, IServiceScopeFactory scopes,
     private readonly Dictionary<string, string> _last = [];
     private int _tick;
 
-    /// <summary>Shutdown: lines still in memory go to storage first — otherwise every deploy would cut up to a minute out of each running log.</summary>
+    /// <summary>Shutdown: lines still in memory go to storage first — otherwise every deploy would cut up to a minute
+    /// out of each running log.</summary>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         await logs.FlushAllAsync();
@@ -26,7 +27,7 @@ public sealed class HealthLoop(SystemHealth health, IServiceScopeFactory scopes,
         {
             try
             {
-                if (++_tick % 4 == 0) await logs.FlushAllAsync();   // buffered logs → S3 storage every 60 s
+                if (++_tick % 4 == 0) await logs.FlushAllAsync();
                 await using var scope = scopes.CreateAsyncScope();
                 var m = scope.ServiceProvider.GetRequiredService<IMediator>();
                 try { await m.Query(new DbPingQuery(), stop); health.Component("postgres", true, "Operational"); }

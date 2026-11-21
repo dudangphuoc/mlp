@@ -6,10 +6,8 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Agent-side data channel (20/04 §3.2): a new TCP(+TLS) connection to the control plane, DataChannelHello → DataChannelAccept, then pipes bytes
-/// both ways with 127.0.0.1:&lt;port&gt; on the host (notebooks listen on loopback only, R2). At most 64 concurrent channels.
-/// </summary>
+/// <summary>Agent-side data channel (20/04 §3.2): a new TCP(+TLS) connection to the control plane, DataChannelHello →
+/// DataChannelAccept, then pipes bytes both ways with 127.0.0.1.</summary>
 public static class DataChannel
 {
     private static readonly SemaphoreSlim Slots = new(64);

@@ -29,6 +29,7 @@ public sealed record ProjectAssistSettings(List<(string Kind, Guid Id)> Sources,
         return new(sources, map, r.AllowExternal, r.MinConfidence, true);
     }
 
-    /// <summary>AI assist is on by default: a project that never saved its settings uses every internal source (data stays on the platform).</summary>
+    /// <summary>AI assist is on by default: a project that never saved its settings uses every internal source (data
+    /// stays on the platform).</summary>
     public bool IsEnabled(string kind, Guid id, bool external) => Saved ? Sources.Contains((kind, id)) : !external;
 }

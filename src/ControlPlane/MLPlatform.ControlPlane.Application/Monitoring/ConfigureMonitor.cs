@@ -12,7 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Monitoring;
 
-/// <summary>Sets the baseline = a tabular dataset version (reads the version's CSV from S3 storage, ≤ 50 MB) + PSI thresholds.</summary>
+/// <summary>Sets the baseline = a tabular dataset version (reads the version's CSV from S3 storage, ≤ 50 MB) + PSI
+/// thresholds.</summary>
 public sealed record ConfigureMonitorCommand(Guid WorkspaceId, Guid DeploymentId, Guid DatasetVersionId, string LabelColumn, double PsiWarn, double PsiAlert,
     int WindowSize, int MinSamples, bool Enabled) : ICommand<MonitorConfigRow>;
 

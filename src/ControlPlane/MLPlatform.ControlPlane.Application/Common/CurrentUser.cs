@@ -1,6 +1,7 @@
 namespace MLPlatform.ControlPlane.Application.Common;
 
-/// <summary>Scoped principal: set by the auth middleware per request, or by a background loop acting for the user who started the work.</summary>
+/// <summary>Scoped principal: set by the auth middleware per request, or by a background loop acting for the user who
+/// started the work.</summary>
 public sealed class CurrentUser : ICurrentUser
 {
     public Guid? UserId { get; private set; }

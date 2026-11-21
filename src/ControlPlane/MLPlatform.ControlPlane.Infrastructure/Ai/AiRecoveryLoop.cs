@@ -11,7 +11,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Startup cleanup + retest of failed models every 5 minutes (each retest is a visible run with trigger auto-recovery).</summary>
+/// <summary>Startup cleanup + retest of failed models every 5 minutes (each retest is a visible run with trigger
+/// auto-recovery).</summary>
 public sealed class AiRecoveryLoop(AiRuntime ai, IServiceScopeFactory scopes, SystemHealth health, ILogger<AiRecoveryLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)

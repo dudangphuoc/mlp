@@ -20,7 +20,8 @@ public static class RecipeDrafts
 
     public static JsonObject Schema(JsonObject manifest) => manifest["params"] as JsonObject ?? [];
 
-    /// <summary>Parameters a person may set: those of the manifest that are not filled in by the platform (`from:`).</summary>
+    /// <summary>Parameters a person may set: those of the manifest that are not filled in by the platform
+    /// (`from:`).</summary>
     public static bool Settable(JsonObject schema, string key) => schema[key] is JsonObject def && def["from"] is null;
 
     public static string FirstVariant(JsonObject manifest) =>
@@ -29,7 +30,8 @@ public static class RecipeDrafts
     public static bool HasVariant(JsonObject manifest, string name) =>
         (manifest["variants"] as JsonArray)?.OfType<JsonObject>().Any(v => v["name"]?.ToString() == name) == true;
 
-    /// <summary>Only keys the manifest lets a person set, in key order — the same content always serialises the same way.</summary>
+    /// <summary>Only keys the manifest lets a person set, in key order — the same content always serialises the same
+    /// way.</summary>
     public static JsonObject Normalise(JsonObject values, JsonObject schema)
     {
         var res = new JsonObject();
@@ -90,7 +92,6 @@ public static class RecipeDrafts
         reasons.AddRange(TrainParams.Validate(parameters, schema).Values);
         if (d.TrainKind == "retrain" && d.RetrainOfRunId is { } of && await db.GetRunAsync(of, ct) is { } repeated && repeated.DatasetVersionId == d.DatasetVersionId)
             reasons.Add("Train again needs a different dataset version than the run it repeats");
-        // R21: a training needs a passed trial of the same content on the same data and start (and machine, when the draft pins one).
         var canTrial = reasons.Count == 0;
         var trialKey = Hashes(pr.OriginManifestSha256, d.Variant, Normalise(parameters, schema), schema).TrialKey;
         var latest = await db.LatestTrialAsync(pr.Id, ws, trialKey, d.DatasetVersionId, d.StartKind, d.HostId, false, ct);
@@ -108,10 +109,8 @@ public static class RecipeDrafts
     public static int IntValue(JsonObject parameters, JsonObject schema, string key, int fallback) =>
         Value(parameters, schema, key) is JsonValue v && v.TryGetValue<double>(out var n) && n >= 1 ? (int)n : fallback;
 
-    /// <summary>
-    /// epochs × (⌊train images / batch⌋ / steps per second + ⌈val images / 64⌉ × seconds per val batch); −20 % … +50 %.
-    /// Without a measured validation time only the training steps are counted, and the source says so.
-    /// </summary>
+    /// <summary>epochs × (⌊train images / batch⌋ / steps per second + ⌈val images / 64⌉ × seconds per val batch); −20 %
+    /// … +50 %.</summary>
     private static async Task<TrainEstimateView?> EstimateAsync(IReadSession db, Guid ws, TrialRow t, JsonObject parameters, JsonObject schema, VersionSplitInfo? data,
         CancellationToken ct)
     {
@@ -123,8 +122,6 @@ public static class RecipeDrafts
         var perEpoch = Math.Floor((double)train / batch) / t.StepsPerS.Value;
         if (t.ValSPerBatch is > 0) perEpoch += Math.Ceiling(val / 64.0) * t.ValSPerBatch.Value;
         var seconds = epochs * perEpoch;
-        // Data preparation before the first step (run #9: 8.5 of 15.5 minutes): the trial's data stage scaled by how many images the full
-        // version has against the trial's subset. A new run gets its own volume, so nothing is cached from the trial.
         var dataSeconds = 0.0;
         if (RecipeTrials.StagesFrom(t.Stages).FirstOrDefault(x => x.Key == "data" && x.State == "passed") is { Seconds: > 0 } ds && t.TrainImages + t.ValImages > 0)
             dataSeconds = ds.Seconds * data.Counts.Values.Sum() / (t.TrainImages + t.ValImages);
@@ -133,10 +130,8 @@ public static class RecipeDrafts
         return new TrainEstimateView(seconds * 0.8, seconds * 1.5, host ?? "", t.ValSPerBatch is > 0, Math.Round(dataSeconds));
     }
 
-    /// <summary>
-    /// Freezes the draft into a revision (shared by train and trial): the same content never makes a second revision.
-    /// Returns the revision and its trial key.
-    /// </summary>
+    /// <summary>Freezes the draft into a revision (shared by train and trial): the same content never makes a second
+    /// revision.</summary>
     public static async Task<(RevisionRow Revision, string TrialKey)> FreezeAsync(IWriteSession db, IClock clock, Guid ws, Guid uid, ProjectRecipeRow pr, DraftRow d,
         CancellationToken ct)
     {
@@ -163,6 +158,6 @@ public static class RecipeDrafts
             var recipe = await mediator.Query(new GetRecipeQuery(ws, pr.OriginName), ct);
             return new ProjectRecipeView(pr, recipe.DisplayName, Sha(recipe.Manifest) != pr.OriginManifestSha256);
         }
-        catch (NotFoundException) { return new ProjectRecipeView(pr, pr.OriginName, false); }   // removed from the Catalog: the project keeps its copy
+        catch (NotFoundException) { return new ProjectRecipeView(pr, pr.OriginName, false); }
     }
 }

@@ -3,20 +3,21 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 var url = args.ElementAtOrDefault(0) ?? "http://127.0.0.1:5080";
 var bootstrap = args.ElementAtOrDefault(1) ?? "";
 var failures = 0;
-// The TLS agent channel pins the certificate (P0-8) — the dev stack exports MLP_AGENT_PIN; without it, run plaintext.
 string[] AgentTlsArgs = Environment.GetEnvironmentVariable("MLP_AGENT_PIN") is { Length: > 0 } pinEnv ? ["--pin", pinEnv] : ["--insecure"];
 using var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions { HttpHandler = new SocketsHttpHandler { UseCookies = false } });
 var instance = new InstanceService.InstanceServiceClient(channel);
 var iam = new IamService.IamServiceClient(channel);
 var ws = new WorkspaceService.WorkspaceServiceClient(channel);
 
-// Plug-and-play (20/04 §2): the script has doctor + pin; /install/agent/build rejects a bad token; with agent-builder (MLP_AGENT_BUILDS=1)
-// builds linux-x64 from the source in the control plane, the second request is served from cache, the download matches SHA-256.
+// Plug-and-play (20/04 §2): the script has doctor + pin; /install/agent/build rejects a bad token; with agent-builder
+// (MLP_AGENT_BUILDS=1)
+// builds linux-x64 from the source in the control plane, the second request is served from cache, the download matches
+// SHA-256.
 async Task PlugAndPlayAsync(string token)
 {
     var web = Environment.GetEnvironmentVariable("MLP_WEB_URL") ?? "http://127.0.0.1:5081";
@@ -55,8 +56,6 @@ async Task PlugAndPlayAsync(string token)
     Assert(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bin)) == st["sha256"]!.ToString() && bin.Length > 1_000_000, "downloaded binary has the wrong SHA-256");
 }
 
-// Auxiliary mode for testing real machines: `mlp-scenarios <url> <bootstrap> enroll <windows|linux|macos> <data> <models>` —
-// sets up the instance (if needed), creates a machine plug-in command and prints it (no scenarios run).
 if (args.ElementAtOrDefault(2) == "enroll")
 {
     var email = Environment.GetEnvironmentVariable("MLP_ADMIN_EMAIL") ?? "admin@lab.local";
@@ -75,8 +74,6 @@ if (args.ElementAtOrDefault(2) == "enroll")
     return 0;
 }
 
-// `mlp-scenarios <url> - train <recipe> <image> <gpus> <network> [params-json]`: runs a real training job (GPU machine), follows it to completion,
-// prints the log + final metrics. Signs in with MLP_ADMIN_EMAIL/MLP_ADMIN_PASSWORD.
 if (args.ElementAtOrDefault(2) == "train")
 {
     var login = await iam.LoginAsync(new LoginRequest { Email = Environment.GetEnvironmentVariable("MLP_ADMIN_EMAIL") ?? "admin@lab.local",
@@ -190,7 +187,6 @@ await Step("M01: create team workspace + duplicate slug", async () =>
         async () => await ws.CreateWorkspaceAsync(new CreateWorkspaceRequest { Slug = $"team-{suffix}", Name = "x" }, auth));
 });
 
-// ---- M02 Fleet: needs MLP_AGENT (path to the agent binary/dll) and the agent port ----
 var agentBin = Environment.GetEnvironmentVariable("MLP_AGENT");
 var agentCp = Environment.GetEnvironmentVariable("MLP_AGENT_CP") ?? "127.0.0.1:7443";
 if (agentBin is not null)
@@ -278,7 +274,6 @@ if (agentBin is not null)
     if (agent is { HasExited: false }) agent.Kill();
 }
 
-// ---- M03 / P0-15: needs MLP_RAY=1 (dev Ray cluster + api with the scheduler enabled) ----
 if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1")
 {
     var fleet = new FleetService.FleetServiceClient(channel);
@@ -334,7 +329,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         Assert(j.State == "failed" && j.LastExitReason == "user_error" && j.AttemptCount == 1, $"state={j.State} reason={j.LastExitReason} attempts={j.AttemptCount}");
     });
 
-    // ---- 20/10 (D-35/D-36): observability + recovery. Toy train 10 epochs, 3 s sleep per epoch, a checkpoint per epoch, declares progress ----
     var trackR = new TrackingService.TrackingServiceClient(channel);
     var projR = await trackR.CreateProjectAsync(new CreateProjectRequest { WorkspaceId = wsId, Slug = $"rec-{suffix}", Name = "Recovery", Task = "tabular-classify" }, auth);
     async Task<(Run Run, JobOps Ops)> StartSlow(string name)
@@ -436,7 +430,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         }
         Assert(map.Hosts.Any(h => h.State == "online" && h.Containers.Any(c => c.JobId == run.JobId && c.JobName == $"watch-{suffix}")), "the cluster map must show the job container on the machine");
 
-        // Freeze the container (shim + train go silent, machine still online) → "lost signal"; unfreeze → signal returns, job finishes in 1 attempt.
         var attempt = (await Ops(run.JobId)).Attempts.Single(a => a.State == "running");
         await System.Diagnostics.Process.Start("docker", ["pause", $"mlp-w-{attempt.Id}-0"])!.WaitForExitAsync();
         var o = await WaitOps(run.JobId, x => x.Events.Any(e => e.Kind == "job.signal_lost"), 70);
@@ -467,13 +460,12 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         try
         {
             for (var i = 0; i < 60 && (await fleet.ListHostsAsync(new ListHostsRequest { WorkspaceId = wsId }, auth)).Hosts.Count(h => h.State == "online") < 2; i++) await Task.Delay(1000);
-            await Task.Delay(5000);   // machine B's Ray node registers with the head
+            await Task.Delay(5000);
             var (run, _) = await StartSlow($"move-{suffix}");
             var o = await WaitOps(run.JobId, x => x.Progress?.Phase == "running" && x.Checkpoints.Any(c => c.Location == "durable"), 120);
             Assert(o.Checkpoints.Any(c => c.Location == "durable"), "no durable checkpoint yet");
             var a1 = o.Attempts.Single(a => a.State == "running");
             var deadHost = a1.HostIds[0];
-            // "Dead machine": stop that machine's agent + remove its workload containers and Ray node.
             var bHostId = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(stateB))!["hostId"]!.ToString();
             var victim = deadHost == bHostId ? agentB : agent;
             victim.Kill(); await victim.WaitForExitAsync();
@@ -487,7 +479,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
             Assert(o.Attempts[1].HostIds[0] != deadHost && o.Attempts[1].ResumedFrom.Contains("durable copy"),
                 $"attempt 2 must run on another machine from the durable copy: {o.Attempts[1].HostIds[0]} {o.Attempts[1].ResumedFrom}");
             Assert(o.Attempts[0].ExitReason == "node_lost" && o.Events.Any(e => e.Kind == "attempt.move_requested"), "attempt 1 must be node_lost");
-            if (victim == agent) agent = RunAgent(stateFile);   // the main machine comes back for later steps
+            if (victim == agent) agent = RunAgent(stateFile);
         }
         finally
         {
@@ -566,9 +558,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
                 Assert((await http.PutAsync(up.Url, new ByteArrayContent([1, 2, 3]))).IsSuccessStatusCode, "PUT image");
                 await data.CompleteUploadAsync(new CompleteUploadRequest { WorkspaceId = wsId, DatasetId = ds.Id, Path = name }, auth);
             }
-        // Second user via invitation (self sign-up is disabled).
         var inv = await ws.CreateInvitationAsync(new CreateInvitationRequest { WorkspaceId = wsId, Email = $"ann{suffix}@x.io", Role = "annotator" }, auth);
-        // Email goes through the dynamic "email" config (Settings → System); the scenario does not check SMTP.
         var reg = await iam.RegisterAsync(new RegisterRequest { Email = $"ann{suffix}@x.io", Password = password, Username = $"ann{suffix}", InvitationToken = inv.Token });
         await ExpectStatus(StatusCode.FailedPrecondition, "IAM_INVITATION_INVALID", async () =>
             await iam.RegisterAsync(new RegisterRequest { Email = $"ann{suffix}@x.io", Password = password, Username = $"ann2{suffix}", InvitationToken = inv.Token }));
@@ -591,7 +581,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         var st = await lab.GetProjectStatsAsync(pref, auth);
         Assert(st.Total == 3 && st.ByStatus["unlabeled"] == 3, "wrong item seeding");
 
-        // Two users press "Next" at the same time → different items (SKIP LOCKED).
         var both = await Task.WhenAll(lab.NextItemAsync(pref, auth).ResponseAsync, lab.NextItemAsync(pref, annAuth).ResponseAsync);
         Assert(!both[0].Empty && !both[1].Empty && both[0].Item.Path != both[1].Item.Path, "two users got the same item");
         var mine = both[1].Item; var adminItem = both[0].Item;
@@ -613,13 +602,11 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         Assert(sub.Status == "in_review", "submit → " + sub.Status);
         await ExpectStatus(StatusCode.PermissionDenied, "LABEL_NOT_MEMBER", async () => await lab.NextReviewItemAsync(pref, annAuth));
 
-        // Lead review: returning requires a comment; the item goes back to the same annotator, prioritized.
         var rv = await lab.NextReviewItemAsync(pref, auth);
         Assert(!rv.Empty && rv.Item.Path == mine.Path && rv.Item.Annotations.Count == 1, "wrong review queue");
         var act = new ItemActionRequest { WorkspaceId = wsId, ProjectId = proj.Id, Path = mine.Path };
         await ExpectStatus(StatusCode.InvalidArgument, "LABEL_REJECT_COMMENT_REQUIRED", async () => await lab.RejectItemAsync(act, auth));
         act.Text = "missing open defect";
-        // M16: the annotator has the bell open (WatchNotifications) → the "returned" notification arrives within ≤ 2 s.
         var notify = new NotificationService.NotificationServiceClient(channel);
         using var watchCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         using var watch = notify.WatchNotifications(new WatchNotificationsRequest { WorkspaceId = wsId }, annAuth, cancellationToken: watchCts.Token);
@@ -641,7 +628,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         act.Text = "";
         Assert((await lab.AcceptItemAsync(act, auth)).Status == "accepted", "accept");
 
-        // Lead assigns an item to themselves, then reviews it → blocked.
         var aref = new LabelItemRef { WorkspaceId = wsId, ProjectId = proj.Id, Path = adminItem.Path };
         await lab.SubmitItemAsync(aref, auth);
         await ExpectStatus(StatusCode.PermissionDenied, "LABEL_SELF_REVIEW", async () =>
@@ -773,7 +759,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         Assert(res.Headers.GetValues("X-Mlp-Model-Version").First().EndsWith("@v2"), "missing version header");
         try
         {
-        // ---- M13: prediction log + baseline from a dataset version + PSI/KS drift + late ground truth + alerts ----
         var mon = new MonitoringService.MonitoringServiceClient(channel);
         var cfgMon = await mon.ConfigureMonitorAsync(new ConfigureMonitorRequest { WorkspaceId = wsId, DeploymentId = dep.Id, DatasetVersionId = churnVersionId, LabelColumn = "label", Enabled = true }, auth);
         Assert(cfgMon.Configured && cfgMon.Config.BaselineRows == 42 && cfgMon.Config.Features.OrderBy(f => f).SequenceEqual(["a", "b"]), "wrong baseline");
@@ -826,7 +811,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
             }
             Assert(ctRun is { State: "succeeded", Trigger: "event:deployment.drift" } && ctRun.ParamsJson.Contains(dep.Id), "drift did not trigger the pipeline: " + ctRun);
         }
-        // ---- M15: prompt registry + guardrails + token usage + eval on the same deployment (the toy handler answers chats) ----
         var llm = new LlmOpsService.LlmOpsServiceClient(channel);
         var pname = $"dich-{suffix}";
         await llm.CreatePromptAsync(new CreatePromptRequest { WorkspaceId = wsId, Name = pname, Description = "Translate" }, auth);
@@ -873,7 +857,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         var u = usage.Days.Where(d => d.DeploymentId == dep.Id).ToList();
         Assert(u.Sum(d => d.Calls) >= 9 && u.Sum(d => d.Blocked) >= 3 && u.Sum(d => d.Cost) > 0 && u.Sum(d => d.PromptTokens) > 0, "usage: " + usage);
 
-        // ---- M07: entity + feature view (source = dataset version) → point-in-time join → online → gateway fetches features by entity ----
         var fs = new FeatureService.FeatureServiceClient(channel);
         var dataSvc = new DataService.DataServiceClient(channel);
         var cds = await dataSvc.CreateDatasetAsync(new CreateDatasetRequest { WorkspaceId = wsId, Slug = $"cust-{suffix}", Name = "Customers", Task = "tabular-classify" }, auth);
@@ -1077,7 +1060,6 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
     agent.Kill();
 }
 
-// ---- M17 Catalog ----
 {
     var catalog = new CatalogService.CatalogServiceClient(channel);
     var wsCat = (await iam.GetMeAsync(new Empty(), auth)).Workspaces[0].WorkspaceId;
@@ -1136,7 +1118,6 @@ await Step("M16: failed-job + offline-machine notifications for the owner; mergi
         if (Environment.GetEnvironmentVariable("MLP_RAY") == "1")
             Assert(list.Notifications.Any(n => n.Kind == "job.failed" && n.Severity == "error"), "missing job-failed notification");
     }
-    // R1: repeated offline events of the same machine within 5 minutes merge into one record (count > 1) instead of many rows.
     var offline = list.Notifications.Where(n => n.Kind == "fleet.host_offline").GroupBy(n => n.ResourceUri);
     Assert(offline.All(g => g.Count() == 1), "notifications for the same machine were not merged");
     Assert(list.Unread == list.Notifications.Count(n => !n.Read), "wrong unread count");

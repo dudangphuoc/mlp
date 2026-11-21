@@ -4,14 +4,12 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.AgentProtocol;
 
-/// <summary>
-/// A control channel past hello: sequential writes via a queue, a read loop, 15 s heartbeat,
-/// 3 silent intervals (45 s without receiving a byte) → close (20/04 §3). Used by both sides via a type parameter.
-/// </summary>
+/// <summary>A control channel past hello: sequential writes via a queue, a read loop, 15 s heartbeat, 3 silent
+/// intervals (45 s without receiving a byte) → close (20/04 §3).</summary>
 public sealed class Connection<TIn, TOut> : IAsyncDisposable
     where TIn : class, IMessage<TIn>
     where TOut : class, IMessage<TOut>
@@ -35,7 +33,7 @@ public sealed class Connection<TIn, TOut> : IAsyncDisposable
         _parser = parser;
         _heartbeat = heartbeat;
         _log = log;
-        _nextStreamId = oddStreamIds ? -1 : 0;   // the agent assigns odd numbers, the control side even ones → no collisions
+        _nextStreamId = oddStreamIds ? -1 : 0;
     }
 
     public CancellationToken Closed => _cts.Token;
@@ -44,7 +42,7 @@ public sealed class Connection<TIn, TOut> : IAsyncDisposable
 
     public ValueTask SendAsync(TOut message, CancellationToken ct = default) => _outbox.Writer.WriteAsync(message, ct);
 
-    /// <summary>Runs until the connection closes. <paramref name="onMessage"/> is called sequentially in the order received.</summary>
+    /// <summary>Runs until the connection closes.</summary>
     public async Task RunAsync(Func<TIn, ValueTask> onMessage, CancellationToken ct)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
@@ -97,7 +95,7 @@ public sealed class Connection<TIn, TOut> : IAsyncDisposable
 
     private static async Task Swallow(Task t)
     {
-        try { await t; } catch { /* already closed */ }
+        try { await t; } catch { }
     }
 
     public async ValueTask DisposeAsync()

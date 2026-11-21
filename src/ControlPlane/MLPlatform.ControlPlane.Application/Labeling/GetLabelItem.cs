@@ -19,7 +19,6 @@ public sealed class GetLabelItemQueryHandler(IReadSession db, LabelAccess access
     {
         var (uid, p, roles) = await access.LoadAsync(q.WorkspaceId, q.ProjectId, "dataset.read", ct);
         var s = await db.GetItemStateAsync(p.Id, q.Path, ct) ?? throw new NotFoundException("LABEL_NOT_ASSIGNED", "Item not found");
-        // Annotators only see items assigned to them (§2.1); Lead/Reviewer/Editor see everything.
         var onlyAnnotator = roles.Count > 0 && roles.All(r => r == "annotator");
         if (onlyAnnotator && s.AnnotatorId != uid) throw new NotFoundException("LABEL_NOT_ASSIGNED", "Item not found");
         return await access.ViewAsync(p, q.Path, s3, ct);

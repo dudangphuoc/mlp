@@ -5,11 +5,7 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Container control via the Docker CLI (works the same on all 3 OSes). Agent v2 (D-38) does not know what a container is used for;
-/// it only translates a <see cref="ContainerSpec"/> into <c>docker run</c>; every platform container has the label <c>mlp.managed=1</c>
-/// and <c>mlp.spec</c> (spec hash) so <c>ContainerApply</c> knows when to keep it as is.
-/// </summary>
+/// <summary>Container control via the Docker CLI (works the same on all 3 OSes).</summary>
 public static class Docker
 {
     public static async Task<(int Code, string Out, string Err)> RunAsync(IEnumerable<string> args, CancellationToken ct, TimeSpan? timeout = null)
@@ -30,7 +26,8 @@ public static class Docker
         return (p.ExitCode, (await outTask).Trim(), (await errTask).Trim());
     }
 
-    /// <summary>Like <see cref="RunAsync"/>, but every output line is passed to <paramref name="onLine"/> as it arrives (progress of long steps).</summary>
+    /// <summary>Like RunAsync, but every output line is passed to onLine as it arrives (progress of long
+    /// steps).</summary>
     public static async Task<(int Code, string Tail)> RunStreamingAsync(IEnumerable<string> args, Action<string> onLine, CancellationToken ct, TimeSpan? timeout = null)
     {
         var psi = new ProcessStartInfo("docker")

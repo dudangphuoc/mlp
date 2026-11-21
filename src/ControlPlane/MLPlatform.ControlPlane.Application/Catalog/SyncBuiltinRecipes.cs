@@ -9,10 +9,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>
-/// Syncs builtin recipes + the task catalog from the release's `recipes/` directory (M17 §2, D-30).
-/// Each manifest goes through selfcheck (M17 R2a). State: `unbuilt` (selfcheck passed, awaiting CI build + smoke) or `invalid`.
-/// </summary>
+/// <summary>Syncs builtin recipes + the task catalog from the release's `recipes/` directory (M17 §2, D-30).</summary>
 public sealed record SyncBuiltinRecipesCommand(string RecipesDir) : ICommand<int>;
 
 public sealed class SyncBuiltinRecipesCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<SyncBuiltinRecipesCommand, int>

@@ -4,14 +4,12 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using MLPlatform.AgentProtocol;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Continuous logs (20/10 §2.4): `docker logs -f -t` for each workload container → LogChunk in blocks of ≤ 64 KB or 1 s.
-/// Connection lost → write to an on-disk spool (≤ 100 MB/attempt) and resend after reconnecting; the api deduplicates by source timestamp.
-/// </summary>
+/// <summary>Continuous logs (20/10 §2.4): `docker logs -f -t` for each workload container → LogChunk in blocks of ≤ 64
+/// KB or 1 s.</summary>
 public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
 {
     private const int MaxChunkBytes = 64 * 1024;
@@ -23,7 +21,8 @@ public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
 
     private string SpoolDir => Directory.CreateDirectory(Path.Combine(state.Dir, "spool")).FullName;
 
-    /// <summary>Follow a container's logs until it stops (called again when the agent re-adopts a container; `--since` from the last sent mark).</summary>
+    /// <summary>Follow a container's logs until it stops (called again when the agent re-adopts a container; `--since`
+    /// from the last sent mark).</summary>
     public void Follow(string container, string attemptId, string? since = null)
     {
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -56,7 +55,6 @@ public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
                 void OnLine(string? l)
                 {
                     if (l is null) return;
-                    // `docker logs -t`: "2026-11-18T05:03:01.123456789Z content"
                     var sp = l.IndexOf(' ');
                     var ts = sp > 0 && DateTimeOffset.TryParse(l[..sp], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t)
                         ? t.ToUnixTimeMilliseconds() : TimeProvider.System.GetUtcNow().ToUnixTimeMilliseconds();
@@ -79,7 +77,8 @@ public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
         });
     }
 
-    /// <summary>Wait for a container's log stream to send its last block (up to <paramref name="max"/>) so logs are complete before reporting the container exit.</summary>
+    /// <summary>Wait for a container's log stream to send its last block (up to max) so logs are complete before
+    /// reporting the container exit.</summary>
     public async Task DrainAsync(string container, TimeSpan max)
     {
         if (_following.TryGetValue(container, out var t)) await Task.WhenAny(t.Task, Task.Delay(max));
@@ -96,7 +95,7 @@ public sealed class LogShipper(AgentState state, ILogger<LogShipper> log)
             catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException) { }
         }
         var file = Path.Combine(SpoolDir, attemptId + ".jsonl");
-        if (File.Exists(file) && new FileInfo(file).Length > MaxSpoolBytes) return;   // spool limit: drop the excess
+        if (File.Exists(file) && new FileInfo(file).Length > MaxSpoolBytes) return;
         await File.AppendAllLinesAsync(file, batch.Select(b => new JsonObject { ["ts"] = b.Ts, ["l"] = b.Text }.ToJsonString()));
     }
 

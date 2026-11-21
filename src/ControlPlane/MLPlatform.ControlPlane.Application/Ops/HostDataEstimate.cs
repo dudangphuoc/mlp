@@ -7,5 +7,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>Before a run: per machine, how much of a dataset version is already there and how much would be downloaded.</summary>
+/// <summary>Before a run: per machine, how much of a dataset version is already there and how much would be
+/// downloaded.</summary>
 public sealed record HostDataEstimate(Guid HostId, long Files, long Bytes, long CachedFiles, long CachedBytes, long FreeBytes, bool Known);

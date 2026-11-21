@@ -7,7 +7,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>M13: every `Monitoring:IntervalSeconds` (default 300) compute drift for deployments with enough new predictions; alerts → M16.</summary>
+/// <summary>M13: every `Monitoring:IntervalSeconds` (default 300) compute drift for deployments with enough new
+/// predictions; alerts → M16.</summary>
 public sealed class MonitorLoop(IServiceScopeFactory scopes, IConfiguration cfg, SystemHealth health, ILogger<MonitorLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stop)

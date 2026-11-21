@@ -12,10 +12,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>Reads a version's split (looking at its files once and remembering the answer) for the training canvas.</summary>
+/// <summary>Reads a version's split (looking at its files once and remembering the answer) for the training
+/// canvas.</summary>
 public sealed record DescribeVersionSplitCommand(Guid WorkspaceId, Guid VersionId) : ICommand<VersionSplitInfo>;
 
-/// <summary>Detects train/val folders from the file list the first time; versions made by <see cref="SplitVersionCommand"/> already carry their counts.</summary>
+/// <summary>Detects train/val folders from the file list the first time; versions made by SplitVersionCommand already
+/// carry their counts.</summary>
 public sealed class DescribeVersionSplitCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<DescribeVersionSplitCommand, VersionSplitInfo>
 {
     public async ValueTask<VersionSplitInfo> Handle(DescribeVersionSplitCommand c, CancellationToken ct)

@@ -10,7 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>Internal: stores what the inspection container reported (ready with its result, or failed with the reason).</summary>
+/// <summary>Internal: stores what the inspection container reported (ready with its result, or failed with the
+/// reason).</summary>
 public sealed record FinishInspectionCommand(InspectionKey Key, InspectionOutput Output) : ICommand<bool>;
 
 /// <summary>Writes the result onto the running row.</summary>

@@ -6,10 +6,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Delete a dataset: it leaves every list and its labeling projects end. Versions that trained runs stay readable for those runs
-/// (a run keeps showing which data it used), so nothing is erased from storage here.
-/// </summary>
+/// <summary>Delete a dataset: it leaves every list and its labeling projects end.</summary>
 public sealed record DeleteDatasetCommand(Guid WorkspaceId, Guid DatasetId) : ICommand<bool>;
 
 /// <summary>Marks the dataset and its labeling projects deleted.</summary>

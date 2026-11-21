@@ -10,7 +10,8 @@ namespace MLPlatform.ControlPlane.Application.Data;
 /// <summary>Buckets per 20/05 §3. `mlp-datasets/{ws}/datasets/{ds}/raw/…` (live) and `…/v{n}/…` (immutable).</summary>
 public static class Buckets
 {
-    /// <summary>Bucket names — configurable via MLP__S3__DatasetsBucket / ArtifactsBucket (set by the api at startup).</summary>
+    /// <summary>Bucket names — configurable via MLP__S3__DatasetsBucket / ArtifactsBucket (set by the api at
+    /// startup).</summary>
     public static string Datasets { get; set; } = "mlp-datasets";
     public static string Artifacts { get; set; } = "mlp-artifacts";
     public static string Raw(Guid ws, Guid ds) => $"{ws}/datasets/{ds}/raw/";

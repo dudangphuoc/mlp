@@ -12,7 +12,8 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 // ───────────── Machine disconnected / reconnected ─────────────
 
-/// <summary>Agent channel dropped → attempts on the machine become `suspect` with a grace deadline (GPUs still count as held).</summary>
+/// <summary>Agent channel dropped → attempts on the machine become `suspect` with a grace deadline (GPUs still count as
+/// held).</summary>
 public static class Suspects
 {
     public static async Task MarkAsync(IWriteSession db, IClock clock, RecoveryOptions opts, Guid hostId, string hostName, CancellationToken ct)

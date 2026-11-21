@@ -5,7 +5,7 @@ using System.Net.WebSockets;
 using MLPlatform.AgentProtocol;
 using MLPlatform.ControlPlane.Application.Notebooks;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 using MLPlatform.Cqrs;
 using MLPlatform.Security;
 

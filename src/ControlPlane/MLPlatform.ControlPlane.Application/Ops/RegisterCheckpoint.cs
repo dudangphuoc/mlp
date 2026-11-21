@@ -21,7 +21,6 @@ public sealed class RegisterCheckpointCommandHandler(IWriteSession db, IClock cl
         if (c.Location is not ("local" or "durable")) throw new ValidationException(new Dictionary<string, string> { ["location"] = "local | durable" });
         if (c.Location == "durable" && (c.Key is null || !c.Key.StartsWith($"{a.WorkspaceId}/jobs/{a.JobId}/checkpoints/", StringComparison.Ordinal)))
             throw new ForbiddenException("SCHED_CHECKPOINT_KEY_INVALID", "Checkpoint key does not belong to this job");
-        // One row per (name, location): a newer upload of last.pth replaces the row, so the object it pointed at is deleted (R28, no orphans).
         var replaced = c.Location == "durable"
             ? (await db.ListCheckpointsAsync(a.JobId, ct)).FirstOrDefault(x => x.Location == "durable" && x.Name == Buckets.SafePath(c.Name) && x.S3Key != c.Key)
             : null;

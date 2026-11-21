@@ -37,7 +37,6 @@ internal static class Map
         http.Response.Cookies.Append(AuthMiddleware.Cookie, token, new CookieOptions
         {
             HttpOnly = true, Secure = http.Request.IsHttps, SameSite = SameSiteMode.Lax, Path = "/",
-            // Under a public domain: the cookie is shared across *.{domain} (notebook nb-….{domain} needs the login session)
             Domain = PublicRoutes.Domain.Length > 0 && http.Request.Host.Host.EndsWith(PublicRoutes.Domain, StringComparison.OrdinalIgnoreCase) ? "." + PublicRoutes.Domain : null,
         });
     }

@@ -12,8 +12,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// Trial mode of <see cref="StartTrainingCommand"/> (round 1 R15–R22): only <paramref name="Files"/> of the dataset version are handed to the shim,
-/// the run is hidden (numbered -1, -2, …) and the shim runs its two short passes with <paramref name="Passes"/> (<c>entrypoints.train.trial</c>).
-/// </summary>
+/// <summary>Trial mode of StartTrainingCommand (round 1 R15–R22): only Files of the dataset version are handed to the
+/// shim, the run is hidden (numbered -1, -2.</summary>
 public sealed record TrialSpec(IReadOnlySet<string> Files, JsonObject Passes);

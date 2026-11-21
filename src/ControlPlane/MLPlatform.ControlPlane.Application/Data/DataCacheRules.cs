@@ -8,12 +8,8 @@ using MLPlatform.Data;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>
-/// Host dataset cache: one docker volume per dataset per machine (<c>mlp-data-{dataset}</c>) holding immutable objects; each run gets a view of
-/// hard links to them. A file is cached by an id derived from an address whose bytes can never change: dataset bucket keys are written once
-/// (version numbers are never reused — <c>data.datasets.version_seq</c>) and Hugging Face links pinned to a commit. Other references (plain
-/// URLs, external S3) can be overwritten by their owner, so they get no id and are downloaded for every run.
-/// </summary>
+/// <summary>Host dataset cache: one docker volume per dataset per machine ( mlp-data-{dataset} ) holding immutable
+/// objects; each run gets a view of hard links to them.</summary>
 public static partial class DataCacheRules
 {
     public const string MountRoot = "/mnt/datasets";

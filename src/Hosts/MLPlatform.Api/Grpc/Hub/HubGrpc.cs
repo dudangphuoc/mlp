@@ -45,7 +45,7 @@ public sealed class HubGrpc(IMediator mediator, HfHub hub, SecretBox secrets, Hu
     public override async Task<SearchHubResponse> SearchHub(SearchHubRequest r, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");
-        await mediator.Query(new GetHubTokenStatusQuery(ws), ctx.CancellationToken);   // checks workspace read permission
+        await mediator.Query(new GetHubTokenStatusQuery(ws), ctx.CancellationToken);
         var kind = r.Kind == "dataset" ? "dataset" : "model";
         var res = new SearchHubResponse();
         var page = await hub.SearchAsync(kind, r.Query, r.Task, r.Sort, r.Limit > 0 ? r.Limit : 30, r.Cursor, await TokenAsync(ws, ctx.CancellationToken), ctx.CancellationToken);
@@ -54,7 +54,8 @@ public sealed class HubGrpc(IMediator mediator, HfHub hub, SecretBox secrets, Hu
         return res;
     }
 
-    /// <summary>Fast repo view: info + top-level entries only (folders are opened with ListHubTree; the card loads separately).</summary>
+    /// <summary>Fast repo view: info + top-level entries only (folders are opened with ListHubTree; the card loads
+    /// separately).</summary>
     public override async Task<HubRepo> GetHubRepo(GetHubRepoRequest r, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");
@@ -77,7 +78,7 @@ public sealed class HubGrpc(IMediator mediator, HfHub hub, SecretBox secrets, Hu
     public override async Task<ListHubTreeResponse> ListHubTree(ListHubTreeRequest r, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");
-        await mediator.Query(new GetHubTokenStatusQuery(ws), ctx.CancellationToken);   // workspace read permission
+        await mediator.Query(new GetHubTokenStatusQuery(ws), ctx.CancellationToken);
         var kind = r.Kind == "dataset" ? "dataset" : "model";
         var rev = string.IsNullOrWhiteSpace(r.Revision) ? "main" : r.Revision.Trim();
         var files = await hub.ListFolderAsync(kind, r.Repo.Trim(), rev, r.Path ?? "", await TokenAsync(ws, ctx.CancellationToken), ctx.CancellationToken);

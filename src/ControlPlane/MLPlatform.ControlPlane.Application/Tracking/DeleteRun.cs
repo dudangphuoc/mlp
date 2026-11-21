@@ -12,10 +12,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// Delete a finished run with its metrics and file list. Refused while a registered model version still points at it —
-/// that version is the record of where the model came from. Returns the storage prefix so the host removes the files.
-/// </summary>
+/// <summary>Delete a finished run with its metrics and file list.</summary>
 public sealed record DeleteRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<string>;
 
 /// <summary>Deletes the run records after the finished / no-registered-model checks.</summary>

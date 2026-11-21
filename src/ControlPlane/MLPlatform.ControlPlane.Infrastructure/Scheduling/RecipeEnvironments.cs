@@ -11,11 +11,7 @@ using Environment = MLPlatform.Contracts.V1.Environment;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// The recipe image ("environment") per machine (round 1 slice 2, D-44). One place computes the image tag a recipe needs on a machine — the
-/// same way for a training launch and for the canvas — builds the image on request without holding a GPU, runs the CPU-only inspection
-/// (<c>canvas.inspect</c>) in it, and reads the recipe's files from the control plane's disk.
-/// </summary>
+/// <summary>The recipe image ("environment") per machine (round 1 slice 2, D-44).</summary>
 public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildStore builds, IServiceScopeFactory scopes, IConfiguration cfg,
     TimeProvider time, ILogger<RecipeEnvironments> log)
 {
@@ -39,20 +35,20 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
 
     public static string Image(string recipe) => $"recipes/{recipe}:current";
 
-    /// <summary>Container architecture of a machine (x64 | arm64): mlp-shim, and so the image tag, differs per architecture.</summary>
+    /// <summary>Container architecture of a machine (x64 | arm64): mlp-shim, and so the image tag, differs per
+    /// architecture.</summary>
     public static string Arch(HostInfo? info) => (info?.Architecture ?? "").Contains("arm", StringComparison.OrdinalIgnoreCase) ? "arm64" : "x64";
 
-    /// <summary>Signed link and hash of mlp-shim for the architecture; waits for agent-builder (up to 20 minutes). Null = not available.</summary>
+    /// <summary>Signed link and hash of mlp-shim for the architecture; waits for agent-builder (up to 20
+    /// minutes).</summary>
     public Task<(string Url, string Sha256)?> ShimAsync(string arch, CancellationToken ct) =>
         builds.ShimAsync(arch, cfg["Install:DownloadBase"] ?? cfg["PublicUrl"] ?? "", ct);
 
-    /// <summary>Build command of a recipe image (<c>recipes/{name}:current</c>); its <c>Tag</c> is the environment tag. Other images → null.</summary>
+    /// <summary>Build command of a recipe image ( recipes/{name}:current ); its Tag is the environment tag.</summary>
     public ImageBuild? Build(string image, (string Url, string Sha256)? shim) => HostContainers.RecipeImage(image, RecipesDir, shim);
 
-    /// <summary>
-    /// The tag the recipe needs today on a machine of this architecture, without waiting: null while mlp-shim is not built yet or when the
-    /// recipe has no Dockerfile. Remembered for a few seconds (the tag hashes every file of the recipe).
-    /// </summary>
+    /// <summary>The tag the recipe needs today on a machine of this architecture, without waiting: null while mlp-shim
+    /// is not built yet or when the recipe has no Dockerfile.</summary>
     public string? CurrentTag(string recipe, string arch)
     {
         if (builds.Version is not { } ver) return null;
@@ -65,10 +61,8 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         return tag;
     }
 
-    /// <summary>
-    /// The launcher built (or found) a recipe image on a machine, or failed to: remember it so the canvas knows where the environment is.
-    /// Never throws — a launch must not fail because of this note.
-    /// </summary>
+    /// <summary>The launcher built (or found) a recipe image on a machine, or failed to: remember it so the canvas
+    /// knows where the environment is.</summary>
     public async Task RecordAsync(Guid workspaceId, string image, string tag, Guid hostId, bool ok, string error)
     {
         try
@@ -113,11 +107,9 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         {
             if (!File.Exists(Path.Combine(RecipesDir ?? "", recipe, "Dockerfile")))
                 throw new PreconditionException("CATALOG_ENV_NO_DOCKERFILE", "The recipe has no Dockerfile on the control plane");
-            _ = Task.Run(() => ShimAsync(arch, CancellationToken.None), CancellationToken.None);   // asks agent-builder for it
+            _ = Task.Run(() => ShimAsync(arch, CancellationToken.None), CancellationToken.None);
             throw new UnavailableException("CATALOG_SHIM_NOT_READY", $"mlp-shim for linux-{arch} is not built yet; try again in a few minutes");
         }
-        // One build per (machine, tag) in this process. A "building" record nobody here is running (api restarted) is started again:
-        // the agent skips the build when the image is already there.
         if (_building.TryAdd((hostId, tag), 0))
         {
             try { await m.Send(new RecordEnvironmentCommand(ws, recipe, tag, hostId, "building", ""), ct); }
@@ -180,7 +172,6 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         var sha = InspectionRules.ParamsHash(manifest, set);
         numClasses = Math.Max(0, numClasses);
 
-        // Machines whose environment for today's tag is ready; connected ones first.
         var hosts = await m.Query(new ListWorkspaceHostsQuery(ws), ct);
         if (hostId is { } only)
         {
@@ -201,7 +192,6 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         foreach (var tag in ready.Select(r => r.Tag).Distinct())
         {
             if (await m.Query(new GetInspectionRowQuery(new InspectionKey(ws, tag, variantName, sha, numClasses)), ct) is not { } row) continue;
-            // A failed inspection is kept as the answer; asking to start again retries it only after the run limit (no rerun loop while polling).
             var retry = start && row.State == "failed" && time.GetUtcNow() - row.CreatedAt > InspectionRules.RunLimit;
             if (!retry) return ToProto(row, manifest);
         }
@@ -230,7 +220,6 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
             var imageGone = false;
             try
             {
-                // CPU only: no GPU is passed, 2 CPUs. The image's own working directory is replaced by canvas.inspectWorkdir.
                 var spec = new ContainerSpec { Image = key.EnvTag, Cpus = 2, Init = true, Workdir = workdir };
                 spec.Labels["mlp.role"] = "inspect";
                 spec.Entrypoint.Add("sh");
@@ -250,7 +239,6 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
             var m = scope.ServiceProvider.GetRequiredService<IMediator>();
             if (imageGone)
             {
-                // The image was removed from the machine: the environment is no longer ready there, and this inspection never ran.
                 await m.Send(new RecordEnvironmentCommand(key.WorkspaceId, recipe, key.EnvTag, session.HostId, "failed",
                     "The image is no longer on the machine; build the environment again"), CancellationToken.None);
                 await m.Send(new DeleteInspectionCommand(key), CancellationToken.None);
@@ -267,7 +255,7 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
     {
         await m.Query(new RequireCatalogPermissionQuery(ws, "run.read"), ct);
         var res = new List<RecipeFile>();
-        if ((await RecipeAsync(m, ws, recipe, ct)).WorkspaceId is not null || Root() is not { } root) return res;   // only builtin recipes live on this disk
+        if ((await RecipeAsync(m, ws, recipe, ct)).WorkspaceId is not null || Root() is not { } root) return res;
         foreach (var dir in new[] { recipe, "_shared" })
         {
             var abs = Path.Combine(root, dir);
@@ -288,7 +276,6 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         await m.Query(new RequireCatalogPermissionQuery(ws, "run.read"), ct);
         var row = await RecipeAsync(m, ws, recipe, ct);
         NotFoundException Missing() => new("CATALOG_FILE_NOT_FOUND", "File not found");
-        // Relative, forward slashes, inside the recipe's own directory or _shared; no "..", no absolute path, no links.
         var parts = path.Split('/');
         if (row.WorkspaceId is not null || Root() is not { } root || path.Length is 0 or > 512 || path.Contains('\\') || path.Contains('\0')
             || parts.Length < 2 || (parts[0] != recipe && parts[0] != "_shared") || parts.Any(p => p.Length == 0 || p is "." or ".."))
@@ -315,7 +302,8 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
 
     // ── Shared ──────────────────────────────────────────────────────────────
 
-    /// <summary>The recipe as the workspace sees it (builtin or its own); the name is checked first because it becomes a path and an image name.</summary>
+    /// <summary>The recipe as the workspace sees it (builtin or its own); the name is checked first because it becomes
+    /// a path and an image name.</summary>
     private static async Task<RecipeRow> RecipeAsync(IMediator m, Guid ws, string recipe, CancellationToken ct)
     {
         if (!RecipeName().IsMatch(recipe)) throw new ValidationException(new Dictionary<string, string> { ["recipe"] = "Invalid recipe name" });

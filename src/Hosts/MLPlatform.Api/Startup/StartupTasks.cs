@@ -8,7 +8,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.Api.Startup;
 
-/// <summary>One-time work before the background loops start; order matters (rearm watchdogs before any loop runs).</summary>
+/// <summary>One-time work before the background loops start; order matters (rearm watchdogs before any loop
+/// runs).</summary>
 public static class StartupTasks
 {
     private const int BucketAttempts = 30;

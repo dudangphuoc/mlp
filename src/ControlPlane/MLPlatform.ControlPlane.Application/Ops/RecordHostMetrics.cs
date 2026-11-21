@@ -10,7 +10,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>Latest machine metrics + per-attempt metrics (container `mlp-w-{attempt}-{rank}`; GPUs by the attempt's `gpu_uuids`) — 20/10 §2.5.</summary>
+/// <summary>Latest machine metrics + per-attempt metrics (container `mlp-w-{attempt}-{rank}`; GPUs by the attempt's
+/// `gpu_uuids`) — 20/10 §2.5.</summary>
 public sealed record RecordHostMetricsCommand(Guid HostId, string MetricsJson, IReadOnlyList<(string Container, double Cpu, long Memory)> Containers,
     IReadOnlyList<(string Uuid, double Util, long Vram)> Gpus) : ICommand<int>, IInternalCommand;
 

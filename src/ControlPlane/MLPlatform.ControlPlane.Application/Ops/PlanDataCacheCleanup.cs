@@ -7,10 +7,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Picks the cache volumes to delete: idle longer than <see cref="DataCacheJanitorRules.MaxIdle"/>, plus — on a machine whose free disk is below
-/// <see cref="DataCacheJanitorRules.MinFreeBytes"/> — idle caches oldest first until enough is freed. Caches whose last job is active are never picked.
-/// </summary>
+/// <summary>Picks the cache volumes to delete: idle longer than MaxIdle, plus — on a machine whose free disk is below
+/// MinFreeBytes — idle caches oldest first until enough is freed.</summary>
 public sealed record PlanDataCacheCleanupCommand : ICommand<IReadOnlyList<(JanitorCacheRow Cache, string Reason)>>, IInternalCommand;
 
 /// <summary>Computes the clean-up plan from the stored sync reports.</summary>
@@ -24,10 +22,10 @@ public sealed class PlanDataCacheCleanupCommandHandler(IReadSession db, IClock c
         foreach (var host in (await db.ListAllDataCachesAsync(ct)).GroupBy(r => r.HostId))
         {
             var idle = new List<JanitorCacheRow>();
-            foreach (var r in host)   // oldest use first
+            foreach (var r in host)
                 if (await mediator.Query(new MLPlatform.ControlPlane.Application.Scheduling.JobStateQuery(r.LastJobId), ct) is null or "succeeded" or "failed" or "cancelled" or "stopped")
                     idle.Add(r);
-            var free = host.MaxBy(r => r.LastUsedAt)!.FreeBytes;   // latest report of the machine
+            var free = host.MaxBy(r => r.LastUsedAt)!.FreeBytes;
             foreach (var r in idle)
             {
                 if (now - r.LastUsedAt > DataCacheJanitorRules.MaxIdle) { plan.Add((r, $"unused for {(int)(now - r.LastUsedAt).TotalDays} days")); free += r.CacheBytes; }

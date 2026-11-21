@@ -10,7 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>Prompt template: variables `{{name}}` (letters, digits, underscores). Missing variable → a clear error, never an empty string sent to the model.</summary>
+/// <summary>Prompt template: variables `{{name}}` (letters, digits, underscores).</summary>
 public static partial class PromptTemplate
 {
     [GeneratedRegex(@"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")] private static partial Regex Var();

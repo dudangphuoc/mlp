@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>What a running attempt holds on one machine — sent to the holder to reserve it again after the Ray head restarted.</summary>
+/// <summary>What a running attempt holds on one machine — sent to the holder to reserve it again after the Ray head
+/// restarted.</summary>
 public sealed class HeldBundleDto
 {
     [JsonPropertyName("host_id")] public Guid HostId { get; set; }

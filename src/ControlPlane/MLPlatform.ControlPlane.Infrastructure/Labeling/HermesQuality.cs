@@ -7,17 +7,10 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/*
- * Hermes phase 4.
- * - Explanations: the analyst model explains a check in plain words, grounded in the stored steps (and the item text for text items).
- * - Calibration: Hermes "pass" checks vs. what a person decided afterwards → error rate per auto-accept threshold, and a recommended
- *   threshold only when there is enough reviewed data. Numbers come straight from checks and review history; nothing is estimated silently.
- * - Summary: the analyst model writes a short report from aggregated numbers only (annotators pseudonymised as A1, A2…).
- * Calls to an external analyst model follow the project's external-API switch and need an explicit confirmation, like proposals.
- */
+// Hermes phase 4.
 public sealed class HermesQuality(AiRuntime ai, ItemContent content)
 {
-    public const int MinReviewed = 10;      // fewer reviewed passing checks than this → no threshold recommendation
+    public const int MinReviewed = 10;
     public const double MaxErrorRate = 0.02;
 
     public sealed record Analyst(string State, string Model, bool External, IReadOnlyList<string> Reasons);
@@ -126,7 +119,6 @@ public sealed class HermesQuality(AiRuntime ai, ItemContent content)
                 ErrorRate = rev.Count == 0 ? -1 : (double)bad / rev.Count,
             });
         }
-        // Lowest threshold with enough reviewed evidence and an observed error rate within the limit.
         var pick = c.Options.FirstOrDefault(o => o.Reviewed >= MinReviewed && o.ErrorRate >= 0 && o.ErrorRate <= MaxErrorRate);
         if (pick is not null)
         {

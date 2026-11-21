@@ -2,7 +2,8 @@ using MLPlatform.CodeGate.Comments;
 
 namespace MLPlatform.CodeGate.Rules;
 
-/// <summary>MLPCODE001 no comment inside a body; MLPCODE003 declaration comments at most 2 lines of at most 120 characters.</summary>
+/// <summary>MLPCODE001 no comment inside a body; MLPCODE003 declaration comments at most 2 lines of at most 120
+/// characters.</summary>
 public static class CommentRules
 {
     private const int MaxLines = 2;

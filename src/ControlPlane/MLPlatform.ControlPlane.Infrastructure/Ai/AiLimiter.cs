@@ -11,7 +11,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Per-connection concurrency (semaphore) and requests-per-minute window. In-flight counts are shown live in the UI.</summary>
+/// <summary>Per-connection concurrency (semaphore) and requests-per-minute window.</summary>
 public sealed class AiLimiter(IClock clock)
 {
     private sealed class Gate(int max)
@@ -29,7 +29,7 @@ public sealed class AiLimiter(IClock clock)
     {
         var g = _g.GetOrAdd(c.Id, _ => new Gate(c.MaxConcurrency));
         if (g.Max == c.MaxConcurrency) return g;
-        var fresh = new Gate(c.MaxConcurrency);   // limit changed in the UI — new calls use the new gate
+        var fresh = new Gate(c.MaxConcurrency);
         _g[c.Id] = fresh;
         return fresh;
     }

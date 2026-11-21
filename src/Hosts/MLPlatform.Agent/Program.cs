@@ -3,7 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MLPlatform.Agent;
 
-// mlp-agent [--state <file>] [--cp host:port] [--token mlpe_…] [--data <dir>] [--models <dir>] [--pin <sha256>] [--service systemd|launchd|schtasks] [--insecure]
+// mlp-agent [--state ] [--cp host:port] [--token mlpe_…] [--data ] [--models ] [--pin ] [--service
+// systemd|launchd|schtasks] [--insecure]
 string? Arg(string name) => args.SkipWhile(a => a != name).Skip(1).FirstOrDefault();
 var statePath = Arg("--state") ?? Path.Combine(AgentOptions.DefaultStateDir(), "agent.json");
 var state = new AgentState(statePath);
@@ -11,8 +12,6 @@ var o = state.Options;
 if (Arg("--cp") is { } cp) o.ControlPlane = cp;
 if (Arg("--token") is { } t)
 {
-    // Install command rerun with a NEW token → enroll again (host_id kept thanks to the old credentials, 20/04 §2 step 6);
-    // service restarted with an already-used token → ignore it and use the saved credentials.
     var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(t)));
     if (hash != o.UsedEnrollTokenHash) { o.EnrollToken = t; o.UsedEnrollTokenHash = hash; }
 }
@@ -28,8 +27,6 @@ if (string.IsNullOrEmpty(o.ControlPlane) || (o.EnrollToken is null && o.Credenti
 }
 state.Save();
 
-// Windows (Docker Desktop): the docker CLI uses the wincred/desktop credential helper, which needs an interactive logon session; a Scheduled Task (S4U)
-// has none → image pulls fail. Use a separate DOCKER_CONFIG + an empty helper "mlpnone" (always returns no credentials).
 if (OperatingSystem.IsWindows() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOCKER_CONFIG")))
 {
     var dockerConfig = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(statePath))!, "docker");
@@ -43,8 +40,6 @@ if (OperatingSystem.IsWindows() && string.IsNullOrEmpty(Environment.GetEnvironme
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddSingleton(state);
-// Services have no console (Windows Scheduled Task, launchd; systemd keeps a journal): write agent.log in the agent folder.
-// Also on every Windows/macOS start, whatever launched the agent (OTA reinstalls start mlp-agent.exe directly) — the control plane reads this file.
 if (o.ServiceManager is "schtasks" or "launchd" || OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
     builder.Logging.AddProvider(new FileLoggerProvider(Path.Combine(state.Dir, "agent.log")));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -52,7 +47,6 @@ builder.Services.AddSingleton<LogShipper>();
 builder.Services.AddSingleton<Containers>();
 builder.Services.AddSingleton<CommandHandler>();
 builder.Services.AddHostedService<AgentService>();
-// One failing background service must not bring down the whole agent (the host would lose its connection until the task restarts itself).
 builder.Services.Configure<HostOptions>(h => h.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 await builder.Build().RunAsync();
 return 0;

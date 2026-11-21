@@ -13,7 +13,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Runs batch pre-label jobs one item at a time (low load), with progress and cancellation visible in the project.</summary>
+/// <summary>Runs batch pre-label jobs one item at a time (low load), with progress and cancellation visible in the
+/// project.</summary>
 public sealed class PrelabelLoop(IServiceScopeFactory scopes, LabelProposer proposer, SystemHealth health, ILogger<PrelabelLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -46,7 +47,6 @@ public sealed class PrelabelLoop(IServiceScopeFactory scopes, LabelProposer prop
             try
             {
                 var ctx = await mediator.Query(new GetLabelContextInternalQuery(job.ProjectId, paths[0], job.CreatedBy), ct);
-                // External sources were confirmed when the job started (StartPrelabel requires the confirmation).
                 var set = await proposer.ProposeAsync(mediator, ctx, settings, job.SourceKind, job.SourceId, true, "auto", job.Id, ct);
                 if (set.State == "failed") failed++; else done++;
             }

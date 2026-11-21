@@ -7,10 +7,12 @@ using MLPlatform.Recipes;
 
 namespace MLPlatform.Shim;
 
-/// <summary>Reads what the trial needs from the training's own output lines (D-FINE logger format, src/misc/logger.py).</summary>
+/// <summary>Reads what the trial needs from the training's own output lines (D-FINE logger format,
+/// src/misc/logger.py).</summary>
 public static partial class TrialLog
 {
-    /// <summary>Speed and memory of stage 1 from the progress lines, and the validation time per batch when it can be read.</summary>
+    /// <summary>Speed and memory of stage 1 from the progress lines, and the validation time per batch when it can be
+    /// read.</summary>
     public sealed record Measurement(double? StepsPerSecond, double? PeakMb, double? ValSecondsPerBatch);
 
     // "Epoch: [0]  [ 3/40]  eta: 0:00:12  lr: …  loss: …  time: 0.3120  data: 0.0100  max mem: 5123"
@@ -46,10 +48,8 @@ public static partial class TrialLog
         return new Measurement(sps, peak, val);
     }
 
-    /// <summary>
-    /// "Load model.state_dict, {'missed': [...], 'unmatched': [...]}" → layers loaded (unknown: the line does not list them) and layers created new
-    /// (missed + unmatched). No such line → (null, null).
-    /// </summary>
+    /// <summary>"Load model.state_dict, {'missed': [...], 'unmatched': [...]}" → layers loaded (unknown: the line does
+    /// not list them) and layers created new (missed + unmatched).</summary>
     public static (int? Loaded, int? Created) WeightsLoad(IEnumerable<string> lines)
     {
         var line = lines.LastOrDefault(l => l.Contains("Load model.state_dict, ", StringComparison.Ordinal));

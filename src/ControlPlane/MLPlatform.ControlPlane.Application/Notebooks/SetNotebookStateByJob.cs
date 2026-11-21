@@ -15,7 +15,6 @@ public sealed class SetNotebookStateByJobCommandHandler(IWriteSession db, IClock
     public async ValueTask<bool> Handle(SetNotebookStateByJobCommand c, CancellationToken ct)
     {
         if (await db.GetServerByJobAsync(c.JobId, ct) is not { } s) return false;
-        // Stopped deliberately → the container exiting means "stopped", not a failure.
         var state = s.State is "stopping" or "stopped" && c.State is "failed" or "stopped" ? "stopped" : c.State;
         if (s.State == "stopped" && state != "stopped") return true;
         await db.SetServerStateAsync(s.Id, state, state == "stopped" && s.State == "stopping" ? s.StateReason : c.Reason, c.HostId, c.Endpoint, clock.UtcNow, ct);

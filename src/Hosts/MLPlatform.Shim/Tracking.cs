@@ -1,14 +1,11 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Sends metrics to TrackingService with the workload token (20/08 §5.1 step 6). Buffers while the network is down; resends on the next flush
-/// (buffer limit 100,000 points). Enabled when MLP_API, MLP_RUN_ID and MLP_JOB_TOKEN are set.
-/// </summary>
+/// <summary>Sends metrics to TrackingService with the workload token (20/08 §5.1 step 6).</summary>
 public sealed class TrackingSink : IAsyncDisposable
 {
     private readonly GrpcChannel _channel;

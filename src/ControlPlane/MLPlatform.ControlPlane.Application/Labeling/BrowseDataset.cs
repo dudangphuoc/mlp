@@ -8,10 +8,8 @@ using MLPlatform.ControlPlane.Application.Data;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>
-/// Content of a dataset version (or of the working copy when <c>VersionId</c> is null): folders and files under a prefix with
-/// browser-loadable URLs, the YOLO label file paired with each image, and the labels made in the platform (M05).
-/// </summary>
+/// <summary>Content of a dataset version (or of the working copy when VersionId is null): folders and files under a
+/// prefix with browser-loadable URLs, the YOLO label file paired with each image.</summary>
 public sealed record BrowseDatasetQuery(Guid WorkspaceId, Guid DatasetId, Guid? VersionId, string Prefix, string Search, string Kind, bool Recursive,
     int Offset, int Limit) : IQuery<BrowseResult>;
 
@@ -31,7 +29,7 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
         var prefixLike = FileKinds.LikeEscape(prefix) + "%";
         var qLike = string.IsNullOrWhiteSpace(q.Search) ? "" : "%" + FileKinds.LikeEscape(q.Search.Trim()) + "%";
         var exts = FileKinds.Extensions(q.Kind);
-        var recursive = q.Recursive || qLike.Length > 0 || exts.Length > 0;   // a search or a type filter looks below the folder too
+        var recursive = q.Recursive || qLike.Length > 0 || exts.Length > 0;
         var limit = Math.Clamp(q.Limit, 1, 200);
         var rows = await db.BrowseFilesAsync(q.VersionId, q.DatasetId, prefixLike, prefix.Length, recursive, qLike, exts.Length > 0, exts, Math.Max(0, q.Offset), limit, ct);
         var total = await db.CountBrowseFilesAsync(q.VersionId, q.DatasetId, prefixLike, prefix.Length, recursive, qLike, exts.Length > 0, exts, ct);
@@ -41,7 +39,6 @@ public sealed class BrowseDatasetQueryHandler(IReadSession db, WorkspaceAuthoriz
             ? DatasetFileUrls.For(s3, version, path, url, Audience.Public)
             : s3.Presign(HttpMethod.Get, Buckets.Datasets, Buckets.Raw(q.WorkspaceId, q.DatasetId) + path, TimeSpan.FromHours(6), Audience.Public);
 
-        // YOLO labels: the txt next to each image (…/images/x.jpg ↔ …/labels|yololabels/x.txt, or the same folder).
         var images = rows.Where(r => FileKinds.Of(r.Path) == "image").ToList();
         var candidates = new Dictionary<string, List<string>>();
         foreach (var img in images) candidates[img.Path] = [.. YoloLabelFiles.CandidatesFor(img.Path)];

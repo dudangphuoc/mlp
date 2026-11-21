@@ -10,5 +10,6 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>What an inspection is cached by: the image, the variant, the parameters that change the result, and the class count.</summary>
+/// <summary>What an inspection is cached by: the image, the variant, the parameters that change the result, and the
+/// class count.</summary>
 public sealed record InspectionKey(Guid WorkspaceId, string EnvTag, string Variant, string ParamsSha256, int NumClasses);

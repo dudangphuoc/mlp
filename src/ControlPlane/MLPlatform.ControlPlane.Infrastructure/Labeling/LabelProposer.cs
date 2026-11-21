@@ -13,13 +13,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/*
- * AI label proposals (Hermes phase 3). One call = one suggestion set stored for the item, pending until a person applies it.
- * Sources: an AI model from the AI page (labeler/vision role; LLM output parsed from JSON) or one of the workspace's deployments
- * (standard ModelServer protocol: detect/classify/ner/asr; candidate labels are sent for zero-shot models). Model labels map to
- * schema classes by the project's mapping or by name; what does not map is listed, never silently dropped. External APIs need
- * the project opt-in and a confirmation for the call. Every call is an AI run anyone in the workspace can open.
- */
+// AI label proposals (Hermes phase 3).
 public sealed class LabelProposer(AiRuntime ai, ItemContent content, ModelServerClients servers, IClock clock, ILogger<LabelProposer> log)
 {
     private sealed record Cls(int Id, string Name);
@@ -205,7 +199,7 @@ public sealed class LabelProposer(AiRuntime ai, ItemContent content, ModelServer
                 if (string.IsNullOrEmpty(quote) || string.IsNullOrEmpty(cls) || text is null) continue;
                 var at = text.IndexOf(quote, from, StringComparison.Ordinal);
                 if (at < 0) at = text.IndexOf(quote, StringComparison.Ordinal);
-                if (at < 0) continue;   // the model quoted text that is not in the item — ignored (the AI run shows it)
+                if (at < 0) continue;
                 add("span", cls, new JsonObject { ["start"] = at, ["end"] = at + quote.Length, ["text"] = quote }, Conf(sp?["confidence"]));
                 from = at + quote.Length;
             }
@@ -254,7 +248,6 @@ public sealed class LabelProposer(AiRuntime ai, ItemContent content, ModelServer
             default: throw new ProposalException($"Deployments cannot propose labels for {media} items yet");
         }
 
-        // Recorded like every AI call: the deployment, what was sent (bytes are not stored, only their size) and what came back.
         var runId = Ids.New();
         var selection = new JsonObject { ["role"] = "deployment", ["note"] = "Deployment chosen in the project's AI assist settings", ["candidates"] = new JsonArray() };
         await mediator.Send(new StartAiRunCommand(runId, p.WorkspaceId, "predict", "Label proposal", $"{p.Name} · {ctx.State.Path}", trigger, ctx.ActorId,

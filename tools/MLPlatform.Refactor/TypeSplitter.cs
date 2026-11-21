@@ -5,7 +5,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MLPlatform.Refactor;
 
-/// <summary>Moves top-level types verbatim into new files; each new file gets the source file's usings and namespace.</summary>
+/// <summary>Moves top-level types verbatim into new files; each new file gets the source file's usings and
+/// namespace.</summary>
 public static class TypeSplitter
 {
     public static int Run(string mapFile)

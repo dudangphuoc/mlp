@@ -11,7 +11,8 @@ internal static partial class IdentityRules
     [GeneratedRegex("^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$")]
     public static partial Regex Slug();
 
-    /// <summary>Turns a free-form name into a slug fragment (lowercase a-z0-9 and single hyphens, at most <paramref name="max"/> chars).</summary>
+    /// <summary>Turns a free-form name into a slug fragment (lowercase a-z0-9 and single hyphens, at most max
+    /// chars).</summary>
     public static string SlugPart(string name, int max)
     {
         var sb = new System.Text.StringBuilder();

@@ -7,10 +7,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Deletes a machine's cache of one dataset (also how a full re-download is forced). Refused while a job using it is active; the caller sends
-/// the volume removal to the agent after this succeeds.
-/// </summary>
+/// <summary>Deletes a machine's cache of one dataset (also how a full re-download is forced).</summary>
 public sealed record DeleteDataCacheCommand(Guid WorkspaceId, Guid HostId, Guid DatasetId) : ICommand<string>;
 
 /// <summary>Checks the cache is idle, marks it removed and returns the volume name to remove on the host.</summary>

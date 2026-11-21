@@ -12,10 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>
-/// Model files of a version as [{path, url}]: a reference version (imported by address) is read from its sources, otherwise from our storage.
-/// Links last 24 hours, so the scheduler signs them again for every replica start.
-/// </summary>
+/// <summary>Model files of a version as [{path, url}]: a reference version (imported by address) is read from its
+/// sources, otherwise from our storage.</summary>
 public static class ModelFiles
 {
     public static async Task<string> BuildAsync(IReadSession db, S3Client s3, Guid versionId, Guid workspaceId, CancellationToken ct)

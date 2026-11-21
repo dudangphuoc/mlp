@@ -9,14 +9,12 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>
-/// Cancel any job that has not finished — waiting, reserving, preparing or running — from the Jobs page. Whatever owns the job follows:
-/// a training run or trial becomes cancelled, a deployment or test replica stopped, a notebook stopped. The host then stops the container
-/// and frees the reservation (WorkloadLauncher.StopJobAsync).
-/// </summary>
+/// <summary>Cancel any job that has not finished — waiting, reserving, preparing or running — from the Jobs
+/// page.</summary>
 public sealed record CancelJobByUserCommand(Guid WorkspaceId, Guid JobId) : ICommand<JobRow>;
 
-/// <summary>Routes the cancel to the job's owner so its page shows the same outcome; a job without an owner is just cancelled.</summary>
+/// <summary>Routes the cancel to the job's owner so its page shows the same outcome; a job without an owner is just
+/// cancelled.</summary>
 public sealed class CancelJobByUserCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IMediator mediator, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<CancelJobByUserCommand, JobRow>
 {
     public async ValueTask<JobRow> Handle(CancelJobByUserCommand c, CancellationToken ct)
@@ -26,7 +24,6 @@ public sealed class CancelJobByUserCommandHandler(IWriteSession db, WorkspaceAut
         if (job.State is "succeeded" or "failed" or "cancelled") throw new PreconditionException("SCHED_JOB_FINISHED", "This job has already finished");
         if (await db.GetRunByJobAsync(job.Id, ct) is { } run && run.WorkspaceId == c.WorkspaceId)
         {
-            // An owner that already ended (a trial cancelled earlier whose job came back) must not block stopping the job itself.
             if (await db.GetTrialByRunAsync(run.Id, c.WorkspaceId, ct) is { } trial)
             {
                 if (trial.State is "queued" or "running") await mediator.Send(new CancelTrialCommand(c.WorkspaceId, trial.Id), ct);

@@ -11,7 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>Convert a model version to <paramref name="Format"/>: submits a job that runs the recipe's export command.</summary>
+/// <summary>Convert a model version to Format: submits a job that runs the recipe's export command.</summary>
 public sealed record StartExportCommand(Guid WorkspaceId, Guid ModelVersionId, string Format, Guid? HostId = null) : ICommand<ExportRow>;
 
 /// <summary>Builds the shim spec (entrypoint <c>export</c>), signs the upload links and submits the job.</summary>
@@ -31,7 +31,7 @@ public sealed class StartExportCommandHandler(IWriteSession db, S3Client s3, ICl
         var variant = (manifest["variants"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(x => x["name"]?.ToString() == v.Variant);
         var id = Ids.New();
         var prefix = ExportRules.Prefix(c.WorkspaceId, id);
-        var needsGpu = c.Format is "engine";   // TensorRT engines are built on a GPU; every other format converts on CPU
+        var needsGpu = c.Format is "engine";
         var shimSpec = new JsonObject
         {
             ["manifest"] = manifest.DeepClone(), ["entrypoint"] = "export", ["task"] = v.Task, ["variant"] = variant?.DeepClone() ?? new JsonObject { ["name"] = v.Variant },
@@ -57,7 +57,8 @@ public sealed class StartExportCommandHandler(IWriteSession db, S3Client s3, ICl
         return (await db.GetExportAsync(c.WorkspaceId, id, ct))!;
     }
 
-    /// <summary>Format built from the version's ready ONNX export in the generic-onnx image (TensorRT on a GPU of the chosen machine).</summary>
+    /// <summary>Format built from the version's ready ONNX export in the generic-onnx image (TensorRT on a GPU of the
+    /// chosen machine).</summary>
     private async Task<ExportRow> StartDerivedAsync(StartExportCommand c, ModelVersionRow v, Guid uid, CancellationToken ct)
     {
         var onnx = (await db.ListReadyOnnxExportsAsync(c.WorkspaceId, v.Id, ct)).FirstOrDefault()

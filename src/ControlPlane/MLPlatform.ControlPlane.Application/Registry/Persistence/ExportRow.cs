@@ -11,6 +11,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>One conversion of a model version to another format: <c>running</c>, <c>ready</c> (file in storage) or <c>failed</c>.</summary>
+/// <summary>One conversion of a model version to another format: running , ready (file in storage) or failed
+/// .</summary>
 public sealed record ExportRow(Guid Id, Guid WorkspaceId, Guid ModelVersionId, string Format, string State, string Error, Guid? JobId,
     string FileName, long SizeBytes, DateTimeOffset CreatedAt);

@@ -6,7 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>A visible step of an attempt on its machine (e.g. building the recipe image) — shown in the job timeline.</summary>
+/// <summary>A visible step of an attempt on its machine (e.g.</summary>
 public sealed record EmitAttemptEventCommand(Guid WorkspaceId, Guid AttemptId, string Code, string Level, string Message) : ICommand<bool>, IInternalCommand;
 
 public sealed class EmitAttemptEventCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<EmitAttemptEventCommand, bool>

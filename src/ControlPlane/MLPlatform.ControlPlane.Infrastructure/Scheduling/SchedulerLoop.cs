@@ -7,10 +7,8 @@ using MLPlatform.Ray;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// M03 §5 scheduling loop (2 s): take the highest-priority job → pick hosts → create attempt + `mlpj_` token →
-/// submit Ray job `mlp_holder` to create the placement group (R1). When the holder reports it is fully allocated → <see cref="WorkloadLauncher"/>.
-/// </summary>
+/// <summary>M03 §5 scheduling loop (2 s): take the highest-priority job → pick hosts → create attempt + `mlpj_` token →
+/// submit Ray job `mlp_holder` to create the placement group (R1).</summary>
 public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, SystemHealth health, ReservationKeeper keeper, ILogger<SchedulerLoop> log)
     : BackgroundService
 {
@@ -27,7 +25,6 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
             health.Beat("scheduler", 2);
             try
             {
-                // Running workloads must hold their resources in Ray before anything new is placed (the head forgets them when it restarts).
                 if (!await keeper.EnsureAsync(stop)) continue;
                 while (await TickAsync(stop)) { }
             }
@@ -52,7 +49,6 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
         else
         {
             IReadOnlyList<Guid> candidates = online.Where(h => Fits(h, spec)).Select(h => h.Id).ToList();
-            // Host dataset cache: prefer the machine that already holds the job's dataset (only what changed is downloaded there).
             if (candidates.Count > spec.Nnodes && spec.Env.TryGetValue("MLP_JOB_SPEC", out var js)
                 && System.Text.Json.Nodes.JsonNode.Parse(js)?["datasetId"]?.ToString() is { } dsText && Guid.TryParse(dsText, out var dsId))
                 candidates = await m.Send(new MLPlatform.ControlPlane.Application.Ops.PreferDataHostsCommand(job.WorkspaceId, job.Id, dsId, candidates), ct);
@@ -60,11 +56,10 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
             if (fit.Count < spec.Nnodes)
             {
                 await m.Send(new RequeueJobCommand(job.Id, $"Waiting for hosts: need {spec.Nnodes} host(s) with {spec.Cpus} CPU, {spec.Gpus} GPU"), ct);
-                return true;   // this job backs off 5 s (not_before); try the next job right away in this loop
+                return true;
             }
             hosts = fit;
         }
-        // D-50: a one-GPU job reserves its memory budget on the GPU, not the device — other jobs fit beside it while budgets allow.
         var needMb = GpuNeed.Mb(spec);
         var bundles = hosts.Select(h => new BundleDto
         {
@@ -86,7 +81,6 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
         {
             log.LogWarning("Ray rejected the job: {Msg}", e.Message);
             var fin = await m.Send(new FinishAttemptCommand(attempt.AttemptId, 1, "ray_unavailable", e.Message), ct);
-            // Rejected before any container started: the deployment / notebook / run must not stay "starting" forever.
             await m.Send(new MLPlatform.ControlPlane.Application.Serving.SetDeploymentStateByJobCommand(fin.JobId,
                 fin.JobState == "queued" ? "deploying" : "failed", e.Message, null), ct);
             await m.Send(new MLPlatform.ControlPlane.Application.Notebooks.SetNotebookStateByJobCommand(fin.JobId,
@@ -96,7 +90,8 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
         return true;
     }
 
-    /// <summary>Memory of the host's smallest GPU in MB (0 when unknown) — the base a job's GPU share is computed against.</summary>
+    /// <summary>Memory of the host's smallest GPU in MB (0 when unknown) — the base a job's GPU share is computed
+    /// against.</summary>
     internal static long GpuTotalMb(HostRow? h)
     {
         if (h?.HostInfo is not { Length: > 0 } b) return 0;

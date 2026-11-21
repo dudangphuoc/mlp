@@ -20,7 +20,6 @@ public sealed class EnrollAgentCommandHandler(IWriteSession db, IClock clock, To
         var credential = TokenService.New("mlpa_");
         var credHash = tokens.Hash(credential);
 
-        // Reinstall on the same machine: keep host_id + overlay_ip (20/04 §2 step 6)
         if (!string.IsNullOrEmpty(c.PreviousCredential)
             && await db.GetHostByCredentialAsync(tokens.Hash(c.PreviousCredential), ct) is { } old
             && old.WorkspaceId == e.WorkspaceId)

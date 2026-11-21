@@ -4,14 +4,12 @@ using System.Text.RegularExpressions;
 using Grpc.Core;
 using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Shim operations channel (20/10): standard progress (step changes sent immediately, within a step at most once per 5 s), 30 s heartbeat, two-tier checkpoints.
-/// Network errors do not break training; they are only logged (unless the attempt was superseded: stop immediately so the run is not overwritten).
-/// </summary>
+/// <summary>Shim operations channel (20/10): standard progress (step changes sent immediately, within a step at most
+/// once per 5 s), 30 s heartbeat, two-tier checkpoints.</summary>
 public sealed partial class OpsReporter : IDisposable
 {
     private readonly GrpcChannel _channel;
@@ -79,8 +77,8 @@ public sealed partial class OpsReporter : IDisposable
         await CallAsync(() => _client.HeartbeatAsync(new RuntimeHeartbeat { Phase = _phase }, _auth, deadline: Now.UtcDateTime.AddSeconds(10)).ResponseAsync);
     }
 
-    /// <summary>Checkpoint: register the local copy immediately, upload to S3 storage, then register the durable copy (only durable copies can resume on another host).</summary>
-    /// <param name="epochsDone">R28: step of a checkpoint whose name has no number (last.pth) = epochs finished when it was written.</param>
+    /// <summary>Checkpoint: register the local copy immediately, upload to S3 storage, then register the durable copy
+    /// (only durable copies can resume on another host).</summary>
     public async Task<bool> UploadCheckpointAsync(string output, string path, CancellationToken ct, long? epochsDone = null)
     {
         var name = Path.GetRelativePath(output, path).Replace('\\', '/');
@@ -109,12 +107,14 @@ public sealed partial class OpsReporter : IDisposable
         return ok;
     }
 
-    // A step number stands alone in the name: "ckpt-6.json", "epoch_012.pt", "checkpoint0004.pth" — not the "1" of "best_stg1.pth".
+    // A step number stands alone in the name: "ckpt-6.json", "epoch_012.pt", "checkpoint0004.pth" — not the "1" of
+    // "best_stg1.pth".
     [GeneratedRegex(@"(?:^|[-_.])(?:epoch|ckpt|checkpoint|step)?[-_]?(\d+)\.[A-Za-z0-9]+$")] private static partial Regex StepNumber();
 
     public static bool HasNumber(string name) => StepNumber().IsMatch(Path.GetFileName(name));
 
-    /// <summary>Checkpoint step = the number in the file name (ckpt-6.json → 6, epoch_012.pt → 12), 0 when there is none.</summary>
+    /// <summary>Checkpoint step = the number in the file name (ckpt-6.json → 6, epoch_012.pt → 12), 0 when there is
+    /// none.</summary>
     public static long StepOf(string name) => StepNumber().Match(Path.GetFileName(name)) is { Success: true } m && long.TryParse(m.Groups[1].Value, out var n) ? n : 0;
 
     private async Task<bool> CallAsync(Func<Task> call)

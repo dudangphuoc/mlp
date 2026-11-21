@@ -13,6 +13,7 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>A trial as the canvas shows it: stored row, live stages while its job runs, the job and the machine.</summary>
+/// <summary>A trial as the canvas shows it: stored row, live stages while its job runs, the job and the
+/// machine.</summary>
 public sealed record TrialView(TrialRow Row, string State, IReadOnlyList<TrialStageView> Stages, double? StepsPerS, long? PeakVramMb, bool VramEstimated,
     int TrainImages, int ValImages, JobInfoRow? Job, string? HostName);

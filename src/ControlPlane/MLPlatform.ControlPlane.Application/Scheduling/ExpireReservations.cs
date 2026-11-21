@@ -6,10 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>
-/// Attempt stuck in "reserving" longer than <paramref name="Timeout"/> (Ray has no suitable node, holder lost, machine out of resources…) → mark it failed
-/// and requeue the job (not counted as a retry). Returns the attempt ids so the api cancels the Ray holder job.
-/// </summary>
+/// <summary>Attempt stuck in "reserving" longer than Timeout (Ray has no suitable node, holder lost, machine out of
+/// resources…) → mark it failed and requeue the job (not counted as a retry).</summary>
 public sealed record ExpireReservationsCommand(TimeSpan Timeout) : ICommand<IReadOnlyList<Guid>>, IInternalCommand;
 
 public sealed class ExpireReservationsCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<ExpireReservationsCommand, IReadOnlyList<Guid>>

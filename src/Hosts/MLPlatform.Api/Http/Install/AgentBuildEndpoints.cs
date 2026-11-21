@@ -33,7 +33,6 @@ public static class AgentBuildEndpoints
         app.MapGet("/install/agent/build/{rid}", (string rid) =>
             !AgentBuildStore.Supported.Contains(rid) ? Results.NotFound()
             : store.Version is { } ver ? Results.Text(store.Status(ver, rid).ToJsonString(), "application/json") : Results.StatusCode(503));
-        // Binary download: requires a valid, unexpired HMAC signature (link issued by /install/agent/build or OTA).
         app.MapGet("/install/agent/{ver}/{rid}/{file}", (string ver, string rid, string file, long? e, string? s) =>
         {
             if (!(AgentBuildStore.Supported.Contains(rid) || AgentBuildStore.ShimRids.Contains(rid)) || file != AgentBuildStore.Exe(rid) || ver.Any(ch => !char.IsAsciiLetterOrDigit(ch))) return Results.NotFound();

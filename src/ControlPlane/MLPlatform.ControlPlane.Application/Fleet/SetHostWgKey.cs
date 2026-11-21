@@ -5,7 +5,8 @@ using MLPlatform.Data;
 
 namespace MLPlatform.ControlPlane.Application.Fleet;
 
-/// <summary>Stores the machine's mlp-net public key (the control plane obtains it via ContainerRunOnce keygen on the machine — D-38).</summary>
+/// <summary>Stores the machine's mlp-net public key (the control plane obtains it via ContainerRunOnce keygen on the
+/// machine — D-38).</summary>
 public sealed record SetHostWgKeyCommand(Guid HostId, string WgPublicKey) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="SetHostWgKeyCommand"/>.</summary>

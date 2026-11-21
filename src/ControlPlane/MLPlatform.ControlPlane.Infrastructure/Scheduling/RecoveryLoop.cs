@@ -7,9 +7,8 @@ using MLPlatform.Ray;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// D-36 (20/10 §4.4): a `suspect` attempt past its wait for the host to return → `node_lost` → the scheduler retries (same or another host) from the checkpoint.
-/// </summary>
+/// <summary>D-36 (20/10 §4.4): a `suspect` attempt past its wait for the host to return → `node_lost` → the scheduler
+/// retries (same or another host) from the checkpoint.</summary>
 public sealed class RecoveryLoop(IServiceScopeFactory scopes, WorkloadLauncher launcher, SystemHealth health, ILogger<RecoveryLoop> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stop)
@@ -32,7 +31,6 @@ public sealed class RecoveryLoop(IServiceScopeFactory scopes, WorkloadLauncher l
                     log.LogWarning("Attempt {Attempt} held resources for over 10 minutes → cancelling holder, requeueing", id);
                     await launcher.AbandonReservationAsync(id, stop);
                 }
-                // 20/10 §2.3: shim signal lost for too long (host still online) → stop the container and retry from the checkpoint.
                 foreach (var id in await med.Send(new MLPlatform.ControlPlane.Application.Ops.DetectAnomaliesCommand(), stop))
                 {
                     log.LogWarning("Attempt {Attempt} lost signal for too long → stopping and retrying", id);

@@ -2,7 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.CodeGate.Rules;
 
-/// <summary>MLPMIG001: migrations are db/&lt;schema&gt;/&lt;yyyyMMddHHmm&gt;_&lt;name&gt;.sql, unique timestamps, additive only.</summary>
+/// <summary>MLPMIG001: migrations are db/<schema>/<yyyyMMddHHmm>_<name>.sql, unique timestamps, additive
+/// only.</summary>
 public static partial class MigrationRules
 {
     public static IEnumerable<Finding> Check(RepoFiles repo)

@@ -10,7 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>Calls the text generation model on the deployment's replica (implemented by the host with the ModelServer gRPC client).</summary>
+/// <summary>Calls the text generation model on the deployment's replica (implemented by the host with the ModelServer
+/// gRPC client).</summary>
 public interface ILlmInvoker
 {
     Task<(string Text, int PromptTokens, int CompletionTokens)> ChatAsync(string endpoint, IReadOnlyList<(string Role, string Content)> messages,

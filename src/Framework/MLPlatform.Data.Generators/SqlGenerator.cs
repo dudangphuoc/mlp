@@ -11,11 +11,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace MLPlatform.Data.Generators;
 
-/// <summary>
-/// [SqlQuery("Module/Name.sql")] partial method → typed ADO.NET code (20/02 §5.2). No reflection.
-/// .sql file header: <c>-- mlp:query Name :one|:many|:exec|:scalar</c>. Parameters <c>@snake_case</c> ↔ method parameters.
-/// Result columns ↔ constructor parameters of the returned record, by snake_case name.
-/// </summary>
+/// <summary>[SqlQuery("Module/Name.sql")] partial method → typed ADO.NET code (20/02 §5.2).</summary>
 [Generator]
 public sealed class SqlGenerator : IIncrementalGenerator
 {
@@ -140,7 +136,6 @@ public sealed class SqlGenerator : IIncrementalGenerator
                 break;
             case "scalar":
                 sb.AppendLine($"        var __v = await __cmd.ExecuteScalarAsync({ct});");
-                // default(T): for Guid?/bool? a bare `default` takes the other branch's type and yields Guid.Empty/false instead of null.
                 sb.AppendLine($"        return __v is null or global::System.DBNull ? default({inner!.ToDisplayString(Fq)})! : {FromObj(inner!, "__v")};");
                 break;
             case "one":

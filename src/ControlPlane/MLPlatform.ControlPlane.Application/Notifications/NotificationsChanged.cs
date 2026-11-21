@@ -5,7 +5,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notifications;
 
-/// <summary>For WatchNotifications: records changed after `since` + unread count. Polled every second (acceptance ≤ 2 s).</summary>
+/// <summary>For WatchNotifications: records changed after `since` + unread count.</summary>
 public sealed record NotificationsChangedQuery(Guid WorkspaceId, DateTimeOffset Since) : IQuery<(IReadOnlyList<NotificationRow> Items, long Unread)>;
 
 public sealed class NotificationsChangedQueryHandler(IReadSession db, WorkspaceAuthorizer auth) : IQueryHandler<NotificationsChangedQuery, (IReadOnlyList<NotificationRow> Items, long Unread)>

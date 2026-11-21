@@ -6,7 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Labeling;
 
-/// <summary>Context for a background proposal (no caller: the job creator was authorized when the job started).</summary>
+/// <summary>Context for a background proposal (no caller: the job creator was authorized when the job
+/// started).</summary>
 public sealed record GetLabelContextInternalQuery(Guid ProjectId, string Path, Guid Actor) : IQuery<HermesContext>;
 
 public sealed class GetLabelContextInternalQueryHandler(IReadSession db) : IQueryHandler<GetLabelContextInternalQuery, HermesContext>

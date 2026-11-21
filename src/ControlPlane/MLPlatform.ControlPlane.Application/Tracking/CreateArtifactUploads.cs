@@ -6,7 +6,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Container (workload token of the same job) requests presigned PUTs for files in the model directory (20/08 §5.1 step 7).</summary>
+/// <summary>Container (workload token of the same job) requests presigned PUTs for files in the model directory (20/08
+/// §5.1 step 7).</summary>
 public sealed record CreateArtifactUploadsCommand(string WorkloadToken, Guid RunId, IReadOnlyList<string> Paths) : ICommand<IReadOnlyList<string>>;
 
 public sealed class CreateArtifactUploadsCommandHandler(IReadSession db, S3Client s3, TokenService tokens)

@@ -10,11 +10,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>Records an operational event row (20/10 §2.1) — in the same transaction as the state change that caused it.</summary>
-/// <summary>
-/// Authenticates the `mlpj_` workload token with fencing (20/10 §4.5): a token of a replaced/finished attempt → `SCHED_ATTEMPT_FENCED`,
-/// so two copies never write to the same run.
-/// </summary>
+/// <summary>Records an operational event row (20/10 §2.1) — in the same transaction as the state change that caused
+/// it.</summary>
 public static class Workload
 {
     public static async Task<WorkloadAttemptRow> ResolveAsync(IReadSession db, TokenService tokens, string token, CancellationToken ct)

@@ -10,9 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Catalog;
 
-/// <summary>
-/// A cached CPU-only inspection of a recipe; <c>Blocks</c> is a JSON array of <c>{key, params, trainable}</c>, <c>Sources</c> a JSON object
-/// pane → <c>[{name, file, line, code}]</c> (the upstream code the merged config selects).
-/// </summary>
+/// <summary>A cached CPU-only inspection of a recipe; Blocks is a JSON array of {key, params, trainable} , Sources a
+/// JSON object pane → [{name, file, line, code}] (the upstream code the merged config selects).</summary>
 public sealed record InspectionRow(Guid Id, Guid WorkspaceId, string RecipeName, string EnvTag, string Variant, string ParamsSha256,
     int NumClasses, string State, string Error, string OverlayYaml, string ConfigJson, string Blocks, DateTimeOffset CreatedAt, string Sources);

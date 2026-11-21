@@ -5,7 +5,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.Api.Http.Overlay;
 
-/// <summary>Peer list ("&lt;pubkey&gt; &lt;ip&gt;" per line) for an overlay hub on another machine; Bearer WireGuard:PeersToken.</summary>
+/// <summary>Peer list ("<pubkey> <ip>" per line) for an overlay hub on another machine; Bearer
+/// WireGuard:PeersToken.</summary>
 public static class OverlayPeersEndpoint
 {
     public static void MapOverlayPeers(this IEndpointRouteBuilder app, IConfiguration cfg) =>

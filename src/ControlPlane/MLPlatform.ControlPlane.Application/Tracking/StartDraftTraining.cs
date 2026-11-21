@@ -13,10 +13,12 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Trains the caller's draft (canvas path): freezes it into a revision, starts the run, and records what the run cooked.</summary>
+/// <summary>Trains the caller's draft (canvas path): freezes it into a revision, starts the run, and records what the
+/// run cooked.</summary>
 public sealed record StartDraftTrainingCommand(Guid WorkspaceId, Guid ProjectRecipeId) : ICommand<RunRow>;
 
-/// <summary>The same content never makes a second revision: an unchanged draft trains its existing revision again.</summary>
+/// <summary>The same content never makes a second revision: an unchanged draft trains its existing revision
+/// again.</summary>
 public sealed class StartDraftTrainingCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IMediator mediator) : ICommandHandler<StartDraftTrainingCommand, RunRow>
 {
     public async ValueTask<RunRow> Handle(StartDraftTrainingCommand c, CancellationToken ct)
@@ -29,16 +31,12 @@ public sealed class StartDraftTrainingCommandHandler(IWriteSession db, IClock cl
         if (d.TrainKind == "retrain" && d.RetrainOfRunId is { } of && (await db.GetRunAsync(of, ct))?.DatasetVersionId == d.DatasetVersionId)
             throw new InvalidArgumentException("TRACK_RETRAIN_SAME_DATA", "Train again needs a different dataset version than the run it repeats");
         var (rev, _) = await RecipeDrafts.FreezeAsync(db, clock, c.WorkspaceId, uid, pr, d, ct);
-        // A draft that lets any machine train goes to the machine the trial measured, so the estimate and the memory check hold.
         var host = d.HostId ?? trial.HostId;
         var run = await mediator.Send(new StartTrainingCommand(c.WorkspaceId, pr.ProjectId, d.RunName, pr.OriginName, rev.Variant, "", rev.Params,
             d.StartKind == "backbone", d.Cpus, d.Gpus, null, null, d.DatasetVersionId, rev.Manifest, host,
-            // D-50: the GPU budget of a real training = what the trial measured plus a quarter and 512 MB of headroom.
             GpuMemoryMb: trial.PeakVramMb is > 0 ? (int)(trial.PeakVramMb.Value * 1.25) + 512 : 0), ct);
         await db.SetRunRevisionAsync(run.Id, c.WorkspaceId, rev.Id, d.TrainKind, d.StartKind, d.TrainKind == "retrain" ? d.RetrainOfRunId : null, host, ct);
         await db.SetRunTrialAsync(run.Id, c.WorkspaceId, trial.Id, ct);
-        // The draft now sits on the revision it just cooked: the next edit shows as a change against it.
-        // A train-again draft goes back to ordinary fine-tuning once its run started.
         await db.UpdateDraftAsync(d.Id, c.WorkspaceId, rev.Id, d.Variant, d.Params, d.DatasetVersionId, d.StartKind, "fine_tune", null, d.HostId, d.Gpus, d.Cpus, "",
             -1, clock.UtcNow, ct);
         return run;

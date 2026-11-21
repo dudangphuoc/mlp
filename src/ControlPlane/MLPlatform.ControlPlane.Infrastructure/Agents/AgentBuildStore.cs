@@ -6,11 +6,7 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Agent builds per platform (D-37/D-38). The control plane holds the agent source; the <c>agent-builder</c> service builds on demand and caches:
-/// <c>{AgentDir}/source-version</c>, <c>queue/{ver}_{rid}.json</c>, <c>cache/{ver}/{rid}/{mlp-agent, .sha256, build.json, build.log}</c>.
-/// Download links are always HMAC-signed + time-limited (blogic-tunnels pattern), used by both the install command and OTA.
-/// </summary>
+/// <summary>Agent builds per platform (D-37/D-38).</summary>
 public sealed class AgentBuildStore(IConfiguration cfg, TimeProvider time, ILogger<AgentBuildStore> log)
 {
     public static readonly string[] Supported = ["linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx-arm64", "osx-x64", "win-x64"];
@@ -21,13 +17,15 @@ public sealed class AgentBuildStore(IConfiguration cfg, TimeProvider time, ILogg
     /// <summary>Current agent version (source hash written by agent-builder); null when there is no builder yet.</summary>
     public string? Version => File.Exists(Path.Combine(Dir, "source-version")) ? File.ReadAllText(Path.Combine(Dir, "source-version")).Trim() : null;
 
-    /// <summary>Linux mlp-shim builds (baked into recipe images for training), cached by the same builder as "shim-{rid}".</summary>
+    /// <summary>Linux mlp-shim builds (baked into recipe images for training), cached by the same builder as
+    /// "shim-{rid}".</summary>
     public static readonly string[] ShimRids = ["shim-linux-x64", "shim-linux-arm64"];
 
     public static string Exe(string rid) => rid.StartsWith("shim-", StringComparison.Ordinal) ? "mlp-shim"
         : rid.StartsWith("win", StringComparison.Ordinal) ? "mlp-agent.exe" : "mlp-agent";
 
-    /// <summary>Absolute signed download URL of mlp-shim for a container architecture (x64 | arm64), once built (waits up to 20 minutes).</summary>
+    /// <summary>Absolute signed download URL of mlp-shim for a container architecture (x64 | arm64), once built (waits
+    /// up to 20 minutes).</summary>
     public async Task<(string Url, string Sha256)?> ShimAsync(string arch, string downloadBase, CancellationToken ct)
     {
         if (Version is not { } ver) return null;

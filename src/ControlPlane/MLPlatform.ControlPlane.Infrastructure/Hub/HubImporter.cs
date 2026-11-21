@@ -14,11 +14,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// HF import worker (one job at a time: bandwidth + CPU): downloads each file from HF and PUTs it straight to S3 storage via an internal signed URL (streamed, no
-/// temp storage). Dataset: writes files into the dataset, then commits version "Imported from HF repo@rev". Model: D-28 model folder (<c>weights/…</c> +
-/// <c>recipe.lock.json</c>), a version with source hf_hub using the hf-auto recipe. Size limit: <c>Hub:MaxImportBytes</c> (default 50 GiB).
-/// </summary>
+/// <summary>HF import worker (one job at a time: bandwidth + CPU): downloads each file from HF and PUTs it straight to
+/// S3 storage via an internal signed URL (streamed, no temp storage).</summary>
 public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBox secrets, S3Client s3, IHttpClientFactory http, IConfiguration cfg,
     SystemHealth health, ILogger<HubImporter> log) : BackgroundService, IHubImportQueue
 {
@@ -27,7 +24,7 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
 
     protected override async Task ExecuteAsync(CancellationToken stop)
     {
-        try   // a cleanup failure must not stop the whole api (BackgroundService exceptions stop the host)
+        try
         {
             await using var scope = scopes.CreateAsyncScope();
             if (await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new FailStaleHubImportsCommand(), stop) is > 0 and var n)
@@ -60,7 +57,6 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
     {
         await using var scope = scopes.CreateAsyncScope();
         var m = scope.ServiceProvider.GetRequiredService<IMediator>();
-        // Enqueued from inside a transaction (pipeline engine) → the row may not be committed yet: wait briefly before giving up.
         var job = await m.Query(new GetHubImportJobQuery(id), ct);
         for (var i = 0; job is null && i < 20; i++)
         {
@@ -72,7 +68,6 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
         var token = job.Source == "hf" ? secrets.Open(await m.Query(new GetHubSecretQuery(job.WorkspaceId), ct)) : null;
         await UpdateAsync(id, "running", job.TargetId, 0, 0, 0, 0, "Listing files");
 
-        // 1. Files from the source (HF revision pinned to its commit so a reference stays immutable).
         string sourceRef;
         List<SourceFile> files;
         var gated = false;
@@ -101,7 +96,6 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
         if (files.Count == 0) { await UpdateAsync(id, "failed", null, 0, 0, 0, 0, "No files match the filter"); return; }
         var total = files.Sum(f => f.Size);
 
-        // 2a. Reference: record the addresses, no copy. Gated/private HF repos need the workspace token, which machines don't have.
         if (job.Mode == "reference")
         {
             if (gated) { await UpdateAsync(id, "failed", null, files.Count, 0, total, 0, "This repo is gated/private — import it with \"Copy to storage\" instead"); return; }
@@ -124,7 +118,6 @@ public sealed class HubImporter(IServiceScopeFactory scopes, HfHub hub, SecretBo
             return;
         }
 
-        // 2b. Copy into our storage.
         var max = long.TryParse(cfg["Hub:MaxImportBytes"], out var mx) ? mx : 50L * 1024 * 1024 * 1024;
         if (total > max) { await UpdateAsync(id, "failed", null, files.Count, 0, total, 0, $"The source is {total / 1073741824.0:0.0} GiB, over the {max / 1073741824} GiB limit; filter out some files or use a reference import"); return; }
         string bucket, prefix;

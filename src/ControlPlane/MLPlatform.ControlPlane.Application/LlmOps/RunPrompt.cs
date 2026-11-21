@@ -10,7 +10,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>Runs a prompt version on an LLM deployment (the version's default, or an override) — used for quick tests and version comparison.</summary>
+/// <summary>Runs a prompt version on an LLM deployment (the version's default, or an override) — used for quick tests
+/// and version comparison.</summary>
 public sealed record RunPromptCommand(Guid WorkspaceId, string PromptKey, int Version, IReadOnlyDictionary<string, string> Variables, Guid? DeploymentId)
     : ICommand<(PromptVersionRow Version, LlmCallResult Result)>;
 

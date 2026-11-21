@@ -6,11 +6,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// D-38: the agent is only a container bridge; the control plane assembles the spec for each role (label <c>mlp.role</c>):
-/// <c>net</c> (WireGuard spoke mlp-net), <c>ray-node</c> (thin Ray worker), <c>workload</c> (attempt container; labels <c>mlp.attempt</c>
-/// + <c>mlp.logs</c> so the agent follows its logs). Changing how a role runs = edit here, no new agent release.
-/// </summary>
+/// <summary>D-38: the agent is only a container bridge; the control plane assembles the spec for each role (label
+/// mlp.role ): net (WireGuard spoke mlp-net), ray-node (thin Ray worker), workload (attempt container.</summary>
 public static class HostContainers
 {
     public const string NetName = "mlp-net";
@@ -41,14 +38,15 @@ public static class HostContainers
         ["tensorflow"] = "jupyterlab numpy pandas matplotlib tensorflow",
     };
 
-    /// <summary>Notebook profile image of the form <c>mlp/nb-{profile}:{ver}-{cpu|gpu}</c> → build command on the host; other images (dev override) → null.</summary>
+    /// <summary>Notebook profile image of the form mlp/nb-{profile}:{ver}-{cpu|gpu} → build command on the host; other
+    /// images (dev override) → null.</summary>
     public static ImageBuild? NotebookImage(string image)
     {
         var m = System.Text.RegularExpressions.Regex.Match(image, @"^mlp/nb-([a-z0-9-]+):[\w.]+-(cpu|gpu)$");
         if (!m.Success) return null;
         var gpu = m.Groups[2].Value == "gpu";
         var pip = NotebookPip.GetValueOrDefault(m.Groups[1].Value, NotebookPip["base"]);
-        if (gpu) pip = pip.Replace(" torch torchvision", "");   // the GPU image already has PyTorch CUDA
+        if (gpu) pip = pip.Replace(" torch torchvision", "");
         var df = NotebookDockerfile
             .Replace("ARG BASE=python:3.12-slim", "ARG BASE=" + (gpu ? "pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime" : "python:3.12-slim"))
             .Replace("ARG PIP=\"jupyterlab\"", "ARG PIP=\"" + pip + "\"");
@@ -57,7 +55,8 @@ public static class HostContainers
         return b;
     }
 
-    /// <summary>The platform layer added to every recipe image (20/08 §6): mlp-serve with gRPC stubs generated for the image's own Python.</summary>
+    /// <summary>The platform layer added to every recipe image (20/08 §6): mlp-serve with gRPC stubs generated for the
+    /// image's own Python.</summary>
     private const string ServeLayer = """
 
         # ── platform layer (added by the control plane) ──
@@ -76,10 +75,8 @@ public static class HostContainers
         WORKDIR /opt/recipe
         """;
 
-    /// <summary>
-    /// Platform training layer (20/08 §6): mlp-shim (built by agent-builder for the host's architecture, fetched from the control plane through a signed
-    /// link) and the dataset converters the shim runs before the recipe command.
-    /// </summary>
+    /// <summary>Platform training layer (20/08 §6): mlp-shim (built by agent-builder for the host's
+    /// architecture.</summary>
     private const string TrainLayer = """
 
         # ── platform training layer (added by the control plane) ──
@@ -88,12 +85,8 @@ public static class HostContainers
         RUN chmod 755 /usr/local/bin/mlp-shim && mkdir -p /mnt/data /mnt/weights && chmod 777 /mnt/data /mnt/weights
         """;
 
-    /// <summary>
-    /// <c>recipes/{name}:current</c> → build command for this host: the recipe's Dockerfile and files (context = recipes dir, as in CI)
-    /// plus the platform serve layer and, when <paramref name="shim"/> is given, the training layer. One image serves both training and serving.
-    /// The tag carries a content hash (recipe files, platform layers, mlp-shim sha256 — not the signed link), so a changed recipe is rebuilt and an
-    /// unchanged one is reused. Other images → null.
-    /// </summary>
+    /// <summary>recipes/{name}:current → build command for this host: the recipe's Dockerfile and files (context =
+    /// recipes dir, as in CI) plus the platform serve layer and, when shim is given, the training layer.</summary>
     public static ImageBuild? RecipeImage(string image, string? recipesDir, (string Url, string Sha256)? shim = null)
     {
         var m = System.Text.RegularExpressions.Regex.Match(image, @"^recipes/([a-z0-9-]+):current$");
@@ -124,10 +117,8 @@ public static class HostContainers
     public static string RayNodeName(Guid hostId) => "mlp-ray-node-" + hostId.ToString()[^12..];
     public static string WorkloadName(string attemptId, int rank) => $"mlp-w-{attemptId}-{rank}";
 
-    /// <summary>
-    /// Build the mlp-net spoke on the host (P0-16): build the image from the control plane's Dockerfile, get the public key (the private key never leaves the volume),
-    /// store the key for the hub, run the spoke. Returns true when the network is ready; a freshly recreated spoke → the old Ray node loses its namespace → remove it to rebuild.
-    /// </summary>
+    /// <summary>Build the mlp-net spoke on the host (P0-16): build the image from the control plane's Dockerfile, get
+    /// the public key (the private key never leaves the volume), store the key for the hub, run the spoke.</summary>
     public static async Task<bool> EnsureNetworkAsync(AgentSession s, string overlayIp, IConfiguration cfg, IServiceScopeFactory scopes, ILogger log, CancellationToken ct)
     {
         if (Overlay.HubPublicKey(cfg) is not { } hubKey || string.IsNullOrEmpty(overlayIp)) return false;
@@ -152,7 +143,7 @@ public static class HostContainers
         spoke.Env["PEER_PUB"] = hubKey;
         spoke.Env["PEER_ENDPOINT"] = cfg["WireGuard:Endpoint"] ?? "";
         spoke.Env["PEER_ALLOWED"] = "10.88.0.0/16";
-        if (cfg["WireGuard:Mtu"] is { Length: > 0 } mtu) spoke.Env["MTU"] = mtu;   // hub behind another tunnel (cenos) → smaller MTU
+        if (cfg["WireGuard:Mtu"] is { Length: > 0 } mtu) spoke.Env["MTU"] = mtu;
         spoke.Command.Add("spoke");
         var r = await s.SendCommandAsync(new AgentCommand { ContainerApply = new ContainerApply { Spec = spoke, KeepIfSame = true } }, TimeSpan.FromMinutes(3), ct);
         if (!r.Ok) { log.LogWarning("mlp-net on {Host} failed: {Msg}", s.HostId, r.Message); return false; }
@@ -161,7 +152,6 @@ public static class HostContainers
             await s.SendCommandAsync(new AgentCommand { ContainerRemove = new ContainerRemove { Name = RayNodeName(s.HostId), Force = true } }, TimeSpan.FromMinutes(2), ct);
             log.LogInformation("mlp-net on {Host}: {Ip} → hub {Endpoint}", s.HostId, overlayIp, cfg["WireGuard:Endpoint"]);
         }
-        // Check the real tunnel (ping the hub inside the spoke's namespace); the node only takes work once it has joined the VPN.
         var check = new ContainerSpec { Image = NetImage, Network = "container:" + NetName };
         check.CapAdd.Add("NET_ADMIN");
         check.Command.Add("check");
@@ -174,7 +164,8 @@ public static class HostContainers
         return ok;
     }
 
-    /// <summary>Thin Ray worker (20/04 §5, D-12, D-32): CPU = min(logical - 1, limit), resource <c>host:&lt;id&gt;</c>, labels mlp.io/*, GPUs by UUID.</summary>
+    /// <summary>Thin Ray worker (20/04 §5, D-12, D-32): CPU = min(logical - 1, limit), resource host:<id> , labels
+    /// mlp.io/*, GPUs by UUID.</summary>
     public static ContainerSpec RayNode(AgentSession s, HostInfo? info, IConfiguration cfg, bool overlay, string overlayIp)
     {
         var cap = int.TryParse(cfg["Ray:MaxCpusPerNode"], out var c) ? c : int.MaxValue;

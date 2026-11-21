@@ -10,7 +10,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.LlmOps;
 
-/// <summary>One guarded LLM call + usage recording (tokens, latency, estimated cost). When blocked the model is not called, but `blocked` usage is still recorded.</summary>
+/// <summary>One guarded LLM call + usage recording (tokens, latency, estimated cost).</summary>
 public static class LlmCall
 {
     public static async Task<LlmCallResult> RunAsync(IWriteSession db, IClock clock, ILlmInvoker invoker, DeploymentRow dep,
@@ -27,12 +27,10 @@ public static class LlmCall
             if (g.Blocked) return await Record(db, clock, dep, settings, new LlmCallResult("", 0, 0, 0, 0, true, g.Reason, flags.Distinct().ToList(), sent), source, promptId, promptVersion, ct);
             sent.Add((role, g.Text));
         }
-        // Do not hold a pooled connection (or an open transaction) while waiting for the model.
         await db.ReleaseAsync(ct);
         var sw = Stopwatch.StartNew();
         var (text, pt, comp) = await invoker.ChatAsync(dep.Endpoint, sent, maxTokens, temperature, ct);
         var latency = sw.Elapsed.TotalMilliseconds;
-        // Model does not report tokens → estimate by whitespace (good enough for observation; the real tokenizer belongs to the recipe).
         if (pt == 0) pt = sent.Sum(m => Words(m.Item2));
         if (comp == 0) comp = Words(text);
         var blocked = false;

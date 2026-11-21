@@ -4,10 +4,8 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Commands from the control plane (D-38): the agent is a container bridge with generic commands (container, image, file, script) and no notion of
-/// Ray node / workload / network. Each command returns exactly one CommandResult.
-/// </summary>
+/// <summary>Commands from the control plane (D-38): the agent is a container bridge with generic commands (container,
+/// image, file, script) and no notion of Ray node / workload / network.</summary>
 public sealed class CommandHandler(AgentState state, Containers containers, ILogger<CommandHandler> log)
 {
     private Connection<ControlToAgent, AgentToControl>? _conn;
@@ -31,7 +29,6 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
             try { result = await ExecuteAsync(cmd, ct); }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                // A step hit its own time limit (e.g. docker build): answer with a clear failure instead of leaving the control plane waiting.
                 log.LogWarning("Command {Kind} timed out", cmd.KindCase);
                 result = new CommandResult { Ok = false, ErrorReason = "FLEET_COMMAND_TIMEOUT", Message = $"{cmd.KindCase} did not finish within its time limit" };
             }
@@ -90,7 +87,8 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
 
     private static CommandResult Fail(string err) => new() { Ok = false, ErrorReason = Docker.Reason(err), Message = err };
 
-    /// <summary>Create a container from the spec; same name + same spec already running and keep_if_same → keep it (an agent reconnect does not lose running work).</summary>
+    /// <summary>Create a container from the spec; same name + same spec already running and keep_if_same → keep it (an
+    /// agent reconnect does not lose running work).</summary>
     private async Task<CommandResult> ApplyAsync(ContainerApply a, CancellationToken ct)
     {
         var s = a.Spec;
@@ -130,7 +128,7 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
     {
         foreach (var id in await TargetsAsync(r.Name, r.Label, ct))
             await Docker.RunAsync(r.Force ? ["rm", "-f", id] : ["rm", id], ct, TimeSpan.FromMinutes(2));
-        foreach (var v in r.Volumes) await Docker.RunAsync(["volume", "rm", v], ct, TimeSpan.FromMinutes(1));   // still used by another container → docker refuses, kept as is
+        foreach (var v in r.Volumes) await Docker.RunAsync(["volume", "rm", v], ct, TimeSpan.FromMinutes(1));
         return new CommandResult { Ok = true };
     }
 
@@ -154,8 +152,7 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
                 await File.WriteAllBytesAsync(p, content.ToByteArray(), ct);
             }
             var limit = b.TimeoutSeconds > 0 ? TimeSpan.FromSeconds(b.TimeoutSeconds) : TimeSpan.FromMinutes(20);
-            // Plain progress: each build step ("#7 [3/6] RUN pip install …", "#7 DONE 212.4s") goes to agent.log, so a long build is visible.
-            var lastProgress = -1L;   // download progress lines repeat every second: log at most one per 15 s
+            var lastProgress = -1L;
             var (code, tail) = await Docker.RunStreamingAsync(["build", "--progress=plain", "-t", b.Tag, dir.FullName], line =>
             {
                 var step = System.Text.RegularExpressions.Regex.IsMatch(line, @"^#\d+ (\[|DONE|CACHED|ERROR)") || line.StartsWith("ERROR", StringComparison.Ordinal);

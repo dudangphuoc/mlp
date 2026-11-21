@@ -6,11 +6,8 @@ using System.Xml.Linq;
 
 namespace MLPlatform.Storage;
 
-/// <summary>
-/// Minimal, AOT-safe S3 client (D-34): SigV4 for requests and presigned URLs, path-style
-/// (<c>{endpoint}/{bucket}/{key}</c>) so it works with SeaweedFS/MinIO/Ceph/real S3.
-/// Presigned URLs are signed for <c>PublicEndpoint</c> (the address browsers/agents see) when set.
-/// </summary>
+/// <summary>Minimal, AOT-safe S3 client (D-34): SigV4 for requests and presigned URLs, path-style (
+/// {endpoint}/{bucket}/{key} ) so it works with SeaweedFS/MinIO/Ceph/real S3.</summary>
 public sealed class S3Client(HttpClient http, S3Options o, TimeProvider time)
 {
     private const string Service = "s3";
@@ -79,7 +76,8 @@ public sealed class S3Client(HttpClient http, S3Options o, TimeProvider time)
         return all;
     }
 
-    /// <summary>Presigned URL (SigV4 query) for browsers/agents to upload or download directly (20/05: the api only issues URLs).</summary>
+    /// <summary>Presigned URL (SigV4 query) for browsers/agents to upload or download directly (20/05: the api only
+    /// issues URLs).</summary>
     public string Presign(HttpMethod method, string bucket, string key, TimeSpan expires, Audience audience = Audience.Public)
     {
         var endpoint = new Uri(audience == Audience.Internal ? o.Endpoint : (audience == Audience.Workload ? o.WorkloadEndpoint : null) ?? o.PublicEndpoint ?? o.Endpoint);

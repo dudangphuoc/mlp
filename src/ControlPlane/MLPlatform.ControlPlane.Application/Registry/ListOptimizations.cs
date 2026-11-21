@@ -15,7 +15,8 @@ namespace MLPlatform.ControlPlane.Application.Registry;
 /// <summary>Optimization runs of the workspace, newest first; running ones are settled from their job first.</summary>
 public sealed record ListOptimizationsCommand(Guid WorkspaceId) : ICommand<IReadOnlyList<OptimizationRow>>;
 
-/// <summary>A finished job's report.json becomes the run's report (ready when at least one candidate was built).</summary>
+/// <summary>A finished job's report.json becomes the run's report (ready when at least one candidate was
+/// built).</summary>
 public sealed class ListOptimizationsCommandHandler(IWriteSession db, S3Client s3, WorkspaceAuthorizer auth) : ICommandHandler<ListOptimizationsCommand, IReadOnlyList<OptimizationRow>>
 {
     public async ValueTask<IReadOnlyList<OptimizationRow>> Handle(ListOptimizationsCommand c, CancellationToken ct)

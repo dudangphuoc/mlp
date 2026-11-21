@@ -5,16 +5,14 @@ using System.Net.WebSockets;
 using MLPlatform.AgentProtocol;
 using MLPlatform.ControlPlane.Application.Notebooks;
 using MLPlatform.Contracts.V1;
-using Environment = System.Environment;   // Contracts.V1 also has an Environment message (catalog)
+using Environment = System.Environment;
 using MLPlatform.Cqrs;
 using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Data channel (20/04 §3.2): the api sends OpenDataChannel{session, token, target} on the control channel; the agent opens a new TCP connection to :7443
-/// with DataChannelHello → the api matches it by session, replies DataChannelAccept, then both sides switch to raw bytes. One-time token, expires in 30 s.
-/// </summary>
+/// <summary>Data channel (20/04 §3.2): the api sends OpenDataChannel{session, token, target} on the control channel;
+/// the agent opens a new TCP connection to :7443 with DataChannelHello → the api matches it by session.</summary>
 public sealed class DataChannelBroker(AgentRegistry agents, ILogger<DataChannelBroker> log)
 {
     private sealed record Pending(string Token, TaskCompletionSource<Stream> Ready);
@@ -39,7 +37,7 @@ public sealed class DataChannelBroker(AgentRegistry agents, ILogger<DataChannelB
         finally { _pending.TryRemove(id, out _); }
     }
 
-    /// <summary>Called from AgentListener when a connection starts with DataChannelHello. Holds the connection until the HTTP side closes the stream.</summary>
+    /// <summary>Called from AgentListener when a connection starts with DataChannelHello.</summary>
     public async Task AcceptAsync(DataChannelHello hello, Stream stream, CancellationToken ct)
     {
         if (!_pending.TryRemove(hello.SessionId, out var p) || !System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(

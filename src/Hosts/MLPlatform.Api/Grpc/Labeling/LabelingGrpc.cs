@@ -99,10 +99,8 @@ public sealed class LabelingGrpc(IMediator mediator, CurrentUser user, HermesLab
         return v is null ? new NextItemResponse { Empty = true } : new NextItemResponse { Item = ToProto(v) };
     }
 
-    /// <summary>
-    /// First time an item of a version is opened: the YOLO label file next to the image (imported datasets, exported label versions) becomes
-    /// editable labels. A source that cannot be read leaves the item unlabeled; the next open tries again.
-    /// </summary>
+    /// <summary>First time an item of a version is opened: the YOLO label file next to the image (imported datasets,
+    /// exported label versions) becomes editable labels.</summary>
     private async Task<bool> ImportExistingAsync(Guid ws, Guid pid, string path, CancellationToken ct)
     {
         var url = await mediator.Query(new ResolveItemLabelFileQuery(ws, pid, path), ct);
@@ -171,7 +169,6 @@ public sealed class LabelingGrpc(IMediator mediator, CurrentUser user, HermesLab
     {
         var ws = G(r.WorkspaceId, "workspace_id"); var pid = G(r.ProjectId, "project_id");
         var res = new ItemStatus { Status = await mediator.Send(new SubmitLabelItemCommand(ws, pid, r.Path), ctx.CancellationToken) };
-        // Hermes runs right after the submit is committed; a failing check never undoes the submit (it is recorded as an error check).
         try
         {
             if (await hermes.CheckAsync(mediator, ws, pid, r.Path, "submit", ctx.CancellationToken) is { } check)

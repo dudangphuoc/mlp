@@ -10,12 +10,8 @@ using ServiceDescriptor = Google.Protobuf.Reflection.ServiceDescriptor;
 
 namespace MLPlatform.Api.Http.Mcp;
 
-/// <summary>
-/// MCP server (Model Context Protocol, Streamable HTTP transport, JSON responses) at <c>POST /mcp</c>: external AI agents (Claude, Cursor,
-/// custom agents) operate the platform with a user API key (<c>Authorization: Bearer …</c>). Every tool is one platform RPC called over the
-/// local gRPC port with the caller's token, so permissions, validation and business rules are exactly the platform's own; input schemas are
-/// generated from the proto messages. No delete operations are exposed.
-/// </summary>
+/// <summary>MCP server (Model Context Protocol, Streamable HTTP transport, JSON responses) at POST /mcp : external AI
+/// agents (Claude, Cursor, custom agents) operate the platform with a user API key ( Authorization.</summary>
 public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
 {
     private const string Protocol = "2025-06-18";
@@ -96,7 +92,6 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
         JsonNode? body;
         try { body = await JsonNode.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted); }
         catch (System.Text.Json.JsonException) { await WriteAsync(http, Error(null, -32700, "Parse error")); return; }
-        // Bearer API key (agents) or the web session cookie (same-origin tools such as WebMCP in the browser)
         var auth = http.Request.Headers.Authorization.ToString();
         var token = auth.StartsWith("Bearer ", StringComparison.Ordinal) ? auth[7..] : http.Request.Cookies[AuthMiddleware.Cookie] ?? "";
         if (body is JsonArray batch)
@@ -108,7 +103,7 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
             return;
         }
         var res = await DispatchAsync(body as JsonObject, token, http.RequestAborted);
-        if (res is null) { http.Response.StatusCode = 202; return; }   // notification
+        if (res is null) { http.Response.StatusCode = 202; return; }
         await WriteAsync(http, res);
     }
 
@@ -123,7 +118,7 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
         if (m is null) return Error(null, -32600, "Invalid request");
         var id = m["id"]?.DeepClone();
         var method = m["method"]?.ToString() ?? "";
-        if (id is null) return null;   // notifications (initialized, cancelled…) need no answer
+        if (id is null) return null;
         try
         {
             return method switch
@@ -149,7 +144,8 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
         }
     }
 
-    /// <summary>A proto file may declare several services: the method is looked up in every service of the tool's file.</summary>
+    /// <summary>A proto file may declare several services: the method is looked up in every service of the tool's
+    /// file.</summary>
     private static MethodDescriptor? Find(Tool t) =>
         t.Service.FindMethodByName(t.Method) ?? t.Service.File.Services.Select(s => s.FindMethodByName(t.Method)).FirstOrDefault(m => m is not null);
 
@@ -164,7 +160,8 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
         };
     }
 
-    /// <summary>JSON Schema of a proto message (field names as in the proto; the platform accepts them as they are).</summary>
+    /// <summary>JSON Schema of a proto message (field names as in the proto; the platform accepts them as they
+    /// are).</summary>
     private static JsonObject Schema(MessageDescriptor d, int depth)
     {
         if (d.FullName == "google.protobuf.Timestamp") return new JsonObject { ["type"] = "string", ["format"] = "date-time" };
@@ -194,7 +191,6 @@ public sealed class McpServer(IConfiguration cfg, ILogger<McpServer> log)
         if (md is null) return ToolError($"Tool {name} is not available on this server");
         var args = p?["arguments"] as JsonObject ?? [];
         var headers = new Metadata { { "authorization", "Bearer " + token } };
-        // workspace_id defaults to the caller's first workspace
         if (md.InputType.FindFieldByName("workspace_id") is not null && string.IsNullOrEmpty(args["workspace_id"]?.ToString()) && string.IsNullOrEmpty(args["workspaceId"]?.ToString()))
         {
             var ws = (ListWorkspacesResponse)await InvokeAsync(Find(ByName["list_workspaces"])!, new Empty(), headers, ct);

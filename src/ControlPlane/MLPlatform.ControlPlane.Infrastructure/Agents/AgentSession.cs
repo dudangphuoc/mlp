@@ -26,7 +26,8 @@ public sealed class AgentSession(Guid hostId, Guid workspaceId, Connection<Agent
     public ConnectionHello? Hello { get; init; }
     public string OverlayIp { get; init; } = "";
 
-    /// <summary>Recent commands sent to this agent, newest last — shown on the machine so nothing happens on it unseen.</summary>
+    /// <summary>Recent commands sent to this agent, newest last — shown on the machine so nothing happens on it
+    /// unseen.</summary>
     public sealed class CommandTrace(string id, string kind, string detail, DateTimeOffset started, TimeSpan limit)
     {
         public string Id { get; } = id;
@@ -35,7 +36,7 @@ public sealed class AgentSession(Guid hostId, Guid workspaceId, Connection<Agent
         public DateTimeOffset Started { get; } = started;
         public TimeSpan Limit { get; } = limit;
         public DateTimeOffset? Finished { get; set; }
-        public string State { get; set; } = "running";   // running | ok | failed | timeout | lost
+        public string State { get; set; } = "running";
         public string Message { get; set; } = "";
     }
     private readonly Queue<CommandTrace> _trace = new();

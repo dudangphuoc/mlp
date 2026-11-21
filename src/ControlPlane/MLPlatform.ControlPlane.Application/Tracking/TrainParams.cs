@@ -12,7 +12,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Checks training parameters against the recipe's schema (type, minimum, maximum, multipleOf, enum) before anything is queued.</summary>
+/// <summary>Checks training parameters against the recipe's schema (type, minimum, maximum, multipleOf, enum) before
+/// anything is queued.</summary>
 public static class TrainParams
 {
     public static Dictionary<string, string> Validate(JsonObject values, JsonObject schema)
@@ -57,7 +58,8 @@ public static class TrainParams
     private static double? Num(JsonObject def, string name) => def[name] is JsonValue v && v.TryGetValue<double>(out var d) ? d : null;
     private static string Text(double d) => d.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>`data.input` is a format name, or a map task → format; "none" (or absent) means the recipe brings no training data.</summary>
+    /// <summary>`data.input` is a format name, or a map task → format; "none" (or absent) means the recipe brings no
+    /// training data.</summary>
     public static bool NeedsData(JsonObject manifest, string task)
     {
         var input = manifest["data"]?["input"];

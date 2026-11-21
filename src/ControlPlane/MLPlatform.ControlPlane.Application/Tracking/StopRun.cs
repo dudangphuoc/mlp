@@ -12,7 +12,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>Stop a run that is waiting or training: marks it cancelled and returns its job so the host stops the container (WorkloadLauncher.StopJobAsync).</summary>
+/// <summary>Stop a run that is waiting or training: marks it cancelled and returns its job so the host stops the
+/// container (WorkloadLauncher.StopJobAsync).</summary>
 public sealed record StopRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<Guid?>;
 
 /// <summary>Marks the run cancelled; the host then stops the job.</summary>

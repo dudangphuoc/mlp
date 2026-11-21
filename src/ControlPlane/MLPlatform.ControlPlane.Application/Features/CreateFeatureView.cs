@@ -12,7 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
-/// <summary>Creates a feature view (same name → new version; the old one is kept so earlier training stays reproducible), then materializes it immediately.</summary>
+/// <summary>Creates a feature view (same name → new version; the old one is kept so earlier training stays
+/// reproducible), then materializes it immediately.</summary>
 public sealed record CreateFeatureViewCommand(Guid WorkspaceId, string Name, string Entity, Guid SourceVersionId, string TimestampColumn,
     IReadOnlyList<string> Features, int TtlHours, bool Online, int? MaterializeEveryMin) : ICommand<ViewRow>;
 
@@ -30,7 +31,6 @@ public sealed class CreateFeatureViewCommandHandler(IWriteSession db, IClock clo
         var names = c.Features.Count > 0 ? c.Features.ToList() : header.Where(h => h != entity.JoinKey && h != ts).ToList();
         var unknown = names.Where(n => !header.Contains(n)).ToList();
         if (unknown.Count > 0) throw new InvalidArgumentException("FEATURE_SOURCE_COLUMN_MISSING", "Source has no columns: " + string.Join(", ", unknown));
-        // Type inferred from data: every non-empty value is numeric → number, otherwise string.
         var defs = new JsonArray(names.Select(n =>
         {
             var i = Array.IndexOf(header, n);

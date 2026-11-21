@@ -16,12 +16,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Pipelines;
 
-/// <summary>
-/// Pipeline definition (M14 §2): `{"params":{…defaults}, "steps":[{"id","kind","needs":[…],"config":{…},"retries":0}]}`.
-/// Steps: `dataset` (import from Hugging Face / URL / S3 into a dataset version + its classes), `train` (M09 run), `job` (M03 job),
-/// `gate` (condition), `register` (M11 from run), `promote` (change stage).
-/// Strings in config may reference `${params.x}` / `${steps.&lt;id&gt;.&lt;field&gt;}` (when the whole string is one reference → the original type is kept).
-/// </summary>
+/// <summary>Pipeline definition (M14 §2): `{"params":{…defaults},
+/// "steps":[{"id","kind","needs":[…],"config":{…},"retries":0}]}`.</summary>
 public static partial class PipelineDef
 {
     public sealed record Step(string Id, string Kind, string[] Needs, JsonObject Config, int Retries);
@@ -59,7 +55,6 @@ public static partial class PipelineDef
         foreach (var s in steps)
             foreach (var need in s.Needs)
                 if (steps.All(x => x.Id != need)) throw Bad($"Step {s.Id} needs '{need}', which does not exist");
-        // Cycle check (Kahn)
         var indeg = steps.ToDictionary(s => s.Id, s => s.Needs.Length);
         var queue = new Queue<string>(indeg.Where(kv => kv.Value == 0).Select(kv => kv.Key));
         var seen = 0;

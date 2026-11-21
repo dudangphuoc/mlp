@@ -6,11 +6,12 @@ namespace MLPlatform.Agent;
 /// <summary>Agent configuration + credentials (a file in the agent data folder, mode 600; 20/04 §2).</summary>
 public sealed class AgentOptions
 {
-    public string ControlPlane { get; set; } = "";     // host:port
+    public string ControlPlane { get; set; } = "";
     public bool UseTls { get; set; } = true;
     /// <summary>SHA-256 (hex) of the control plane TLS certificate; pinned when using a self-signed certificate.</summary>
     public string? CertPin { get; set; }
-    /// <summary>Service manager running the agent (systemd | launchd | schtasks | none); written by the install script, used by OTA to restart.</summary>
+    /// <summary>Service manager running the agent (systemd | launchd | schtasks | none); written by the install script,
+    /// used by OTA to restart.</summary>
     public string ServiceManager { get; set; } = "none";
     public string DataPath { get; set; } = "";
     public string ModelsPath { get; set; } = "";
@@ -18,7 +19,8 @@ public sealed class AgentOptions
     public string? Credential { get; set; }
     public string? HostId { get; set; }
     public string? OverlayIp { get; set; }
-    /// <summary>SHA-256 of the enrollment token already used; a service restart with the same --token does not enroll again.</summary>
+    /// <summary>SHA-256 of the enrollment token already used; a service restart with the same --token does not enroll
+    /// again.</summary>
     public string? UsedEnrollTokenHash { get; set; }
 
     public static string DefaultStateDir() =>

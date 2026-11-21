@@ -14,7 +14,8 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 
 // ───────────── Drift + quality ─────────────
 
-/// <summary>Computes a drift/quality snapshot over the `last_n` most recent predictions (0 = window_size); records the snapshot; transition to alert → M16.</summary>
+/// <summary>Computes a drift/quality snapshot over the `last_n` most recent predictions (0 = window_size); records the
+/// snapshot; transition to alert → M16.</summary>
 public sealed record ComputeDriftCommand(Guid WorkspaceId, Guid DeploymentId, int LastN) : ICommand<SnapshotRow>;
 
 public sealed class ComputeDriftCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IEnumerable<IDriftListener> listeners) : ICommandHandler<ComputeDriftCommand, SnapshotRow>

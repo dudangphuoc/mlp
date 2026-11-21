@@ -6,17 +6,15 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Per-attempt log store (20/10 §2.4): keeps the latest 2,000 lines in memory for realtime viewing; writes everything to S3 storage in ~1 MB chunks
-/// (`mlp-artifacts/{ws}/jobs/{job}/attempts/{attempt}/logs/{seq}.log`, line = "ts_ms\tcontent"). Deduplicated by source timestamp (resent after reconnect).
-/// </summary>
+/// <summary>Per-attempt log store (20/10 §2.4): keeps the latest 2,000 lines in memory for realtime viewing; writes
+/// everything to S3 storage in ~1 MB chunks
 public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBroker broker, ILogger<LogStore> log)
 {
     private sealed class Buf
     {
         public readonly LinkedList<(long Ts, string Text)> Tail = new();
         public readonly StringBuilder Pending = new();
-        public readonly List<string> Trial = [];   // "[mlp-trial]" lines of the attempt, kept whole (the tail drops old lines)
+        public readonly List<string> Trial = [];
         public long LastTs = long.MinValue;
         public int Seq;
         public Guid JobId, WorkspaceId;
@@ -40,7 +38,7 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
             for (var i = 0; i < lines.Count; i++)
             {
                 var t = i < ts.Count ? ts[i] : 0;
-                if (t != 0 && t < b.LastTs) continue;          // already have it (duplicate resend)
+                if (t != 0 && t < b.LastTs) continue;
                 if (t == b.LastTs && b.Tail.Last?.Value.Text == lines[i]) continue;
                 b.LastTs = Math.Max(b.LastTs, t);
                 b.Tail.AddLast((t, lines[i]));
@@ -60,9 +58,7 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
         lock (b) return b.Tail.Where(x => x.Ts > afterTs).TakeLast(max).ToList();
     }
 
-    /// <summary>
-    /// The trial lines of an attempt: from memory, or — after an api restart — from the stored log. Each line is a whole <c>[mlp-trial] {json}</c>.
-    /// </summary>
+    /// <summary>The trial lines of an attempt: from memory, or — after an api restart — from the stored log.</summary>
     public async Task<IReadOnlyList<string>> TrialLinesAsync(Guid workspace, Guid job, Guid attempt, CancellationToken ct)
     {
         if (_bufs.TryGetValue(attempt, out var b))
@@ -71,13 +67,13 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
             .Where(l => l.Contains("[mlp-trial] ", StringComparison.Ordinal)).ToList();
     }
 
-    /// <summary>Read the last <paramref name="max"/> lines from storage (memory only keeps the newest ones, and nothing after an api restart).</summary>
+    /// <summary>Read the last max lines from storage (memory only keeps the newest ones, and nothing after an api
+    /// restart).</summary>
     public async Task<IReadOnlyList<(long Ts, string Text)>> ReadPersistedAsync(Guid workspace, Guid job, Guid attempt, int max, CancellationToken ct)
     {
         var prefix = $"{workspace}/jobs/{job}/attempts/{attempt}/logs/";
         var chunks = new List<List<(long, string)>>();
         var count = 0;
-        // Newest chunk first, until enough lines are collected; 400 chunks bounds the work for a very long job.
         foreach (var o in (await s3.ListAsync(MLPlatform.ControlPlane.Application.Data.Buckets.Artifacts, prefix, ct)).OrderByDescending(o => o.Key).Take(400))
         {
             var lines = new List<(long, string)>();
@@ -97,7 +93,8 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
         foreach (var attempt in _bufs.Keys) await FlushAsync(attempt);
     }
 
-    /// <summary>Write one attempt's buffered lines now (its container exited: the log must be complete in storage, not only in memory).</summary>
+    /// <summary>Write one attempt's buffered lines now (its container exited: the log must be complete in storage, not
+    /// only in memory).</summary>
     public async Task FlushAsync(Guid attempt)
     {
         if (!_bufs.TryGetValue(attempt, out var b)) return;
@@ -108,8 +105,6 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
 
     private async Task PersistAsync(Guid attempt, Buf b, int seq, string data)
     {
-        // The chunk name is its write time, not a counter: a counter restarts at 0 with the api and would overwrite the chunks of an attempt
-        // that is still running. Names sort in write order, after the counter-named chunks of older attempts.
         var key = $"{b.WorkspaceId}/jobs/{b.JobId}/attempts/{attempt}/logs/{TimeProvider.System.GetUtcNow().ToUnixTimeMilliseconds():D15}-{seq:D4}.log";
         try
         {
@@ -117,7 +112,6 @@ public sealed class LogStore(IServiceScopeFactory scopes, S3Client s3, StreamBro
         }
         catch (Exception e) when (e is HttpRequestException or IOException or S3Exception or TaskCanceledException)
         {
-            // Storage refused or is unreachable: keep the lines for the next flush instead of losing them.
             lock (b) b.Pending.Insert(0, data);
             log.LogWarning("Saving log {Attempt} to storage failed (kept for the next flush): {M}", attempt, e.Message);
         }

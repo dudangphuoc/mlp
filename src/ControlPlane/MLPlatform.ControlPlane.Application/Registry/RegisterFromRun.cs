@@ -9,10 +9,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>
-/// Registers a model version from a run (M11 §5.1, R5): server-side copy of the run's model directory to
-/// `mlp-artifacts/{ws}/models/{model}/v{n}/` (immutable, R1); final metrics and recipe/variant are recorded on the version (R7).
-/// </summary>
+/// <summary>Registers a model version from a run (M11 §5.1, R5): server-side copy of the run's model directory to
+/// `mlp-artifacts/{ws}/models/{model}/v{n}/` (immutable, R1).</summary>
 public sealed record RegisterFromRunCommand(Guid WorkspaceId, Guid RunId, string ModelName, string Description) : ICommand<ModelVersionRow>;
 
 public sealed class RegisterFromRunCommandHandler(IWriteSession db, S3Client s3, IClock clock, WorkspaceAuthorizer auth, IMediator mediator)

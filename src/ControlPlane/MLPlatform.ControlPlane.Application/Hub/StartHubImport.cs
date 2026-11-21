@@ -7,15 +7,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Hub;
 
-/// <summary>
-/// Starts an import from HF Hub. Dataset: creates a new dataset if none is selected (task required); Model: checks model.write permission.
-/// A worker in the api downloads files from HF and streams them straight to S3 storage (no temporary copy).
-/// </summary>
-/// <summary>
-/// Import into a dataset or model. Source: "hf" (Repo = org/name, Include = globs), "url" (Include = https URLs, Repo unused),
-/// "s3" (Repo = s3://bucket/prefix in our storage). Mode: "copy" = files are copied into our storage now; "reference" = only the
-/// addresses are recorded and machines download from the source when a job uses the version.
-/// </summary>
+/// <summary>Starts an import from HF Hub.</summary>
 public sealed record StartHubImportCommand(Guid WorkspaceId, string Kind, string Repo, string Revision, string[] Include, Guid? DatasetId,
     string TargetName, string Task, string Source = "hf", string Mode = "copy") : ICommand<Guid>;
 

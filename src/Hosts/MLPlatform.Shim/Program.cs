@@ -2,8 +2,6 @@ using System.Text.Json.Nodes;
 using MLPlatform.Recipes;
 using MLPlatform.Shim;
 
-// mlp-shim run --spec <job.json>          : run one attempt (entrypoint of every workload container)
-// mlp-shim selfcheck <manifest> <tasks>   : M17 R2a
 if (args is ["selfcheck", var manifestPath, var tasksPath])
 {
     var known = (YamlJson.Parse(File.ReadAllText(tasksPath))?["tasks"] as JsonArray)?
@@ -16,7 +14,7 @@ if (args is ["selfcheck", var manifestPath, var tasksPath])
 }
 if (args is ["run", "--spec" or "--spec-env", var specPath])
 {
-    var cts = new CancellationTokenSource();   // not disposed: ProcessExit/SIGTERM may arrive after Run finishes
+    var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
     System.Runtime.InteropServices.PosixSignalRegistration.Create(System.Runtime.InteropServices.PosixSignal.SIGTERM, c => { c.Cancel = true; cts.Cancel(); });
     try
@@ -27,7 +25,6 @@ if (args is ["run", "--spec" or "--spec-env", var specPath])
     }
     catch (OperationCanceledException) when (cts.IsCancellationRequested)
     {
-        // SIGTERM (stop/cancel/agent relocation): exit like a TERM-ed process → the scheduler treats it as an infrastructure error (retry from checkpoint).
         Console.Error.WriteLine("[mlp-shim] received SIGTERM; stopping");
         return 143;
     }

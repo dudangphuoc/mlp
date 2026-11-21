@@ -11,4 +11,4 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-public sealed record AiQuestion(string Id, string Type, string Instructions, IReadOnlyList<AiOption> Options);   // Type: choice | score | noul
+public sealed record AiQuestion(string Id, string Type, string Instructions, IReadOnlyList<AiOption> Options);

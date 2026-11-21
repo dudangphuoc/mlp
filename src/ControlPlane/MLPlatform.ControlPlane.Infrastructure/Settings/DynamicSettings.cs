@@ -4,7 +4,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Reads dynamic settings from the DB, cached 15 s (changes in the UI take effect almost immediately).</summary>
+/// <summary>Reads dynamic settings from the DB, cached 15 s (changes in the UI take effect almost
+/// immediately).</summary>
 public sealed class DynamicSettings(IServiceScopeFactory scopes, SecretBox box, MLPlatform.Security.IClock clock)
 {
     private readonly Dictionary<string, (DateTimeOffset At, ResolvedSetting? Value)> _cache = [];

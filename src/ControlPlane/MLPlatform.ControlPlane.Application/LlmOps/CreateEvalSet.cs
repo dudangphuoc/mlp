@@ -12,7 +12,8 @@ namespace MLPlatform.ControlPlane.Application.LlmOps;
 
 // ───────────── Eval ─────────────
 
-/// <summary>Eval set: `[{"vars":{…}, "expect":{"contains","not_contains","equals","regex","max_chars"}}]` (≤ 100 cases).</summary>
+/// <summary>Eval set: `[{"vars":{…}, "expect":{"contains","not_contains","equals","regex","max_chars"}}]` (≤ 100
+/// cases).</summary>
 public sealed record CreateEvalSetCommand(Guid WorkspaceId, string Name, string CasesJson) : ICommand<EvalSetRow>;
 
 public sealed class CreateEvalSetCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<CreateEvalSetCommand, EvalSetRow>

@@ -6,11 +6,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Tracking;
 
-/// <summary>
-/// R30: the data links in a training's job spec are signed when the job is submitted and expire after 24 hours. Every attempt launch signs them
-/// again (same files, same version — only the links change), so a run that queued for a day or retried after a long stage still downloads its data.
-/// Returns the spec unchanged when it has no dataset version.
-/// </summary>
+/// <summary>R30: the data links in a training's job spec are signed when the job is submitted and expire after 24
+/// hours.</summary>
 public sealed record RefreshRunDataUrlsCommand(Guid WorkspaceId, Guid RunId, string SpecJson) : ICommand<string>, IInternalCommand;
 
 /// <summary>Re-signs the data links of a run's job spec from the dataset version, keeping the same file set.</summary>
@@ -20,7 +17,6 @@ public sealed class RefreshRunDataUrlsCommandHandler(IReadSession db, S3Client s
     {
         if (JsonNode.Parse(c.SpecJson) is not JsonObject spec || !Guid.TryParse(spec["datasetVersionId"]?.ToString(), out var versionId)) return c.SpecJson;
         var listKey = $"{c.WorkspaceId}/runs/{c.RunId}/data-files.json";
-        // The files the run was given (a trial gets a subset): from the inline list, or from the stored list the shim reads by link.
         HashSet<string> paths;
         if (spec["dataFiles"] is JsonArray inline) paths = inline.Select(f => f?["path"]?.ToString()).OfType<string>().ToHashSet();
         else if (spec["dataFilesUrl"] is not null && await s3.GetAsync(Buckets.Artifacts, listKey, ct) is { } stored
@@ -29,7 +25,7 @@ public sealed class RefreshRunDataUrlsCommandHandler(IReadSession db, S3Client s
         else return c.SpecJson;
 
         var version = await db.GetVersionAsync(versionId, c.WorkspaceId, ct);
-        if (version is null) return c.SpecJson;   // version deleted: keep the old links, the shim reports what it cannot download
+        if (version is null) return c.SpecJson;
         var files = (await VersionFileUrls.SignAsync(db, s3, version, ct)).Where(f => paths.Contains(f.Path))
             .Select(f => (JsonNode)f.ToJson()).ToArray();
         var list = new JsonArray(files);

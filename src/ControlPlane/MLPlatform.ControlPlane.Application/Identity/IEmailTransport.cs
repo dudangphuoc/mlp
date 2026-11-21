@@ -5,7 +5,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Identity;
 
-/// <summary>Email sending gateway (SMTP per the dynamic "email" config in api; when disabled → nothing is sent, emails stay queued and the Admin copies links manually — D-27).</summary>
+/// <summary>Email sending gateway (SMTP per the dynamic "email" config in api; when disabled → nothing is sent, emails
+/// stay queued and the Admin copies links manually — D-27).</summary>
 public interface IEmailTransport
 {
     Task<bool> IsConfiguredAsync(CancellationToken ct);

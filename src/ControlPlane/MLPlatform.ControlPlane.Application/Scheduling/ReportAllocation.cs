@@ -6,7 +6,7 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>Holder reports an allocation. Returns the allocation list once every machine has reported (so the api sends StartWorkload), otherwise null.</summary>
+/// <summary>Holder reports an allocation.</summary>
 public sealed record ReportAllocationCommand(string Token, Guid AttemptId, Guid HostId, string[] GpuUuids, string NodeIp, bool Ok, string Message)
     : ICommand<AllocationComplete?>;
 
@@ -22,7 +22,6 @@ public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock cloc
         if (!c.Ok)
         {
             await db.SetAttemptStateAsync(a.Id, "failed", null, c.Message, "Could not reserve resources", clock.UtcNow, ct);
-            // Say what the job is waiting for and who holds it — a silent retry loop looks like a hang to the user.
             var spec = JobSpecDto.Parse(a.Spec);
             var holders = spec.Gpus > 0
                 ? (await db.HostAttemptJobsAsync(a.WorkspaceId, ct))

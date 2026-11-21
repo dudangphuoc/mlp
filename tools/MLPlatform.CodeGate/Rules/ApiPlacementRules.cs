@@ -2,7 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace MLPlatform.CodeGate.Rules;
 
-/// <summary>MLPAPI001: endpoints are mapped only under Api/Grpc and Api/Http; gRPC service classes live only under Api/Grpc.</summary>
+/// <summary>MLPAPI001: endpoints are mapped only under Api/Grpc and Api/Http; gRPC service classes live only under
+/// Api/Grpc.</summary>
 public static partial class ApiPlacementRules
 {
     private const string ApiRoot = "src/Hosts/MLPlatform.Api/";

@@ -14,10 +14,8 @@ namespace MLPlatform.ControlPlane.Application.Serving;
 
 // ───────────── Model playground: test replicas + calls with the user's session ─────────────
 
-/// <summary>
-/// "Test model": reuse a running replica of the model version, or start a test replica that stops itself after
-/// <see cref="TestReplica.IdleStopMin"/> minutes without calls. Gpus &lt; 0 = follow the recipe (environment.gpu: required → 1 GPU).
-/// </summary>
+/// <summary>"Test model": reuse a running replica of the model version, or start a test replica that stops itself after
+/// IdleStopMin minutes without calls.</summary>
 public sealed record StartTestDeploymentCommand(Guid WorkspaceId, Guid ModelVersionId, int Gpus, string? ImageOverride) : ICommand<DeploymentRow>;
 
 public sealed class StartTestDeploymentCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IMediator mediator)

@@ -8,10 +8,11 @@ using MLPlatform.Recipes;
 
 namespace MLPlatform.Shim;
 
-/// <summary>Lifecycle of one attempt (20/08 §5.1): build the command → run → collect metrics → build outputs → exit code (§12).</summary>
+/// <summary>Lifecycle of one attempt (20/08 §5.1): build the command → run → collect metrics → build outputs → exit
+/// code (§12).</summary>
 public sealed partial class Runner(JobSpec spec, TextWriter log)
 {
-    private Action<string>? _tap;   // trial: sees every line of the recipe process (stdout and stderr)
+    private Action<string>? _tap;
     private readonly string _mlpDir = Path.Combine(spec.Output, ".mlp");
     private string? _userError;
     private bool _oomSeen;
@@ -43,10 +44,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         finally { RemoveView(); }
     }
 
-    /// <summary>
-    /// Runs the entrypoint's command once and collects its metrics. <paramref name="extra"/> = config overrides the recipe reads from
-    /// <c>MLP_EXTRA_JSON</c> (trial passes, denser progress lines) — never spliced into the command template.
-    /// </summary>
+    /// <summary>Runs the entrypoint's command once and collects its metrics.</summary>
     private async Task<int> ExecuteAsync(JsonObject entry, JsonObject? extra, TrackingSink? sink, CancellationToken ct)
     {
         var ops = _ops;
@@ -59,7 +57,6 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
 
         var metricsDef = entry["metrics"] as JsonObject ?? spec.Manifest["metrics"] as JsonObject ?? [];
         var collector = new MetricCollector(metricsDef, s => Template.Render(s, spec.Resolve, RenderMode.Raw));
-        // R24/R25: progress from the recipe's own lines; epoch metrics land on the global step axis, values from lines at the current step.
         var train = new TrainProgress(entry["progress"] as JsonObject);
         _train = train.Enabled ? train : null;
         collector.EpochToStep = e => train.Steps > 0 ? (e + 1) * train.Steps : null;
@@ -89,14 +86,12 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
 
-        // SIGTERM from the agent → forward to the child process, wait 60 s (20/08 §5.1 step 8)
         using var reg = ct.Register(() =>
         {
-            try { Process.Start("kill", ["-TERM", proc.Id.ToString()])?.WaitForExit(2000); } catch { /* already exited */ }
+            try { Process.Start("kill", ["-TERM", proc.Id.ToString()])?.WaitForExit(2000); } catch { }
             if (!proc.WaitForExit(60_000)) proc.Kill(entireProcessTree: true);
         });
 
-        // `running` step progress follows the recipe's `progress` declaration (20/10 §2.2): step/epoch metric → current = highest step + 1.
         var progressDef = entry["progress"] as JsonObject;
         var progressMetric = progressDef?["metric"]?.GetValue<string>();
         double progressTotal = 0;
@@ -146,7 +141,8 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         return code;
     }
 
-    /// <summary>Exit code of the recipe process → model folder and upload (train), export list, or the failure class (20/08 §12).</summary>
+    /// <summary>Exit code of the recipe process → model folder and upload (train), export list, or the failure class
+    /// (20/08 §12).</summary>
     private async Task<int> CompleteAsync(int code, JsonObject entry, TrackingSink? sink, CancellationToken ct)
     {
         var ops = _ops;
@@ -167,7 +163,6 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         }
         if (_failure is { } nf)
         {
-            // R26: a declared failure (e.g. loss became NaN) — retrying the same attempt cannot fix it. MLP_FAIL carries the reason to the control plane.
             log.WriteLine("MLP_FAIL " + new JsonObject { ["reason"] = nf.Reason, ["message"] = nf.Message }.ToJsonString());
             return Fail(2, nf.Reason, nf.Message);
         }
@@ -175,13 +170,11 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         if (code == 2 || _userError is not null) return Fail(2, "user_error", _userError ?? "User error");
         if (code is 126 or 127) return Fail(3, "recipe_error", "The recipe command could not run (not found or not permitted)");
         if (_recipeError is not null) return Fail(3, "recipe_error", "The recipe image is missing a dependency: " + _recipeError);
-        return code;   // anything else → infrastructure error, the scheduler retries
+        return code;
     }
 
-    /// <summary>
-    /// Fleet autonomy (D-40): training finished but the control plane or storage is unreachable → keep the result on the run volume
-    /// and retry with backoff (up to MLP_UPLOAD_WAIT_HOURS, default 24) instead of failing a finished run.
-    /// </summary>
+    /// <summary>Fleet autonomy (D-40): training finished but the control plane or storage is unreachable → keep the
+    /// result on the run volume and retry with backoff (up to MLP_UPLOAD_WAIT_HOURS.</summary>
     private async Task UploadWhenReachableAsync(Func<Task> upload, OpsReporter? ops, CancellationToken ct)
     {
         var limit = TimeSpan.FromHours(double.TryParse(Environment.GetEnvironmentVariable("MLP_UPLOAD_WAIT_HOURS"), System.Globalization.CultureInfo.InvariantCulture, out var h) && h > 0 ? h : 24);
@@ -203,11 +196,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         }
     }
 
-    /// <summary>
-    /// Download the dataset version's files (20/08 §5.1 step 2), 4 at a time. Large lists come from <c>dataFilesUrl</c> (an env var holds at most 128 KB).
-    /// Files land on the run's volume (<c>{output}/.mlp/data</c>), so a retried attempt on the same machine only fetches what is missing.
-    /// HTTP 429/503 (e.g. Hugging Face rate limits) pauses every download until Retry-After, then backs off. Failure → code 1 (the scheduler retries).
-    /// </summary>
+    /// <summary>Download the dataset version's files (20/08 §5.1 step 2), 4 at a time.</summary>
     private async Task DownloadDataAsync(CancellationToken ct)
     {
         if (spec.Data is null) return;
@@ -228,13 +217,13 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
                 f["size"] is JsonValue sv && sv.TryGetValue<long>(out var size) ? size : -1, f["id"]?.GetValue<string>())).ToList(), ct);
             return;
         }
-        if (Directory.Exists(spec.Output)) spec.Data = Path.Combine(_mlpDir, "data");   // cache on the run volume (kept across attempts)
+        if (Directory.Exists(spec.Output)) spec.Data = Path.Combine(_mlpDir, "data");
         var files = list.OfType<JsonObject>().Select(f => (Path: f["path"]!.GetValue<string>(), Url: f["url"]!.GetValue<string>())).ToList();
         var root = Path.GetFullPath(spec.Data);
         long total = 0;
         var done = 0;
         var cached = 0;
-        long pauseUntil = 0;   // Environment.TickCount64 before which nobody sends a request (shared rate-limit pause)
+        long pauseUntil = 0;
         using var progress = new CancellationTokenSource();
         var reporter = Task.Run(async () =>
         {
@@ -318,17 +307,14 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         log.WriteLine($"[mlp-shim] pretrained weights: {url} → {path}");
     }
 
-    /// <summary>
-    /// The recipe reads COCO (<c>data.input: coco</c>) → run the platform converter baked into the image (YOLO / COCO tree → COCO {train,val}).
-    /// It links images instead of copying them and writes annotations with class ids 0..N-1 in the dataset's class order.
-    /// </summary>
+    /// <summary>The recipe reads COCO ( data.input: coco ) → run the platform converter baked into the image (YOLO /
+    /// COCO tree → COCO {train,val}).</summary>
     private async Task ConvertDataAsync(CancellationToken ct)
     {
         const string converter = "/opt/mlp-convert/to_coco.py";
         if (spec.Data is not { } data || !Directory.Exists(data) || spec.Entrypoint != "train"
             || spec.Manifest["data"]?["input"]?.GetValue<string>() != "coco" || !File.Exists(converter)) return;
         if (_ops is not null) await _ops.ProgressAsync("preparing_data", 0, 1, "", "converting the dataset to COCO");
-        // On the run volume, never next to the data: the data may be a view inside the shared dataset cache (DataSync.cs).
         var dst = Path.Combine(_mlpDir, "data-coco");
         var psi = new ProcessStartInfo("python3") { RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var a in new[] { "-I", converter, "--src", data, "--dst", dst, "--classes", spec.Dataset["classes.names_json"]?.GetValue<string>() ?? "",
@@ -345,7 +331,8 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         spec.Data = dst;
     }
 
-    /// <summary>Checkpoint globs of the entrypoint, relative to {output}: `checkpoints` is one path or a list (R28: last.pth + best_stg1.pth).</summary>
+    /// <summary>Checkpoint globs of the entrypoint, relative to {output}: `checkpoints` is one path or a list (R28:
+    /// last.pth + best_stg1.pth).</summary>
     private List<string> CheckpointGlobs(JsonObject entry) => (entry["checkpoints"] switch
     {
         JsonArray a => a.Select(x => x?.GetValue<string>()).OfType<string>(),
@@ -353,11 +340,8 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         _ => [],
     }).Select(g => Path.GetRelativePath(spec.Output, Path.Combine(spec.Output, Template.Render(g, spec.Resolve, RenderMode.Raw)))).ToList();
 
-    /// <summary>
-    /// `MLP_RESUME_FROM` (20/10 §4.6), one entry per line: `local:&lt;name&gt;` = checkpoint still on the run's volume (same host);
-    /// `url:&lt;presigned&gt;|&lt;name&gt;|&lt;sha256&gt;` = durable copy in storage, downloaded to the right place and checked against its sha.
-    /// Several names (R28: last.pth and best_stg1.pth) are all restored; the one resumed from is the first in the recipe's `checkpoints` order.
-    /// </summary>
+    /// <summary>`MLP_RESUME_FROM` (20/10 §4.6), one entry per line: `local:<name>` = checkpoint still on the run's
+    /// volume (same host); `url:<presigned>|<name>|<sha256>` = durable copy in storage.</summary>
     private async Task RestoreCheckpointAsync(CancellationToken ct)
     {
         var from = Environment.GetEnvironmentVariable("MLP_RESUME_FROM");
@@ -431,14 +415,14 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
             }
         if (line.Contains("CUDA out of memory", StringComparison.Ordinal) || line.Contains("OutOfMemoryError", StringComparison.Ordinal))
             _oomSeen = true;
-        // A missing Python package is a broken recipe image, not a flaky machine: retrying the attempt cannot fix it.
         if (_recipeError is null)
             foreach (var marker in new[] { "ModuleNotFoundError: ", "ImportError: " })
                 if (line.IndexOf(marker, StringComparison.Ordinal) is >= 0 and var at) { _recipeError = line[at..].Trim(); break; }
         collector.OnLine(stream, line);
     }
 
-    /// <summary>`MLP_ERROR {json}` on a line = user error (20/08 §12): its message becomes the run's failure reason.</summary>
+    /// <summary>`MLP_ERROR {json}` on a line = user error (20/08 §12): its message becomes the run's failure
+    /// reason.</summary>
     private void CheckUserError(string line)
     {
         if (!line.StartsWith("MLP_ERROR ", StringComparison.Ordinal)) return;
@@ -525,7 +509,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
         if (spec.Dataset["classes.json_path"]?.GetValue<string>() is { } cj && File.Exists(cj))
             File.Copy(cj, Path.Combine(model, "classes.json"), overwrite: true);
         else if (spec.Dataset["classes.names_json"]?.GetValue<string>() is { Length: > 2 } names)
-            File.WriteAllText(Path.Combine(model, "classes.json"), names);   // class names by id, as the model was trained
+            File.WriteAllText(Path.Combine(model, "classes.json"), names);
         File.WriteAllText(Path.Combine(model, "signature.json"), new JsonObject { ["task"] = spec.Task }.ToJsonString());
 
         var lockDoc = new JsonObject
@@ -582,11 +566,8 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
     }
 }
 
-/// <summary>
-/// Trial mode (round 1 R15–R22): the same training on a small subset, in two natural passes — pass 1 ends after one stage-1 epoch,
-/// pass 2 resumes from its checkpoint into stage 2 — then packaging and a reload of the model through the serve handler.
-/// Every stage prints one <c>[mlp-trial] {json}</c> line when it starts and one when it ends; the control plane reads them from the job log.
-/// </summary>
+/// <summary>Trial mode (round 1 R15–R22): the same training on a small subset, in two natural passes — pass 1 ends
+/// after one stage-1 epoch.</summary>
 public sealed partial class Runner
 {
     private static readonly string[] TrialKeys = ["data", "stage1", "weights", "resume", "package", "reload"];
@@ -602,7 +583,6 @@ public sealed partial class Runner
         int trainImages = 0, valImages = 0;
         var pass1 = new List<string>();
         var pass2 = new List<string>();
-        // The first declared checkpoint is the one a resume starts from (last.pth); `checkpoints` may be one path or a list (R28).
         string? checkpoint = CheckpointGlobs(entry).FirstOrDefault() is { } ck ? Path.Combine(spec.Output, ck) : null;
 
         await StageAsync("data", async () =>
@@ -616,7 +596,6 @@ public sealed partial class Runner
 
         await StageAsync("stage1", async () =>
         {
-            // A retried attempt must not pass on files of the previous one.
             foreach (var f in BestNames().Append(checkpoint ?? "").Where(f => f.Length > 0))
                 foreach (var p in Glob(spec.Output, f)) if (File.Exists(p)) File.Delete(p);
             spec.Checkpoint = null;
@@ -679,7 +658,8 @@ public sealed partial class Runner
         return Fail(2, "trial_failed", _trialError ?? "Trial failed");
     }
 
-    /// <summary>One recipe pass with its lines captured; the metric state of an earlier pass does not leak into this one.</summary>
+    /// <summary>One recipe pass with its lines captured; the metric state of an earlier pass does not leak into this
+    /// one.</summary>
     private async Task<int> PassAsync(JsonObject entry, JsonObject? overrides, TrackingSink? sink, List<string> lines, CancellationToken ct)
     {
         (_oomSeen, _userError, _recipeError) = (false, null, null);
@@ -689,7 +669,7 @@ public sealed partial class Runner
         finally { _tap = null; }
     }
 
-    /// <summary>Runs one stage; after a failed stage the rest are skipped. Detail "skipped:…" marks the stage itself as skipped.</summary>
+    /// <summary>Runs one stage; after a failed stage the rest are skipped.</summary>
     private async Task StageAsync(string key, Func<Task<(bool Ok, string Detail)>> body)
     {
         if (_trialFailed) { TrialLine(key, "skipped", 0, "an earlier stage failed"); return; }
@@ -706,7 +686,7 @@ public sealed partial class Runner
         {
             TrialLine(key, "failed", sw.Elapsed.TotalSeconds, e.Message);
             (_trialFailed, _trialError) = (true, $"{key}: {e.Message}");
-            if (e.ExitCode == 1) throw;   // infrastructure (download, upload, fencing): let the scheduler retry the attempt
+            if (e.ExitCode == 1) throw;
         }
     }
 
@@ -742,10 +722,8 @@ public sealed partial class Runner
             .Count(f => ext.Contains(Path.GetExtension(f).ToLowerInvariant()));
     }
 
-    /// <summary>
-    /// Loads the packaged model through the recipe's serve handler (python -m mlp_serve.selftest) and predicts a few val images.
-    /// Anything the shim cannot provide (no handler, no mlp_serve in the image) → skipped, not failed.
-    /// </summary>
+    /// <summary>Loads the packaged model through the recipe's serve handler (python -m mlp_serve.selftest) and predicts
+    /// a few val images.</summary>
     private async Task<(bool, string)> SelfTestAsync(CancellationToken ct)
     {
         var handler = spec.Manifest["entrypoints"]?["serve"]?["handler"]?.GetValue<string>();

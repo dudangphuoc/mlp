@@ -6,7 +6,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>Where the api reads one dataset file from (internal URL) — the gRPC layer downloads a bounded prefix for previews.</summary>
+/// <summary>Where the api reads one dataset file from (internal URL) — the gRPC layer downloads a bounded prefix for
+/// previews.</summary>
 public sealed record ResolveDatasetFileQuery(Guid WorkspaceId, Guid DatasetId, Guid? VersionId, string Path) : IQuery<(string Url, long SizeBytes)>;
 
 public sealed class ResolveDatasetFileQueryHandler(IReadSession db, WorkspaceAuthorizer auth, S3Client s3) : IQueryHandler<ResolveDatasetFileQuery, (string Url, long SizeBytes)>

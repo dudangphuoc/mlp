@@ -7,7 +7,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Data;
 
-/// <summary>Presigned GETs (24 hours) for a version's files: stored files from the dataset bucket, reference files from their source.</summary>
+/// <summary>Presigned GETs (24 hours) for a version's files: stored files from the dataset bucket, reference files from
+/// their source.</summary>
 public static class VersionFileUrls
 {
     public static async Task<IReadOnlyList<VersionFileLink>> SignAsync(IReadSession db, S3Client s3, VersionRow v, CancellationToken ct) =>

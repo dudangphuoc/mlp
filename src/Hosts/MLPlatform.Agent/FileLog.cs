@@ -2,10 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MLPlatform.Agent;
 
-/// <summary>
-/// Logs to a file in the agent folder (a Windows Scheduled Task has no console). Opened per line with FileShare.ReadWrite|Delete;
-/// no file lock is held between writes (a wrapping cmd.exe once held agent.log and made the next startup fail). Rotates at 10 MB.
-/// </summary>
+/// <summary>Logs to a file in the agent folder (a Windows Scheduled Task has no console).</summary>
 public sealed class FileLoggerProvider(string path) : ILoggerProvider
 {
     private readonly Lock _gate = new();

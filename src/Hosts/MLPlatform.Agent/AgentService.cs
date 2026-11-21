@@ -8,11 +8,13 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>Maintains the control channel: enroll the first time, register afterwards, reconnect with backoff + jitter (20/04 §3).</summary>
+/// <summary>Maintains the control channel: enroll the first time, register afterwards, reconnect with backoff + jitter
+/// (20/04 §3).</summary>
 public sealed class AgentService(AgentState state, CommandHandler commands, TimeProvider time, ILogger<AgentService> log,
     IHostApplicationLifetime lifetime) : BackgroundService
 {
-    /// <summary>Version = agent source hash stamped by agent-builder at build time (OTA compares it with the control plane's current build); manual builds → "dev".</summary>
+    /// <summary>Version = agent source hash stamped by agent-builder at build time (OTA compares it with the control
+    /// plane's current build); manual builds → "dev".</summary>
     public static readonly string Version =
         (typeof(AgentService).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion.Split('+')[0] is { Length: > 0 } v && v != "1.0.0" ? v : "dev";
@@ -25,7 +27,6 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
         while (!stop.IsCancellationRequested)
         {
             Outcome outcome;
-            // Any network/TLS/protocol error (e.g. EOF when the proxy is still up but the control plane is down) is just one failed connection; the agent must NOT die.
             try { outcome = await ConnectOnceAsync(stop); }
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { return; }
             catch (Exception e)
@@ -80,7 +81,6 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
         if (!res.Ok)
         {
             log.LogError("Control plane rejected: {Reason}", res.ErrorReason);
-            // The enrollment token was already used but the host still has credentials (service restarted after enrolling) → register again with the credentials.
             if (res.ErrorReason == "FLEET_ENROLL_TOKEN_INVALID" && o.Credential is { Length: > 0 } && o.EnrollToken is not null)
             {
                 o.EnrollToken = null;
@@ -112,7 +112,6 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
         await conn.SendAsync(new AgentToControl { HostInfo = info }, stop);
         var run = conn.RunAsync(m => commands.HandleAsync(conn, m, stop), stop);
         await commands.OnConnectedAsync(conn, stop);
-        // Host + container + GPU metrics every 15 s (20/10 §2.5) until the channel closes.
         using var metricsCts = CancellationTokenSource.CreateLinkedTokenSource(stop);
         _ = Task.Run(async () =>
         {

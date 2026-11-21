@@ -8,7 +8,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>Keeps the shim's final sync report (progress detail <c>sync</c> with <c>final: true</c>) — the live progress is overwritten by later phases.</summary>
+/// <summary>Keeps the shim's final sync report (progress detail sync with final: true ) — the live progress is
+/// overwritten by later phases.</summary>
 public static class DataSyncRecorder
 {
     internal static string Size(long b) => b >= 1L << 30 ? $"{b / (double)(1L << 30):0.00} GB" : b >= 1L << 20 ? $"{b / (double)(1L << 20):0.0} MB"

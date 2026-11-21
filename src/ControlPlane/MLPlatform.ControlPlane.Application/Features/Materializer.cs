@@ -12,10 +12,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Features;
 
-/// <summary>
-/// Materialize (M07 §5): reads the source dataset version's CSV → offline store (full history by event time) → online store (latest row per entity).
-/// Fully rebuilt each time (idempotent). Data errors → view `failed` + reason, no throw (so the state is saved).
-/// </summary>
+/// <summary>Materialize (M07 §5): reads the source dataset version's CSV → offline store (full history by event time) →
+/// online store (latest row per entity).</summary>
 internal static class Materializer
 {
     public static async Task<ViewRow> RunAsync(IWriteSession db, S3Client s3, IClock clock, ViewRow v, CancellationToken ct)

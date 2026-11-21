@@ -7,9 +7,8 @@ using MLPlatform.Ray;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Replica probing (M12 R2/R5): every 5 s call ModelServer.Health; success → healthy, failure → degraded (the gateway drops it from routing).
-/// </summary>
+/// <summary>Replica probing (M12 R2/R5): every 5 s call ModelServer.Health; success → healthy, failure → degraded (the
+/// gateway drops it from routing).</summary>
 public sealed class DeploymentProber(IServiceScopeFactory scopes, ModelServerClients clients, SystemHealth health, WorkloadLauncher launcher,
     ILogger<DeploymentProber> log) : BackgroundService
 {
@@ -23,7 +22,6 @@ public sealed class DeploymentProber(IServiceScopeFactory scopes, ModelServerCli
             {
                 await using var scope = scopes.CreateAsyncScope();
                 var m = scope.ServiceProvider.GetRequiredService<IMediator>();
-                // Playground test replicas that nobody called for idle_stop_min minutes: free the GPU.
                 foreach (var d in await m.Query(new MLPlatform.ControlPlane.Application.Serving.ListIdleTestDeploymentsQuery(), stop))
                 {
                     await m.Send(new MLPlatform.ControlPlane.Application.Serving.StopIdleDeploymentCommand(d.Id, d.IdleStopMin ?? 0), stop);

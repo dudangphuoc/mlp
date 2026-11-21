@@ -6,11 +6,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Notebooks;
 
-/// <summary>
-/// Marks it stopping and returns the job so the host stops the container + Ray job (WorkloadLauncher.StopJobAsync).
-/// Stop on a notebook that is already stopping = force stop: it is marked stopped right away (the stop is sent to the machine again),
-/// so a machine that never answers can no longer leave the user stuck.
-/// </summary>
+/// <summary>Marks it stopping and returns the job so the host stops the container + Ray job
+/// (WorkloadLauncher.StopJobAsync).</summary>
 public sealed record StopNotebookCommand(Guid WorkspaceId, Guid ServerId) : ICommand<ServerRow>;
 
 public sealed class StopNotebookCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IAfterCommit afterCommit, IWorkloadControl workloads) : ICommandHandler<StopNotebookCommand, ServerRow>

@@ -12,5 +12,6 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Registry;
 
-/// <summary>A check/calibration image of an optimization: link, size and host cache id (null = not cacheable).</summary>
+/// <summary>A check/calibration image of an optimization: link, size and host cache id (null = not
+/// cacheable).</summary>
 public sealed record OptImage(string Path, string Url, long Size, string? Id, Guid DatasetId);

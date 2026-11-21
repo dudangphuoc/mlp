@@ -2,7 +2,8 @@ using MLPlatform.Cqrs;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>Queues job stops after the commit; a stop must outlive the request, so it never uses the request's token.</summary>
+/// <summary>Queues job stops after the commit; a stop must outlive the request, so it never uses the request's
+/// token.</summary>
 public static class WorkloadStops
 {
     public static void StopAfterCommit(this IAfterCommit queue, IWorkloadControl workloads, Guid jobId) =>

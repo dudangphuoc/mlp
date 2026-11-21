@@ -4,16 +4,11 @@ using System.Text.Json.Nodes;
 
 namespace MLPlatform.Shim;
 
-/// <summary>
-/// Host dataset cache (see DataCacheRules on the control plane). The dataset's volume is mounted at <c>spec.DataCache</c>:
-/// <c>objects/ab/{id}</c> = one immutable file per cache id, <c>views/run-{run}/…</c> = this run's dataset tree as hard links to objects.
-/// Only files whose object is missing (or was modified in place — size or stamp differ) are downloaded; a dataset that did not change
-/// transfers nothing. Files without an id (references that may change at the source) are downloaded into the view every time.
-/// Progress is reported in bytes with a <c>sync</c> detail (reused / to download / done / failed), and a final summary the control plane keeps.
-/// </summary>
+/// <summary>Host dataset cache (see DataCacheRules on the control plane).</summary>
 public sealed partial class Runner
 {
-    // Every object gets this modification time when written; a recipe that rewrites a cached file in place changes it → re-downloaded next time.
+    // Every object gets this modification time when written; a recipe that rewrites a cached file in place changes it →
+    // re-downloaded next time.
     private static readonly DateTime ObjectStamp = new(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private const long DiskMargin = 512L << 20;
     private string? _view;
@@ -60,7 +55,7 @@ public sealed partial class Runner
         log.WriteLine($"[mlp-shim] dataset cache {cache}: {files.Count} file(s), {st.ReusedFiles} reused ({Bytes(st.ReusedBytes)}), " +
                       $"{st.FetchFiles} to download ({Bytes(st.FetchBytes)}), {st.UncachedFiles} not cacheable, free {Bytes(free)}");
 
-        if (Directory.Exists(view)) Directory.Delete(view, recursive: true);   // retried attempt: rebuild the view (links are cheap)
+        if (Directory.Exists(view)) Directory.Delete(view, recursive: true);
         Directory.CreateDirectory(view);
         TouchAlive(view);
         _view = view;
@@ -95,7 +90,7 @@ public sealed partial class Runner
         {
             var dst = ViewPath(view, f.Path);
             Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
-            if (Link(ObjectPath(objects, f.Id!), dst) != 0) File.Copy(ObjectPath(objects, f.Id!), dst, overwrite: true);   // not the same file system
+            if (Link(ObjectPath(objects, f.Id!), dst) != 0) File.Copy(ObjectPath(objects, f.Id!), dst, overwrite: true);
         }
         spec.Data = view;
         var (cacheFiles, cacheBytes) = Usage(objects);
@@ -107,7 +102,7 @@ public sealed partial class Runner
     private async Task DownloadOneAsync(HttpClient http, SyncFile f, string target, SyncState st, CancellationToken token)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        var part = $"{target}.part-{Guid.NewGuid():N}";   // unique: two jobs fetching the same object never write the same file
+        var part = $"{target}.part-{Guid.NewGuid():N}";
         for (var attempt = 1; ; attempt++)
         {
             var wait = Interlocked.Read(ref st.PauseUntil) - Environment.TickCount64;
@@ -170,7 +165,7 @@ public sealed partial class Runner
         };
         if (cacheBytes >= 0) { sync["cache_files"] = cacheFiles; sync["cache_bytes"] = cacheBytes; }
         sync["version"] = spec.DatasetVersionId;
-        sync["subset"] = spec.Trial is not null;   // a trial syncs a sample of the version, not all of it
+        sync["subset"] = spec.Trial is not null;
         var wait = Interlocked.Read(ref st.PauseUntil) - Environment.TickCount64;
         await _ops.ProgressAsync("preparing_data", Interlocked.Read(ref st.DoneBytes), st.FetchBytes, "B",
             wait > 0 ? $"rate limited by the source — waiting {wait / 1000} s" : final ? "dataset ready" : "syncing dataset",
@@ -187,7 +182,8 @@ public sealed partial class Runner
         return target;
     }
 
-    /// <summary>Views of runs that ended without cleaning up (container killed): their keep-alive stamp is older than a day.</summary>
+    /// <summary>Views of runs that ended without cleaning up (container killed): their keep-alive stamp is older than a
+    /// day.</summary>
     private void RemoveStaleViews(string views, string mine)
     {
         foreach (var d in Directory.EnumerateDirectories(views))
@@ -226,7 +222,6 @@ public sealed partial class Runner
         {
             if (f.Name.Contains(".part-", StringComparison.Ordinal))
             {
-                // partial download of a run that was killed: swept once it is clearly abandoned
                 if (TimeProvider.System.GetUtcNow().UtcDateTime - f.LastWriteTimeUtc > TimeSpan.FromHours(6)) try { f.Delete(); } catch (IOException) { }
                 continue;
             }

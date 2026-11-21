@@ -20,7 +20,8 @@ public sealed class NotificationGrpc(IMediator mediator, TimeProvider time, MLPl
         return res;
     }
 
-    /// <summary>Wakes when StreamBroker signals a workspace change (NOTIFY, correct even with multiple api replicas), re-polls at least every 5 s; sends records changed after the previous mark.</summary>
+    /// <summary>Wakes when StreamBroker signals a workspace change (NOTIFY, correct even with multiple api replicas),
+    /// re-polls at least every 5 s; sends records changed after the previous mark.</summary>
     public override async Task WatchNotifications(WatchNotificationsRequest r, IServerStreamWriter<NotificationEvent> stream, ServerCallContext ctx)
     {
         var ws = G(r.WorkspaceId, "workspace_id");
@@ -28,7 +29,6 @@ public sealed class NotificationGrpc(IMediator mediator, TimeProvider time, MLPl
         var (_, unread) = await mediator.Query(new NotificationsChangedQuery(ws, since), ctx.CancellationToken);
         await stream.WriteAsync(new NotificationEvent { Unread = unread }, ctx.CancellationToken);
         var lastUnread = unread;
-        // A write transaction takes its timestamp before commit → look back 5 s and deduplicate so late commits are not missed.
         var sent = new Dictionary<Guid, DateTimeOffset>();
         try
         {

@@ -6,10 +6,8 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// System health (20/10 §2.6): components (PostgreSQL, S3 storage, Ray head, agent channel) checked every 15 s; each background loop records its own heartbeat,
-/// missing for more than 3x its period → `down` + a `system.loop_stalled` event.
-/// </summary>
+/// <summary>System health (20/10 §2.6): components (PostgreSQL, S3 storage, Ray head, agent channel) checked every 15
+/// s; each background loop records its own heartbeat.</summary>
 public sealed class SystemHealth(TimeProvider time)
 {
     public sealed record Item(string Name, string Group, string Status, string Message, DateTimeOffset? LastOkAt, DateTimeOffset CheckedAt, double PeriodSeconds);
@@ -23,7 +21,7 @@ public sealed class SystemHealth(TimeProvider time)
     };
     public static string Label(string n) => Labels.TryGetValue(n, out var l) ? l : n;
 
-    /// <summary>Called by a background loop on each pass. periodSeconds = 0: event-driven worker (queue); long idle periods are not an incident.</summary>
+    /// <summary>Called by a background loop on each pass.</summary>
     public void Beat(string loop, double periodSeconds) =>
         _items[loop] = new Item(loop, "loop", "ok", "Running", time.GetUtcNow(), time.GetUtcNow(), periodSeconds);
 

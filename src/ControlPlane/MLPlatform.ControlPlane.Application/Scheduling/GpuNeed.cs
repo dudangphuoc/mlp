@@ -3,12 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace MLPlatform.ControlPlane.Application.Scheduling;
 
-/// <summary>
-/// D-50: one GPU runs several jobs. A job with one GPU reserves a memory budget on it instead of the whole device; the scheduler packs jobs
-/// while the budgets fit. Nothing enforces the budget inside the container — it is a reservation, the same way CPU shares are.
-/// The budget: what the job states, else by kind — deployment 2 GB, notebook 4 GB, recipe job = the recipe's (variant's) `minVramGb`
-/// (half of it for anything that is not training). Unknown → the whole GPU, as before.
-/// </summary>
+/// <summary>D-50: one GPU runs several jobs.</summary>
 public static class GpuNeed
 {
     public const int ServeMb = 2048, NotebookMb = 4096;
@@ -31,11 +26,11 @@ public static class GpuNeed
         catch (JsonException) { return 0; }
     }
 
-    /// <summary>Share of a GPU with <paramref name="gpuTotalMb"/> memory; 0 = the whole GPU (budget unknown, or it does not leave room for anything else).</summary>
+    /// <summary>Share of a GPU with gpuTotalMb memory; 0 = the whole GPU (budget unknown, or it does not leave room for
+    /// anything else).</summary>
     public static double Fraction(int needMb, long gpuTotalMb)
     {
         if (needMb <= 0 || gpuTotalMb <= 0) return 0;
-        // Rounded down to Ray's precision (0.0001): rounding up made 2 + 8 + 2 GB on a 12 GB GPU add up to 1.001 and the third job never fit.
         var f = Math.Floor(needMb * 10000.0 / gpuTotalMb) / 10000.0;
         return f >= 0.9999 ? 0 : Math.Max(f, 0.0001);
     }

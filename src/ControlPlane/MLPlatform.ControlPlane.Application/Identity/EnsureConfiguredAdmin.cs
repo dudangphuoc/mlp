@@ -4,11 +4,8 @@ using MLPlatform.Security;
 
 namespace MLPlatform.ControlPlane.Application.Identity;
 
-/// <summary>
-/// Admin account declared in config (MLP__Admin__Email/Password/Name — compose `.env`): api ensures it exists on every startup.
-/// Instance not set up → complete setup with this account (skipping /setup); set up but the account is missing → create an Instance Admin + personal workspace.
-/// If it already exists, leave it unchanged (do not overwrite a password the user changed). Returns true when just created.
-/// </summary>
+/// <summary>Admin account declared in config (MLP__Admin__Email/Password/Name — compose `.env`): api ensures it exists
+/// on every startup.</summary>
 public sealed record EnsureConfiguredAdminCommand(string Email, string Password, string DisplayName) : ICommand<bool>, IInternalCommand;
 
 /// <summary>Handles <see cref="EnsureConfiguredAdminCommand"/>.</summary>

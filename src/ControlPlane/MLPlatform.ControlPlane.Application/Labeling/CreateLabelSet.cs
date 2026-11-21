@@ -13,7 +13,8 @@ namespace MLPlatform.ControlPlane.Application.Labeling;
 
 // ───────────── Label set ─────────────
 
-/// <summary>Commits a label set (§5 step 6): an immutable JSONL snapshot in S3 storage (`…/labelsets/{id}.jsonl`). Parquet later.</summary>
+/// <summary>Commits a label set (§5 step 6): an immutable JSONL snapshot in S3 storage
+/// (`…/labelsets/{id}.jsonl`).</summary>
 public sealed record CreateLabelSetCommand(Guid WorkspaceId, Guid DatasetId, bool AllLabeled) : ICommand<LabelSetRow>;
 
 public sealed class CreateLabelSetCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, S3Client s3) : ICommandHandler<CreateLabelSetCommand, LabelSetRow>

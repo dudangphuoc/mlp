@@ -14,13 +14,12 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>
-/// Hugging Face Hub client (public REST): search models/datasets, repo info, file tree, file download. The workspace token (if any)
-/// is sent to read gated/private repos. No other user information is sent to HF.
-/// </summary>
+/// <summary>Hugging Face Hub client (public REST): search models/datasets, repo info, file tree, file
+/// download.</summary>
 public sealed class HfHub(IHttpClientFactory http, IConfiguration cfg, TimeProvider time)
 {
-    // Short cache for search/info/tree pages: browsing back and forth does not hit the Hub again (key includes the token hash).
+    // Short cache for search/info/tree pages: browsing back and forth does not hit the Hub again (key includes the
+    // token hash).
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTimeOffset At, object Value)> _cache = new();
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
 
@@ -63,13 +62,13 @@ public sealed class HfHub(IHttpClientFactory http, IConfiguration cfg, TimeProvi
         return (await JsonNode.ParseAsync(await res.Content.ReadAsStreamAsync(ct), cancellationToken: ct))?["name"]?.ToString();
     }
 
-    /// <summary>One page of search results + the cursor of the next page (the Hub paginates with a Link: rel="next" header).</summary>
+    /// <summary>One page of search results + the cursor of the next page (the Hub paginates with a Link: rel="next"
+    /// header).</summary>
     public Task<HubSearchPage> SearchAsync(string kind, string query, string task, string sort, int limit, string? cursor, string? token, CancellationToken ct)
     {
         string url;
         if (!string.IsNullOrEmpty(cursor))
         {
-            // The cursor is the Hub's own next-page URL; only accept URLs on the configured Hub host.
             if (!Uri.TryCreate(cursor, UriKind.Absolute, out var cu) || !cursor.StartsWith(Base + "/api/", StringComparison.Ordinal) || cu.Query.Length == 0)
                 throw new InvalidArgumentException("HUB_CURSOR_INVALID", "Invalid search cursor");
             url = cursor;
@@ -116,7 +115,8 @@ public sealed class HfHub(IHttpClientFactory http, IConfiguration cfg, TimeProvi
             return files;
         });
 
-    /// <summary>Public file URL pinned to a commit (used by reference imports — machines download straight from the Hub).</summary>
+    /// <summary>Public file URL pinned to a commit (used by reference imports — machines download straight from the
+    /// Hub).</summary>
     public string ResolveUrl(string kind, string repo, string revision, string path) =>
         $"{Base}/{(kind == "dataset" ? "datasets/" : "")}{repo}/resolve/{Uri.EscapeDataString(revision)}/{string.Join('/', path.Split('/').Select(Uri.EscapeDataString))}";
 
