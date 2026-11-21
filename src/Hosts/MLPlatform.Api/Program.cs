@@ -34,6 +34,8 @@ if (args is ["db", "apply", ..])
     return;
 }
 
+if (MLPlatform.Api.Commands.SurfaceDescription.IsRequested(args)) MLPlatform.Api.Commands.SurfaceDescription.PrepareConfiguration();
+
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.Configuration.AddEnvironmentVariables("MLP__");
 var cfg = builder.Configuration;
@@ -222,6 +224,12 @@ app.MapGet("/install/agent.ps1", () =>
     return Results.Text(text, "text/plain; charset=utf-8");
 });
 app.MapAgentBuilds();
+
+if (MLPlatform.Api.Commands.SurfaceDescription.IsRequested(args))
+{
+    MLPlatform.Api.Commands.SurfaceDescription.Write(args, s, app);
+    return;
+}
 
 // D-27: empty DB → print a one-time bootstrap token to the log
 await using (var scope = app.Services.CreateAsyncScope())
