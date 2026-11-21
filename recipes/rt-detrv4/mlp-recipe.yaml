@@ -1,0 +1,116 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: rt-detrv4
+  displayName: RT-DETRv4
+  family: detr-realtime
+  description: >
+    Fourth-generation RT-DETR, distilled from a DINOv3 ViT-B/16 teacher during training. The repo moved from RT-DETRs/RT-DETRv4
+    to AIMIA-PKU/RT-DETRv4; it also has DEIM, D-FINE and RT-DETRv2 configs (no DINOv3 needed).
+  homepage: https://github.com/AIMIA-PKU/RT-DETRv4
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  git: https://github.com/AIMIA-PKU/RT-DETRv4
+  commit: 55fefaaed7efe2a5f72d0a18fd4e05965e35c292
+  commitDate: "2026-07-06"
+license:
+  code: Apache-2.0
+  weights: "Released checkpoints: README states no terms · DINOv3 teacher: DINOv3 License"
+  requiresAck: true
+  notes: >
+    Both training and eval (--test-only) need the DINOv3 ViT-B/16 teacher (dinov3_vitb16_pretrain_lvd1689m.pth) under the
+    DINOv3 License (commercial use allowed; redistribution must include the agreement; military/weapons use prohibited under
+    trade controls). DINOv3 weights are manually approved by Meta: an Admin must request them, then upload them to the
+    workspace Model Zoo. The RT-DETRv4 checkpoint license is not stated in the README.
+tasks: [detect]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 12           # estimate: student + ViT-B/16 teacher both loaded during training; measure during smoke test
+  python: "3.11"
+  shmSizeGb: 8
+data:
+  input: coco
+variants:   # checkpoints on Google Drive (downloaded with gdown when caching the model zoo)
+  - {name: rtdetrv4-s, config: configs/rtv4/rtv4_hgnetv2_s_coco.yml, weights: "gdrive://1jDAVxblqRPEWed7Hxm6GwcEl7zn72U6z", params: 10.4, reported: {coco_ap50_95: 49.8, t4_ms: 3.66}, requiresFiles: [{zoo: dinov3_vitb16, path: /opt/recipe/zoo/dinov3_vitb16.pth}], classes: coco80}
+  - {name: rtdetrv4-m, config: configs/rtv4/rtv4_hgnetv2_m_coco.yml, weights: "gdrive://1O-YpP4X-quuOXbi96y2TKkztbjroP5mX", reported: {coco_ap50_95: 53.7, t4_ms: 5.91}, requiresFiles: [{zoo: dinov3_vitb16, path: /opt/recipe/zoo/dinov3_vitb16.pth}], classes: coco80}
+  - {name: rtdetrv4-l, config: configs/rtv4/rtv4_hgnetv2_l_coco.yml, weights: "gdrive://1shO9EzZvXZyKedE2urLsN4dwEv8Jqa_8", reported: {coco_ap50_95: 55.4, t4_ms: 8.07}, requiresFiles: [{zoo: dinov3_vitb16, path: /opt/recipe/zoo/dinov3_vitb16.pth}], classes: coco80}
+  - {name: rtdetrv4-x, config: configs/rtv4/rtv4_hgnetv2_x_coco.yml, weights: "gdrive://19gnkMTgFveJsrOvSmEPQXCTG6v9oQHN3", reported: {coco_ap50_95: 57.0, t4_ms: 12.90}, requiresFiles: [{zoo: dinov3_vitb16, path: /opt/recipe/zoo/dinov3_vitb16.pth}], classes: coco80}
+params:
+  epochs: {type: integer, default: 58, minimum: 1, description: "The repo key is `epoches`; the schedule is scaled proportionally"}
+  batch: {type: integer, default: 16}
+  num_classes: {type: integer, from: dataset.classes.count}
+  seed: {type: integer, default: 0}
+  use_amp: {type: boolean, default: true, description: "--use-amp must be passed; omitting the flag turns AMP OFF even if the YAML enables it"}
+entrypoints:
+  train:
+    distributed: torchrun          # the repo only documents torchrun; a single GPU also runs torchrun --nproc_per_node=1
+    workdir: /opt/recipe/src       # backbone weight paths are relative to the repo directory
+    command: >
+      python /opt/recipe/shared/make_config.py --base /opt/recipe/src/{variant.config}
+      --data {data} --num-classes {params.num_classes} --epochs {params.epochs} --batch {params.batch}
+      --epoch-key epoches --output-dir {output} --out {output}/mlp_train.yml
+      --extra-json '{{"teacher_model.dinov3_repo_path": "/opt/recipe/dinov3", "teacher_model.dinov3_weights_path": "/opt/recipe/zoo/dinov3_vitb16.pth"}}'
+      && torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      train.py -c {output}/mlp_train.yml {params.use_amp?--use-amp} --seed={params.seed} {weights?-t {weights}}
+    resume: {mode: replace, from: "{weights?-t {weights}}", to: "-r {checkpoint}"}   # -t and -r are mutually exclusive
+    checkpoints: "{output}/last.pth"
+    fromScratch: true              # no -t: train from the pretrained backbone bundled in the image
+  eval:
+    workdir: /opt/recipe/src
+    command: >
+      python /opt/recipe/shared/make_config.py --base {model}/config/mlp_train.yml --data {data}
+      --train-split '' --val-split test --output-dir {output} --out {output}/mlp_eval.yml
+      --extra-json '{{"teacher_model.dinov3_repo_path": "/opt/recipe/dinov3", "teacher_model.dinov3_weights_path": "/opt/recipe/zoo/dinov3_vitb16.pth"}}'
+      && torchrun --nproc_per_node=1 train.py -c {output}/mlp_eval.yml --test-only -r {model.weights}
+    metrics:
+      sources:
+        - jsonl: "{output}/log.txt"
+      primary: test/mAP50-95
+      map:
+        test_coco_eval_bbox[0]: test/mAP50-95
+        test_coco_eval_bbox[1]: test/mAP50
+  export:
+    formats: [onnx]
+    outputs: ["model.onnx"]                # TensorRT: build the engine on the target machine (GPU/driver dependent), not at export
+    workdir: /opt/recipe/src
+    command: >
+      cp {model.weights} {output}/model.pth
+      && python tools/deployment/export_onnx.py --check -c {model}/config/mlp_train.yml -r {output}/model.pth
+      && rm {output}/model.pth
+  serve:
+    handler: shared.handler:Handler
+  assist:
+    kinds: [prelabel, score]
+    handler: shared.handler:Handler
+metrics:
+  sources:
+    - tensorboard: "{output}/summary"
+    - jsonl: "{output}/log.txt"     # per epoch: train_loss, train_lr, test_coco_eval_bbox[0..], epoch
+  primary: val/mAP50-95
+  map:
+    Test/coco_eval_bbox_0: val/mAP50-95
+    Test/coco_eval_bbox_1: val/mAP50
+    Loss/total: train/loss
+    Lr/pg_0: lr/pg0
+    test_coco_eval_bbox[0]: val/mAP50-95
+    test_coco_eval_bbox[1]: val/mAP50
+    train_loss: train/loss
+artifacts:
+  best: {from: ["best_stg2.pth", "best_stg1.pth"], as: model.pth}   # stg2 if stop_epoch was passed, otherwise stg1
+  files:
+    - {from: mlp_train.yml, to: config/mlp_train.yml}
+    - {from: log.txt, to: config/log.txt}
+openItems:
+  - "DINOv3 weights cannot be downloaded automatically (manual Meta approval) → the recipe cannot pass smoke test until an Admin uploads them to the Model Zoo."
+  - "hubconf.py at dinov3 HEAD may also need omegaconf, ftfy, regex, submitit… (installed from the dinov3 requirements); RT-DETRv4 does not pin a dinov3 commit → the Dockerfile pins 6876159a."
+  - "ONNX export uses a fixed 640 input, opset 16, always simplified."
+  - "Actual training VRAM (student + teacher) not measured yet."
+  - "last.pth is only written before stop_epoch → a crash in the final stage resumes from an epoch before stop_epoch."
+  - "Order/length of the test_coco_eval_bbox array (12 or 14 elements) not verified; only elements 0 (AP50:95) and 1 (AP50) are used."
+  - "export_onnx.py writes the .onnx file next to the checkpoint (.pth → .onnx extension) — check on the built image."
+  - "Eval --test-only writes log.txt to the eval config output_dir — check that the test_coco_eval_bbox key appears on a test-only run."

@@ -1,0 +1,120 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: ultralytics-yolo
+  displayName: Ultralytics YOLO (YOLO26, YOLO11)
+  family: yolo
+  description: The YOLO family via the `ultralytics` pip package — a recipe on equal footing with the others (D-20).
+  homepage: https://github.com/ultralytics/ultralytics
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["ultralytics==8.4.215"]
+license:
+  code: AGPL-3.0
+  weights: AGPL-3.0
+  requiresAck: true
+  notes: >
+    AGPL-3.0: use in a product/service requires publishing source code under the AGPL, or buying an Ultralytics
+    Enterprise License. Trained models and deployments carry this license.
+tasks: [detect, segment, classify, pose, obb]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional
+  minVramGb: 4
+  python: "3.11"
+  shmSizeGb: 8
+data:
+  input:                       # the converter writes data.yaml (train/val/test/names[, kpt_shape]) without `path` → ultralytics uses the directory containing the file
+    detect: yolo
+    segment: yolo-seg
+    pose: yolo-pose
+    obb: yolo-obb
+    classify: cls-folders      # {split}/{class}/*; ultralytics takes the directory directly (val/ or test/)
+variants:   # per-task weights: ultralytics downloads the .pt by name from its GitHub releases (cache_weights job)
+  - {name: yolo26n, weights: {detect: yolo26n.pt, segment: yolo26n-seg.pt, classify: yolo26n-cls.pt, pose: yolo26n-pose.pt, obb: yolo26n-obb.pt}, params: 2.4,  reported: {coco_map50_95: 40.9}}
+  - {name: yolo26s, weights: {detect: yolo26s.pt, segment: yolo26s-seg.pt, classify: yolo26s-cls.pt, pose: yolo26s-pose.pt, obb: yolo26s-obb.pt}, params: 9.5,  reported: {coco_map50_95: 48.6}}
+  - {name: yolo26m, weights: {detect: yolo26m.pt, segment: yolo26m-seg.pt, classify: yolo26m-cls.pt, pose: yolo26m-pose.pt, obb: yolo26m-obb.pt}, params: 20.4, reported: {coco_map50_95: 53.1}}
+  - {name: yolo26l, weights: {detect: yolo26l.pt, segment: yolo26l-seg.pt, classify: yolo26l-cls.pt, pose: yolo26l-pose.pt, obb: yolo26l-obb.pt}, params: 24.8, reported: {coco_map50_95: 55.0}}
+  - {name: yolo26x, weights: {detect: yolo26x.pt, segment: yolo26x-seg.pt, classify: yolo26x-cls.pt, pose: yolo26x-pose.pt, obb: yolo26x-obb.pt}, params: 55.7, reported: {coco_map50_95: 57.5}}
+  - {name: yolo11n, weights: {detect: yolo11n.pt, segment: yolo11n-seg.pt, classify: yolo11n-cls.pt, pose: yolo11n-pose.pt, obb: yolo11n-obb.pt}}
+  - {name: yolo11s, weights: {detect: yolo11s.pt, segment: yolo11s-seg.pt, classify: yolo11s-cls.pt, pose: yolo11s-pose.pt, obb: yolo11s-obb.pt}}
+  - {name: yolo11m, weights: {detect: yolo11m.pt, segment: yolo11m-seg.pt, classify: yolo11m-cls.pt, pose: yolo11m-pose.pt, obb: yolo11m-obb.pt}}
+  - {name: yolo11l, weights: {detect: yolo11l.pt, segment: yolo11l-seg.pt, classify: yolo11l-cls.pt, pose: yolo11l-pose.pt, obb: yolo11l-obb.pt}}
+  - {name: yolo11x, weights: {detect: yolo11x.pt, segment: yolo11x-seg.pt, classify: yolo11x-cls.pt, pose: yolo11x-pose.pt, obb: yolo11x-obb.pt}}
+params:
+  epochs: {type: integer, default: 100, minimum: 1}
+  imgsz: {type: integer, default: 640, minimum: 32, multipleOf: 32}
+  batch: {type: number, default: 16, description: "-1 = AutoBatch; a fraction = share of GPU memory"}
+  patience: {type: integer, default: 100}
+  optimizer: {enum: [auto, SGD, MuSGD, Adam, AdamW, NAdam, RAdam, RMSProp], default: auto}
+  lr0: {type: number, default: 0.01}
+  seed: {type: integer, default: 0}
+  workers: {type: integer, default: 8}
+entrypoints:
+  train:
+    distributed: internal      # device=0,1 → ultralytics runs torch.distributed.run itself; multi-node: undocumented → 1 machine max
+    workdir: /opt/recipe
+    command: >
+      yolo {task} train data={task|classify={data}|*={data}/data.yaml} model={weights}
+      epochs={params.epochs} imgsz={params.imgsz} batch={params.batch} patience={params.patience}
+      optimizer={params.optimizer} lr0={params.lr0} seed={params.seed} workers={params.workers}
+      device={gpu_ids_csv} project={output} name=run exist_ok=True plots=True
+    resume: {mode: command, command: "yolo {task} train resume model={checkpoint} device={gpu_ids_csv}"}
+    checkpoints: "{output}/run/weights/last.pt"
+  eval:
+    workdir: /opt/recipe
+    command: >
+      yolo {task} val model={model.weights} data={task|classify={data}|*={data}/data.yaml} split=test
+      imgsz={params.imgsz} project={output} name=eval exist_ok=True
+    metrics:
+      sources:
+        - regex: {stream: stdout, pattern: "^\\s+all\\s+\\d+\\s+\\d+\\s+(?P<p>[\\d.]+)\\s+(?P<r>[\\d.]+)\\s+(?P<map50>[\\d.]+)\\s+(?P<map>[\\d.]+)"}
+      primary: "{task|classify=test/accuracy|segment=test/mask_mAP50-95|pose=test/pose_mAP50-95|*=test/mAP50-95}"
+      map:
+        p: test/precision
+        r: test/recall
+        map50: test/mAP50
+        map: test/mAP50-95
+  export:
+    formats: [onnx, torchscript, openvino, engine, coreml, saved_model, litert, ncnn, mnn, paddle, rknn, executorch]
+    workdir: /opt/recipe
+    command: >
+      cp {model.weights} {output}/best.pt
+      && yolo export model={output}/best.pt format={format} imgsz={params.imgsz}
+      && rm {output}/best.pt
+  serve:
+    handler: handler:Handler
+    batching: true
+  assist:
+    kinds: [prelabel, score]
+    handler: handler:Handler
+metrics:
+  sources:
+    - csv: "{output}/run/results.csv"     # ultralytics' TensorBoard is off by default
+  primary: "{task|classify=val/accuracy|segment=val/mask_mAP50-95|pose=val/pose_mAP50-95|*=val/mAP50-95}"
+  map:
+    metrics/mAP50-95(B): val/mAP50-95
+    metrics/mAP50(B): val/mAP50
+    metrics/precision(B): val/precision
+    metrics/recall(B): val/recall
+    metrics/mAP50-95(M): val/mask_mAP50-95
+    metrics/mAP50-95(P): val/pose_mAP50-95
+    metrics/accuracy_top1: val/accuracy
+    train/box_loss: train/box_loss
+    train/cls_loss: train/cls_loss
+    lr/pg0: lr/pg0
+artifacts:
+  best: {from: ["run/weights/best.pt"], as: best.pt}
+  files:
+    - {from: run/args.yaml, to: config/args.yaml}
+    - {from: run/results.csv, to: config/results.csv}
+    - {from: run/results.png, to: config/results.png}
+openItems:
+  - "YOLO26 loss column names (dfl_loss or l1_loss) depend on reg_max — only box/cls are mapped; other columns keep their original names."
+  - "Multi-node training is not officially documented → the recipe is limited to 1 machine, multiple GPUs."
+  - "The regex for the `all` line of `yolo val` only fits detect/obb (4 columns P R mAP50 mAP50-95); seg/pose print extra (M)/(P) columns and classify prints top1/top5 — check during smoke test."
+  - "Whether YOLO11/YOLO26 -obb and YOLO26 -pose variants exist for every size — check the asset list of the pinned ultralytics release."
+  - "YOLO26 semantic/depth tasks are not mapped in the recipe yet."

@@ -1,0 +1,154 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M11 — RegistryService (first slice: register from a run, immutable versions, stages)
+service RegistryService {
+  rpc RegisterFromRun(RegisterFromRunRequest) returns (ModelVersion);
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+  rpc ListModelVersions(ListModelVersionsRequest) returns (ListModelVersionsResponse);
+  rpc TransitionStage(TransitionStageRequest) returns (ModelVersion);
+  rpc ListVersionsByRun(ListVersionsByRunRequest) returns (ListModelVersionsResponse);   // versions registered from a training run
+  // Evaluation on a dataset version: the platform calls a replica of the version per sample and computes the task metrics.
+  rpc StartEvaluation(StartEvaluationRequest) returns (Evaluation);
+  rpc ListEvaluations(ListEvaluationsRequest) returns (ListEvaluationsResponse);
+  rpc GetEvaluation(GetEvaluationRequest) returns (Evaluation);
+  rpc ListEvaluationSamples(ListEvaluationSamplesRequest) returns (ListEvaluationSamplesResponse);
+  rpc CancelEvaluation(GetEvaluationRequest) returns (Evaluation);
+  // Conversion to another format (ONNX, TorchScript, …): a job runs the recipe's export command; the result is a file to download.
+  rpc StartExport(StartExportRequest) returns (ModelExport);
+  rpc ListExports(ListExportsRequest) returns (ListExportsResponse);
+  rpc GetExportDownload(ExportRef) returns (ExportDownload);
+  rpc DeleteExport(ExportRef) returns (ExportDownload);
+  // Optimization for production: candidates (fp32 / fp16 / int8) built from the ONNX export, checked against it on the same images,
+  // benchmarked on the target machine; a chosen candidate becomes a model version.
+  rpc StartOptimization(StartOptimizationRequest) returns (Optimization);
+  rpc ListOptimizations(ListOptimizationsRequest) returns (ListOptimizationsResponse);
+  rpc GetOptimization(OptimizationRef) returns (Optimization);
+  rpc GetOptimizationFile(OptimizationFileRequest) returns (ExportDownload);
+  rpc PromoteOptimization(PromoteOptimizationRequest) returns (ModelVersion);
+  rpc DeleteOptimization(OptimizationRef) returns (ExportDownload);
+}
+
+message Optimization {
+  string id = 1;
+  string source_version_id = 2;
+  string model_name = 3;
+  int32 source_version = 4;
+  string task = 5;
+  string device = 6;                  // cpu | cuda
+  repeated string candidates = 7;     // fp32 | fp16 | int8
+  string host_id = 8;
+  string calib_dataset_version_id = 9;
+  string check_dataset_version_id = 10;
+  double conf = 11;
+  string state = 12;                  // running | ready | failed
+  string error = 13;
+  string job_id = 14;
+  string report_json = 15;            // the job's report.json
+  string promoted_json = 16;          // {candidate: model version id}
+  google.protobuf.Timestamp created_at = 17;
+}
+message StartOptimizationRequest {
+  string workspace_id = 1; string source_version_id = 2; string device = 3; repeated string candidates = 4; string host_id = 5;
+  string check_dataset_version_id = 6; int32 check_images = 7; string calib_dataset_version_id = 8; int32 calib_images = 9;
+  double conf = 10; string calib_method = 11;   // minmax | percentile
+}
+message ListOptimizationsRequest { string workspace_id = 1; }
+message ListOptimizationsResponse { repeated Optimization optimizations = 1; }
+message OptimizationRef { string workspace_id = 1; string id = 2; }
+message OptimizationFileRequest { string workspace_id = 1; string id = 2; string path = 3; }
+message PromoteOptimizationRequest { string workspace_id = 1; string id = 2; string candidate = 3; }
+
+message ModelExport {
+  string id = 1;
+  string model_version_id = 2;
+  string format = 3;
+  string state = 4;            // running | ready | failed
+  string error = 5;
+  string job_id = 6;
+  string file_name = 7;
+  int64 size_bytes = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+message StartExportRequest { string workspace_id = 1; string model_version_id = 2; string format = 3; string host_id = 4; }   // host_id: machine for GPU-specific formats (TensorRT)
+message ListExportsRequest { string workspace_id = 1; string model_version_id = 2; }
+message ListExportsResponse { repeated ModelExport exports = 1; repeated string formats = 2; }   // formats = what the version's recipe can convert to
+message ExportRef { string workspace_id = 1; string export_id = 2; }
+message ExportDownload { string url = 1; }
+
+message RegisteredModel {
+  string id = 1;
+  string workspace_id = 2;
+  string name = 3;
+  string task = 4;
+  int32 latest_version = 5;
+  int32 production_version = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ModelVersion {
+  string id = 1;
+  string model_id = 2;
+  string model_name = 3;
+  int32 version = 4;
+  string run_id = 5;
+  string recipe = 6;
+  string variant = 7;
+  string task = 8;
+  string stage = 9;           // none | staging | production | archived
+  int64 file_count = 10;
+  int64 size_bytes = 11;
+  string metrics_json = 12;
+  google.protobuf.Timestamp created_at = 13;
+  string source = 14;         // run | upload | hf_hub
+  string source_ref = 15;     // hf://org/repo@revision
+  string storage = 16;        // copied | reference
+  string parent_version_id = 17;   // set when the version was made by an optimization
+  string optimization_json = 18;   // {optimization_id, device, precision, latency, fidelity, …}
+}
+
+message RegisterFromRunRequest { string workspace_id = 1; string run_id = 2; string model_name = 3; string description = 4; }
+message ListModelsRequest { string workspace_id = 1; }
+message ListModelsResponse { repeated RegisteredModel models = 1; }
+message ListModelVersionsRequest { string workspace_id = 1; string model_id = 2; }
+message ListModelVersionsResponse { repeated ModelVersion versions = 1; }
+message TransitionStageRequest { string workspace_id = 1; string version_id = 2; string stage = 3; string reason = 4; }
+
+message Evaluation {
+  string id = 1;
+  string model_version_id = 2;
+  string dataset_version_id = 3;
+  string path_filter = 4;
+  int32 max_samples = 5;
+  double conf_threshold = 6;
+  string deployment_id = 7;
+  string state = 8;               // queued | preparing | running | succeeded | failed | cancelled
+  string state_reason = 9;
+  int32 total = 10;
+  int32 done = 11;
+  int32 errors = 12;
+  string metrics_json = 13;       // test/mAP50-95, test/mAP50, test/precision, test/recall, test/f1 | test/accuracy, test/f1_macro …
+  string per_class_json = 14;
+  string confusion_json = 15;     // classification: {labels, matrix}
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp started_at = 17;
+  google.protobuf.Timestamp finished_at = 18;
+}
+message StartEvaluationRequest {
+  string workspace_id = 1; string model_version_id = 2; string dataset_version_id = 3;
+  string path_filter = 4;          // only files whose path contains this text (e.g. "val/", "test/")
+  int32 max_samples = 5; double conf_threshold = 6;
+}
+message ListEvaluationsRequest { string workspace_id = 1; string model_version_id = 2; }
+message ListEvaluationsResponse { repeated Evaluation evaluations = 1; }
+message GetEvaluationRequest { string workspace_id = 1; string evaluation_id = 2; }
+message EvaluationSample {
+  int32 idx = 1; string path = 2; string image_url = 3; int32 width = 4; int32 height = 5;
+  string gt_json = 6; string pred_json = 7; int32 tp = 8; int32 fp = 9; int32 fn = 10; bool correct = 11; string error = 12; double latency_ms = 13;
+}
+message ListEvaluationSamplesRequest { string workspace_id = 1; string evaluation_id = 2; bool errors_only = 3; int32 offset = 4; int32 limit = 5; }
+message ListEvaluationSamplesResponse { repeated EvaluationSample samples = 1; }
+message ListVersionsByRunRequest { string workspace_id = 1; string run_id = 2; }

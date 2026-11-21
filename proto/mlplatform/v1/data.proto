@@ -1,0 +1,109 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+
+// M04 — DataService (first slice: file-based datasets, direct upload to S3 storage via presigned URLs)
+service DataService {
+  rpc CreateDataset(CreateDatasetRequest) returns (Dataset);
+  rpc ListDatasets(ListDatasetsRequest) returns (ListDatasetsResponse);
+  rpc GetDataset(GetDatasetRequest) returns (Dataset);
+  rpc CreateUpload(CreateUploadRequest) returns (UploadTarget);
+  rpc CompleteUpload(CompleteUploadRequest) returns (DatasetFile);
+  rpc ListFiles(GetDatasetRequest) returns (ListFilesResponse);
+  rpc CreateVersion(CreateVersionRequest) returns (DatasetVersion);
+  rpc ListVersions(GetDatasetRequest) returns (ListVersionsResponse);
+  rpc SplitVersion(SplitVersionRequest) returns (DatasetVersion);
+  // Content browser: folders + files of a version (or the working copy) with viewable URLs, paired YOLO labels and platform labels.
+  rpc BrowseFiles(BrowseFilesRequest) returns (BrowseFilesResponse);
+  rpc GetContentStats(ContentStatsRequest) returns (ContentStats);
+  // Bounded preview of one file (text, csv, json, label) read by the api — works for any source without browser CORS.
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+  // The working copy is the pending change of the next version: files added since the latest one, and files of it marked to leave.
+  rpc RemoveFiles(DatasetPathsRequest) returns (ChangeCount);      // added file → dropped now; file of the latest version → leaves with the next one
+  rpc KeepFiles(DatasetPathsRequest) returns (ChangeCount);        // undo a removal mark
+  rpc ListPendingRemovals(GetDatasetRequest) returns (PendingRemovals);
+  rpc DeleteVersion(DeleteVersionRequest) returns (Empty);         // refused while a run, labeling project, draft or evaluation uses it
+  rpc DeleteDataset(GetDatasetRequest) returns (Empty);
+}
+message DatasetPathsRequest { string workspace_id = 1; string dataset_id = 2; repeated string paths = 3; }
+message ChangeCount { int32 count = 1; }
+message PendingRemovals { repeated string paths = 1; }
+message DeleteVersionRequest { string workspace_id = 1; string version_id = 2; }
+
+message Dataset {
+  string id = 1;
+  string workspace_id = 2;
+  string slug = 3;
+  string name = 4;
+  string task = 5;
+  string status = 6;
+  int64 file_count = 7;
+  int64 size_bytes = 8;
+  int32 current_version = 9;
+  google.protobuf.Timestamp created_at = 10;
+  int64 pending_files = 11;       // added since the latest version (go into the next one)
+  int64 pending_removals = 12;    // files of the latest version that leave with the next one
+}
+message CreateDatasetRequest { string workspace_id = 1; string slug = 2; string name = 3; string task = 4; }
+message ListDatasetsRequest { string workspace_id = 1; string task = 2; }
+message ListDatasetsResponse { repeated Dataset datasets = 1; }
+message GetDatasetRequest { string workspace_id = 1; string dataset_id = 2; }
+
+message CreateUploadRequest { string workspace_id = 1; string dataset_id = 2; string path = 3; int64 size_bytes = 4; }
+message UploadTarget { string url = 1; string method = 2; google.protobuf.Timestamp expires_at = 3; }
+message CompleteUploadRequest { string workspace_id = 1; string dataset_id = 2; string path = 3; }
+
+message DatasetFile { string path = 1; int64 size_bytes = 2; google.protobuf.Timestamp uploaded_at = 3; }
+message ListFilesResponse { repeated DatasetFile files = 1; }
+
+message CreateVersionRequest { string workspace_id = 1; string dataset_id = 2; string note = 3; }
+message DatasetVersion {
+  string id = 1;
+  string dataset_id = 2;
+  int32 number = 3;
+  int64 file_count = 4;
+  int64 size_bytes = 5;
+  string note = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string storage = 8;      // copied (files in our storage) | reference (machines download from source_ref when used)
+  string source_ref = 9;
+  string split_state = 10;                 // "" = not looked at yet | none | folders | file (mlp-split.json)
+  map<string, int64> split_counts = 11;    // images per train / val / test
+}
+// Fixed train/val/test split (D-49): a new version that references the same files plus mlp-split.json. An image's split depends only on its
+// path, so it never moves when a later version adds images.
+message SplitVersionRequest {
+  string workspace_id = 1; string version_id = 2;
+  int32 train_pct = 3; int32 val_pct = 4; int32 test_pct = 5;   // must add up to 100; 0/0/0 = 80/10/10
+  string group_by = 6;                     // file (default) | folder (frames of one video stay together)
+  string note = 7;
+}
+message ListVersionsResponse { repeated DatasetVersion versions = 1; }
+
+message BrowseFilesRequest {
+  string workspace_id = 1; string dataset_id = 2;
+  string version_id = 3;          // empty = working copy (files not frozen into a version yet)
+  string prefix = 4;              // folder, e.g. "data/train/images"
+  string search = 5;              // text contained in the path
+  string kind = 6;                // image | text | table | json | audio | video | "" (all)
+  bool recursive = 7;
+  int32 offset = 8; int32 limit = 9;
+}
+message BrowseFolder { string name = 1; int64 files = 2; int64 size_bytes = 3; }
+message BrowseFile {
+  string path = 1; int64 size_bytes = 2;
+  string kind = 3;                // image | text | table | json | audio | video | other
+  string url = 4;                 // browser-loadable (presigned or source URL)
+  string label_url = 5;           // YOLO txt paired with an image; empty if none
+  string label_path = 7;          // path of that label file (for ReadFile when the URL cannot be fetched from the browser)
+  string annotations_json = 6;    // labels made in the platform: [{kind, class_id, geometry, source}] (geometry normalized 0–1)
+}
+message BrowseFilesResponse { repeated BrowseFolder folders = 1; repeated BrowseFile files = 2; int64 total = 3; string classes_json = 4; }
+message ContentStatsRequest { string workspace_id = 1; string dataset_id = 2; string version_id = 3; }
+message ExtensionStat { string ext = 1; string kind = 2; int64 files = 3; int64 size_bytes = 4; }
+message ContentStats { repeated ExtensionStat extensions = 1; int64 files = 2; int64 size_bytes = 3; }
+message ReadFileRequest { string workspace_id = 1; string dataset_id = 2; string version_id = 3; string path = 4; int32 max_bytes = 5; }
+message ReadFileResponse { bytes data = 1; bool truncated = 2; int64 size_bytes = 3; }

@@ -1,0 +1,20 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M06 — AuditService
+service AuditService {
+  rpc ListEvents(ListAuditEventsRequest) returns (ListAuditEventsResponse);
+}
+message ListAuditEventsRequest { string workspace_id = 1; }
+message AuditEvent {
+  int64 seq = 1;
+  google.protobuf.Timestamp at = 2;
+  string actor_id = 3;
+  string action = 4;
+  string outcome = 5;
+  string reason = 6;
+}
+message ListAuditEventsResponse { repeated AuditEvent events = 1; bool chain_valid = 2; }

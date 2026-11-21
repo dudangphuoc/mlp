@@ -1,0 +1,288 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// Agent ↔ control plane channel (20/04 §3, D-11; modeled on blogic-tunnels).
+//
+// Framing: each message = varint length + protobuf message ("delimited" format).
+// Every TCP+TLS connection to :7443 starts with a ConnectionHello within 5 s.
+//   - register / enroll: long-lived control channel. After hello, control replies ControlToAgent{hello_result}
+//     then both sides exchange AgentToControl / ControlToAgent, multiplexed by stream_id
+//     (the side that opens an exchange assigns the id; 0 = connection level).
+//   - data_channel: short-lived connection for one byte session (notebook, file). Control replies with a DataChannelAccept,
+//     after which both sides switch to raw bytes.
+
+message ConnectionHello {
+  oneof kind {
+    RegisterHello register = 1;
+    EnrollHello enroll = 2;
+    DataChannelHello data_channel = 3;
+  }
+}
+
+message RegisterHello {
+  string credential = 1;        // mlpa_…
+  string agent_version = 2;
+  HostInfo host_info = 3;
+  string wg_public_key = 4;     // current mlp-net key (machines enrolled before the overlay existed / key regenerated)
+}
+
+message EnrollHello {
+  string enroll_token = 1;      // mlpe_… single-use, 10 minutes
+  string agent_version = 2;
+  HostInfo host_info = 3;
+  string wg_public_key = 4;
+  string previous_credential = 5; // reinstall on the same machine → keeps host_id + overlay_ip
+}
+
+message DataChannelHello {
+  string session_id = 1;
+  string token = 2;
+}
+
+message HelloResult {
+  bool ok = 1;
+  string error_reason = 2;      // FLEET_…
+  string host_id = 3;
+  string credential = 4;        // enroll only
+  string overlay_ip = 5;
+  WireGuardPeer wg_peer = 6;
+  string ray_head = 7;          // 10.88.0.1:6379
+  string node_image = 8;
+  string mlp_net_image = 9;
+}
+
+message WireGuardPeer {
+  string public_key = 1;
+  string endpoint = 2;          // <cp>:51820
+  string allowed_ips = 3;       // 10.88.0.0/16
+}
+
+message DataChannelAccept { bool ok = 1; string error_reason = 2; }
+
+// ── Envelope ───────────────────────────────────────────────────────────────
+
+message AgentToControl {
+  uint64 stream_id = 1;
+  oneof body {
+    Heartbeat heartbeat = 10;
+    HostInfo host_info = 11;
+    HostMetrics host_metrics = 12;
+    CommandProgress command_progress = 13;
+    CommandResult command_result = 14;
+    SetupStage setup_stage = 16;
+    LogChunk log_chunk = 17;
+    ContainerEvent container_event = 19;       // D-38: every mlp.managed=1 container start / exit
+    ContainerSnapshot container_snapshot = 20; // right after hello: existing containers (running + exited but not removed)
+  }
+  reserved 15, 18;   // NodeStatus, WorkloadExit (agent v1)
+}
+
+message ControlToAgent {
+  uint64 stream_id = 1;
+  oneof body {
+    HelloResult hello_result = 10;
+    Heartbeat heartbeat = 11;
+    AgentCommand command = 12;
+    OpenDataChannel open_data_channel = 13;
+    CancelCommand cancel = 14;
+  }
+}
+
+message Heartbeat { google.protobuf.Timestamp at = 1; }
+
+// ── Machine info (D-12: the agent is the source of truth) ─────────────────
+
+enum OsFamily { OS_FAMILY_UNSPECIFIED = 0; LINUX = 1; WINDOWS = 2; MACOS = 3; }
+enum ContainerRuntime { RUNTIME_UNSPECIFIED = 0; NATIVE = 1; WSL2 = 2; DOCKER_DESKTOP = 3; }
+
+message HostInfo {
+  string machine_name = 1;
+  OsFamily os_family = 2;
+  string os_description = 3;
+  string kernel = 4;
+  string architecture = 5;      // x64 / arm64
+  int32 logical_cpus = 6;
+  uint64 memory_bytes = 7;
+  repeated GpuInfo gpus = 8;
+  repeated DiskInfo disks = 9;
+  ContainerRuntime runtime = 10;
+  uint64 vm_memory_bytes = 11;  // Docker Desktop/WSL VM limit
+  int32 vm_cpus = 12;
+  string docker_version = 13;
+  string nvidia_driver = 14;
+  string cuda_version = 15;
+  string data_path = 16;
+  string models_path = 17;
+  // Agent (D-38, OTA): version = agent-builder source hash; RID + install location + service manager let the control plane generate the upgrade script.
+  string agent_version = 18;
+  string agent_rid = 19;
+  string agent_exe = 20;
+  string service_manager = 21;  // systemd | launchd | schtasks | none
+  string agent_state_dir = 22;
+}
+
+message GpuInfo {
+  int32 index = 1;
+  string uuid = 2;
+  string name = 3;
+  uint64 memory_bytes = 4;
+  string compute_capability = 5;
+}
+
+message DiskInfo { string mount = 1; uint64 total_bytes = 2; uint64 free_bytes = 3; }
+
+message HostMetrics {
+  google.protobuf.Timestamp at = 1;
+  double cpu_percent = 2;
+  uint64 memory_used_bytes = 3;
+  repeated GpuSample gpus = 4;
+  repeated DiskInfo disks = 5;
+  uint64 net_rx_bytes = 6;
+  uint64 net_tx_bytes = 7;
+  repeated ContainerSample containers = 8;
+  bool docker_down = 9;          // docker daemon not responding (Docker Desktop stopped…) → control plane marks the machine "degraded"
+  string docker_error = 10;
+}
+
+message GpuSample {
+  string uuid = 1;
+  double util_percent = 2;
+  uint64 memory_used_bytes = 3;
+  double temperature_c = 4;
+  double power_w = 5;
+}
+
+message ContainerSample { string name = 1; string state = 2; double cpu_percent = 3; uint64 memory_bytes = 4; }
+
+message SetupStage {
+  string stage = 1;   // agent_installed | network_configured | image_pulled | ray_node_started | connected
+  bool ok = 2;
+  string message = 3;
+}
+
+// Continuous container logs (20/10 §2.4): chunks ≤ 64 KB or 1 s; ts_ms parallels lines (source timestamp, used to deduplicate on resend).
+message LogChunk { string source = 1; repeated string lines = 2; string attempt_id = 3; repeated int64 ts_ms = 4; }
+
+// D-38: the agent is a container bridge — it only reports facts about containers; the control plane interprets them (attempt, Ray node, mlp-net).
+message ContainerState {
+  string name = 1;
+  map<string, string> labels = 2;
+  string state = 3;           // running | exited | created
+  int32 exit_code = 4;
+  bool oom_killed = 5;
+  google.protobuf.Timestamp finished_at = 6;
+  string spec_hash = 7;       // mlp.spec label from ContainerApply
+}
+message ContainerEvent { ContainerState container = 1; string action = 2; }   // start | die
+message ContainerSnapshot { repeated ContainerState containers = 1; }
+
+
+// ── Commands (one stream per command) ──────────────────────────────────────
+
+message AgentCommand {
+  string command_id = 1;
+  oneof kind {
+    BrowsePath browse_path = 16;
+    PrepullImages prepull_images = 18;
+    CollectLogs collect_logs = 20;
+    Uninstall uninstall = 22;
+    Disconnect disconnect = 23;
+    // D-38 — generic operations; the control plane composes them into Ray node / workload / mlp-net / OTA
+    ContainerApply container_apply = 30;
+    ContainerStop container_stop = 31;
+    ContainerRemove container_remove = 32;
+    ContainerRunOnce container_run_once = 33;
+    ImageBuild image_build = 34;
+    FileRead file_read = 35;
+    FileWrite file_write = 36;
+    FileDelete file_delete = 37;
+    RunScript run_script = 38;
+  }
+  reserved 10, 11, 12, 13, 14, 15, 17, 19, 21;   // StartRayNode…StartNetwork, Drain, BuildImage, Upgrade (agent v1)
+}
+
+// A platform container. The agent adds labels mlp.managed=1 + mlp.spec=<sha256 spec> (compared on re-apply).
+message ContainerSpec {
+  string name = 1;
+  string image = 2;
+  repeated string command = 3;          // arguments after the image
+  repeated string entrypoint = 4;       // empty = image default
+  map<string, string> env = 5;
+  map<string, string> labels = 6;
+  repeated Mount mounts = 7;            // source is an absolute path or a volume name
+  string network = 8;                   // docker network name or container:<name>
+  repeated string gpus = 9;             // ["all"] or UUIDs
+  double cpus = 10;
+  uint64 memory_bytes = 11;
+  uint64 shm_bytes = 12;
+  repeated string cap_add = 13;
+  repeated PortBinding ports = 14;
+  string restart = 15;                  // "" | unless-stopped | always
+  bool init = 16;
+  string workdir = 17;
+  map<string, string> sysctls = 18;
+}
+message Mount { string source = 1; string target = 2; bool read_only = 3; }
+message PortBinding { string host_ip = 1; int32 host_port = 2; int32 container_port = 3; string protocol = 4; }   // host_port 0 = random port
+
+// Creates a container from the spec. keep_if_same: a running container with the same name and mlp.spec is kept as is (ok, kept=true).
+message ContainerApply { ContainerSpec spec = 1; bool keep_if_same = 2; int32 timeout_seconds = 3; }
+// Stops (SIGTERM, waits for grace, then SIGKILL) by name or k=v label; does not remove — the die event reports the exit code.
+message ContainerStop { string name = 1; string label = 2; int32 grace_seconds = 3; }
+message ContainerRemove { string name = 1; string label = 2; bool force = 3; repeated string volumes = 4; }   // volumes: deleted after the container is removed (errors ignored)
+// Runs until exit (e.g. keygen); returns exit_code + stdout (≤ 64 KB).
+message ContainerRunOnce { ContainerSpec spec = 1; int32 timeout_seconds = 2; }
+// Builds an image from the attached files (Dockerfile + …); skipped if the tag already exists (unless force).
+message ImageBuild { string tag = 1; map<string, bytes> files = 2; bool force = 3; int32 timeout_seconds = 4; }   // 0 = agent default (20 min)
+// File in the agent's state directory (relative path, cannot escape it).
+message FileRead { string path = 1; int64 max_bytes = 2; }
+message FileWrite { string path = 1; bytes content = 2; bool executable = 3; }
+message FileDelete { string path = 1; bool recursive = 2; }
+// Runs a script. detached: detached from the agent process via the service manager (systemd-run / launchctl / schtasks SYSTEM) —
+// used for OTA (the script replaces the agent binary and restarts the service).
+message RunScript { string path = 1; string shell = 2; repeated string args = 3; bool detached = 4; string job_name = 5; int32 timeout_seconds = 6; }
+
+message BrowsePath { string relative_path = 1; }
+message BrowsePathResult { repeated PathEntry entries = 1; }
+message PathEntry { string name = 1; bool is_dir = 2; uint64 size = 3; }
+
+message PrepullImages { repeated string images = 1; }
+message CollectLogs { string upload_url = 1; }
+message Uninstall {}
+message Disconnect {}
+
+message CancelCommand { string command_id = 1; }
+
+message CommandProgress { string command_id = 1; string message = 2; double percent = 3; }
+
+message CommandResult {
+  string command_id = 1;
+  bool ok = 2;
+  string error_reason = 3;
+  string message = 4;
+  string endpoint = 5;            // ContainerApply with published ports: host:port of the first port
+  int32 exit_code = 6;            // ContainerRunOnce / RunScript (not detached)
+  string output = 7;              // stdout (≤ 64 KB)
+  bytes data = 8;                 // FileRead
+  bool kept = 9;                  // ContainerApply: a running container matching the spec → kept as is
+  bool exists = 11;               // FileRead: whether the file exists
+  oneof result {
+    BrowsePathResult browse_path = 10;
+  }
+}
+
+// ── Data channel ───────────────────────────────────────────────────────────
+
+message OpenDataChannel {
+  string session_id = 1;
+  string token = 2;
+  oneof target {
+    NotebookTarget notebook = 10;
+    HostFileTarget host_file = 11;
+  }
+}
+message NotebookTarget { int32 port = 1; }
+message HostFileTarget { string path = 1; uint64 offset = 2; uint64 length = 3; string token = 4; }

@@ -1,0 +1,61 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+// Standard serving protocol between the gateway (api) and a recipe's serve container (20/08 §10, D-21).
+// Per-task input/output types — same semantics as mlp_serve.types (Python). Image coordinates are in pixels.
+service ModelServer {
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Metadata(HealthRequest) returns (ServerMetadata);
+}
+
+message PredictRequest { repeated TaskInput inputs = 1; }
+message PredictResponse { repeated TaskOutput outputs = 1; }
+
+message TaskInput {
+  oneof kind {
+    ImageInput image = 1;
+    TextInput text = 2;
+    TabularInput tabular = 3;
+    AudioInput audio = 4;
+    ChatInput chat = 5;
+  }
+}
+message ImageInput { bytes data = 1; float conf = 2; float iou = 3; int32 imgsz = 4; repeated string labels = 5; }   // labels: candidate classes for zero-shot models
+message TextInput { string text = 1; repeated string labels = 2; }   // labels: candidate classes for zero-shot models
+message TabularInput { map<string, double> numbers = 1; map<string, string> strings = 2; }
+message AudioInput { bytes data = 1; string format = 2; string language = 3; }
+message ChatMessage { string role = 1; string content = 2; }
+message ChatInput { repeated ChatMessage messages = 1; int32 max_tokens = 2; float temperature = 3; }
+
+message TaskOutput {
+  oneof kind {
+    DetectOutput detect = 1;
+    ClassifyOutput classify = 2;
+    NerOutput ner = 3;
+    GenerateOutput generate = 4;
+    AsrOutput asr = 5;
+    TabularOutput tabular = 6;
+  }
+}
+message DetectObject {
+  int32 class_id = 1; string class_name = 2; float score = 3;
+  float x1 = 4; float y1 = 5; float x2 = 6; float y2 = 7;
+  repeated float polygon = 8;      // x0,y0,x1,y1,…
+  repeated float keypoints = 9;
+  float angle = 10;
+}
+message DetectOutput { int32 width = 1; int32 height = 2; repeated DetectObject objects = 3; }
+message LabelScore { string label = 1; float score = 2; }
+message ClassifyOutput { repeated LabelScore labels = 1; }
+message Entity { string label = 1; int32 start = 2; int32 end = 3; string text = 4; float score = 5; }
+message NerOutput { repeated Entity entities = 1; }
+message GenerateOutput { string text = 1; int32 prompt_tokens = 2; int32 completion_tokens = 3; }
+message Segment { float start = 1; float end = 2; string text = 3; string speaker = 4; }
+message AsrOutput { string text = 1; repeated Segment segments = 2; }
+message TabularOutput { string label = 1; map<string, double> probabilities = 2; double value = 3; bool has_value = 4; }
+
+message HealthRequest {}
+message HealthResponse { bool ready = 1; string message = 2; }
+message ServerMetadata { string task = 1; string recipe = 2; string handler = 3; }

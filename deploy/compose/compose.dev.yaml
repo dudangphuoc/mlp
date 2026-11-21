@@ -1,0 +1,21 @@
+# Dev override (deploy/dev/stack.sh): fixed container names + 127.0.0.1 ports for an api run from source and for integration scenarios.
+# Each container ≤ 1 CPU (CLAUDE.md: keep the machine cool).
+services:
+  ray-head:
+    container_name: mlp-ray-head
+    cpus: 1
+  agent-builder:
+    container_name: mlp-agent-builder-dev
+    volumes: !override ["../../.dev/agents:/agents"]
+    cpus: 2
+  # `stack.sh full`: both api + web in docker (images built one at a time)
+  api:
+    container_name: mlp-api-dev
+    volumes: !override ["net:/net", "certs:/certs:ro", "../../.dev/agents:/agents", "../../.dev/recipes-docker:/app/recipes:ro"]   # cache shared with agent-builder; builtin recipes + gpu-recipe (copied in by stack.sh full)
+    cpus: 2
+  web:
+    container_name: mlp-web-dev
+    cpus: 1
+  wireguard:
+    container_name: mlp-wg-dev
+    ports: !override ["0.0.0.0:51820:51820/udp", "${MLP_DEV_BIND:-127.0.0.1}:5080:5080", "${MLP_DEV_BIND:-127.0.0.1}:5081:5081", "0.0.0.0:7443:7443", "127.0.0.1:8265:8265", "${MLP_DEV_BIND:-127.0.0.1}:8080:8080"]

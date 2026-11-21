@@ -1,0 +1,29 @@
+# Integration scenarios only (deploy/dev/stack.sh up|test): local Postgres + S3, Ray head without overlay (api runs on the host).
+# Not for production — production infrastructure is external PostgreSQL/MinIO.
+services:
+  postgres:
+    container_name: mlp-pg-dev
+    image: postgres:17-alpine
+    networks: [mlp]
+    environment: { POSTGRES_DB: mlp, POSTGRES_PASSWORD: dev }
+    volumes: [pg-test:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:55432:5432"]
+    cpus: 1
+  s3:
+    container_name: mlp-s3-dev
+    image: chrislusf/seaweedfs:4.54
+    networks: [mlp]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mkdir -p /etc/mlp && printf '{"identities":[{"name":"mlp","credentials":[{"accessKey":"mlpdevaccess","secretKey":"mlpdevsecret-change-me"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        > /etc/mlp/s3.json && exec /entrypoint.sh server -ip.bind=0.0.0.0 -s3 -s3.config=/etc/mlp/s3.json
+    volumes: [s3-test:/data]
+    ports: ["${MLP_DEV_BIND:-127.0.0.1}:8333:8333"]
+    cpus: 1
+  ray-head:
+    network_mode: !reset null
+    networks: [mlp]
+    ports: ["127.0.0.1:8265:8265"]
+    command: ray start --head --block --num-cpus=0 --num-gpus=0 --dashboard-host=0.0.0.0 --port=6379
+volumes: { pg-test: {}, s3-test: {} }

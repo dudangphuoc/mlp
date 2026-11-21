@@ -1,0 +1,45 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M16 — NotificationService (P1: in-app channel). Email/Slack/webhook (channels) in P2.
+service NotificationService {
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  // Server stream: sends the unread count immediately, then each new/merged notification (acceptance: ≤ 2 s).
+  rpc WatchNotifications(WatchNotificationsRequest) returns (stream NotificationEvent);
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+  rpc GetPreferences(GetNotificationPreferencesRequest) returns (NotificationPreferences);
+  rpc UpdatePreferences(UpdateNotificationPreferencesRequest) returns (NotificationPreferences);
+}
+
+message Notification {
+  string id = 1;
+  string kind = 2;              // job.failed, labeling.rejected, …
+  string title = 3;
+  string link = 4;              // path within the web app (R2: no sensitive data)
+  string resource_uri = 5;
+  string severity = 6;          // info | success | warning | error
+  int32 count = 7;              // R1: number of merges within 5 minutes
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  bool read = 10;
+}
+message ListNotificationsRequest { string workspace_id = 1; bool unread_only = 2; }
+message ListNotificationsResponse { repeated Notification notifications = 1; int64 unread = 2; }
+message WatchNotificationsRequest { string workspace_id = 1; }
+message NotificationEvent { Notification notification = 1; int64 unread = 2; }
+message MarkReadRequest { string workspace_id = 1; repeated string ids = 2; bool all = 3; }
+message MarkReadResponse { int64 unread = 1; }
+
+message NotificationPreference {
+  string kind = 1;
+  string group = 2;
+  string label = 3;
+  bool mandatory = 4;           // R3: cannot be turned off
+  bool in_app = 5;
+}
+message GetNotificationPreferencesRequest { string workspace_id = 1; }
+message NotificationPreferences { repeated NotificationPreference preferences = 1; }
+message UpdateNotificationPreferencesRequest { string workspace_id = 1; repeated NotificationPreference preferences = 2; }

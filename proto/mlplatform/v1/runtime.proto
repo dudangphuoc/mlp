@@ -1,0 +1,58 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "mlplatform/v1/common.proto";
+
+// RuntimeService — shim/holder → control plane, authenticated with the `mlpj_` job token (M03 §6, 20/03).
+service RuntimeService {
+  rpc ReportAllocation(ReportAllocationRequest) returns (Empty);
+  rpc Heartbeat(RuntimeHeartbeat) returns (Empty);
+  rpc ReportExit(ReportExitRequest) returns (Empty);
+  // Model directory (D-28) after training: request a presigned PUT per file, then report completion (20/08 §5.1 step 7)
+  rpc CreateArtifactUploads(CreateArtifactUploadsRequest) returns (ArtifactUploads);
+  rpc CompleteArtifacts(CompleteArtifactsRequest) returns (Empty);
+  // 20/10 §2.2, §4.2 — standard progress and two-tier checkpoints (workload token; superseded attempt → SCHED_ATTEMPT_FENCED)
+  rpc ReportProgress(ProgressReport) returns (Empty);
+  rpc CreateCheckpointUpload(CheckpointUploadRequest) returns (CheckpointUpload);
+  rpc RegisterCheckpoint(RegisterCheckpointRequest) returns (Empty);
+}
+
+message ProgressReport {
+  string phase = 1;          // preparing_data | restoring_checkpoint | running | uploading | finishing
+  double current = 2;
+  double total = 3;
+  string unit = 4;           // file | epoch | step …
+  double percent = 5;
+  double rate = 6;           // units / second
+  double eta_seconds = 7;
+  string message = 8;
+  int32 stall_after_min = 9;  // recipe `progress.stallAfterMin` (default 30) — "possibly stalled" threshold
+  string detail_json = 10;    // round 1 R24: training detail {epoch, epochs, step, steps, sub: train|validate, loss, epoch_seconds, stages[]}
+}
+message CheckpointUploadRequest { string name = 1; int64 step = 2; }
+message CheckpointUpload { string url = 1; string key = 2; }
+message RegisterCheckpointRequest { string name = 1; int64 step = 2; string location = 3; string key = 4; int64 size_bytes = 5; string sha256 = 6; }
+
+message CreateArtifactUploadsRequest { string run_id = 1; repeated string paths = 2; }
+message ArtifactUploads { repeated string urls = 1; }
+message ArtifactFile { string path = 1; int64 size_bytes = 2; }
+message CompleteArtifactsRequest { string run_id = 1; repeated ArtifactFile files = 2; }
+
+message ReportAllocationRequest {
+  string attempt_id = 1;
+  string host_id = 2;
+  repeated string gpu_uuids = 3;
+  string node_ip = 4;
+  bool ok = 5;
+  string message = 6;      // placement_timeout …
+}
+
+message RuntimeHeartbeat { string attempt_id = 1; string phase = 2; double percent = 3; }
+
+message ReportExitRequest {
+  string attempt_id = 1;
+  int32 exit_code = 2;
+  string reason = 3;        // user_error | recipe_error | oom | …
+  string message = 4;
+}

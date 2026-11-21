@@ -1,0 +1,34 @@
+# CI (P0-10/P0-11): gate → AOT → image. Mỗi job một lõi build (-m:1), image build lần lượt.
+name: ci
+on: [push, pull_request]
+jobs:
+  gates:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - uses: bufbuild/buf-action@v1
+        with: { setup_only: true }
+      - run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - run: cd web && npm ci
+      - run: gates/run.sh --aot
+  images:
+    needs: gates
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions: { packages: write, contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: build + push (lần lượt)
+        run: |
+          set -e
+          P=ghcr.io/${{ github.repository_owner }}/mlp
+          for img in api web node; do
+            docker build -f deploy/docker/$img.Dockerfile -t $P/$img:${{ github.sha }} .
+            docker push $P/$img:${{ github.sha }}
+          done

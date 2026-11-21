@@ -1,0 +1,153 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: d-fine
+  displayName: D-FINE
+  family: detr-realtime
+  description: Real-time DETR with Fine-grained Distribution Refinement (ICLR 2025). COCO and Objects365 weights.
+  homepage: https://github.com/Peterande/D-FINE
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  git: https://github.com/Peterande/D-FINE
+  commit: 956d1709314c2c6a4df6f34de232054578a7449f
+  commitDate: "2026-08-19"
+license:
+  code: Apache-2.0
+  weights: Apache-2.0 (COCO) · *_obj365/*_obj2coco variants may be subject to the Objects365 dataset terms
+  notes: ""
+tasks: [detect]
+environment:
+  dockerfile: Dockerfile          # build context: the recipes/ directory
+  gpu: required
+  minVramGb: 8
+  python: "3.11"
+  shmSizeGb: 8
+data:
+  input: coco
+variants:
+  - {name: dfine-n, config: configs/dfine/dfine_hgnetv2_n_coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_n_coco.pth, params: 4,  reported: {coco_ap50_95: 42.8}, classes: coco80}
+  - {name: dfine-s, config: configs/dfine/dfine_hgnetv2_s_coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_s_coco.pth, params: 10, reported: {coco_ap50_95: 48.5}, classes: coco80}
+  - {name: dfine-m, config: configs/dfine/dfine_hgnetv2_m_coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_m_coco.pth, params: 19, reported: {coco_ap50_95: 52.3}, classes: coco80}
+  - {name: dfine-l, config: configs/dfine/dfine_hgnetv2_l_coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_l_coco.pth, params: 31, reported: {coco_ap50_95: 54.0}, classes: coco80}
+  - {name: dfine-x, config: configs/dfine/dfine_hgnetv2_x_coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_x_coco.pth, params: 62, reported: {coco_ap50_95: 55.8}, classes: coco80}
+  - {name: dfine-s-obj2coco, config: configs/dfine/objects365/dfine_hgnetv2_s_obj2coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_s_obj2coco.pth, params: 10, reported: {coco_ap50_95: 50.7}, license: "see the Objects365 terms", classes: coco80}
+  - {name: dfine-m-obj2coco, config: configs/dfine/objects365/dfine_hgnetv2_m_obj2coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_m_obj2coco.pth, params: 19, reported: {coco_ap50_95: 55.1}, license: "see the Objects365 terms", classes: coco80}
+  - {name: dfine-l-obj2coco, config: configs/dfine/objects365/dfine_hgnetv2_l_obj2coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_l_obj2coco_e25.pth, params: 31, reported: {coco_ap50_95: 57.3}, license: "see the Objects365 terms", classes: coco80}
+  - {name: dfine-x-obj2coco, config: configs/dfine/objects365/dfine_hgnetv2_x_obj2coco.yml, weights: https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_x_obj2coco.pth, params: 62, reported: {coco_ap50_95: 59.3}, license: "see the Objects365 terms", classes: coco80}
+params:
+  epochs: {type: integer, default: 72, minimum: 1, pane: schedule, affectsTrial: false, affectsInspect: true, description: "Schedule keys (stop_epoch, policy.epoch…) are scaled proportionally"}
+  batch: {type: integer, default: 16, minimum: 1, pane: batch, description: "Total batch size; must be divisible by the number of GPUs"}
+  num_classes: {type: integer, from: dataset.classes.count}
+  seed: {type: integer, default: 0, pane: objective, affectsTrial: false}
+  use_amp: {type: boolean, default: true, pane: objective}
+  # Shallow tuning (round 1, D-45). default: null = "as the variant's config has it"; the real value comes from the inspection.
+  lr: {type: number, default: null, exclusiveMinimum: 0, maximum: 0.1, pane: schedule, affectsInspect: true, label: "Peak learning rate", description: "Learning rate after warm-up. Lower it when fine-tuning on little data; the backbone keeps its ratio to this value."}
+  backbone_lr_scale: {type: number, default: null, exclusiveMinimum: 0, maximum: 1, pane: learn, affectsInspect: true, label: "Backbone learning-rate ratio", description: "Backbone LR as a share of the peak LR. 1 = the backbone learns as fast as the rest."}
+  freeze: {type: string, enum: [none, backbone], default: null, pane: learn, affectsInspect: true, label: "Frozen part", description: "backbone = the backbone keeps its pretrained weights and is not trained (little data); none = everything is trained."}
+  img_size: {type: integer, default: null, minimum: 320, maximum: 1280, multipleOf: 32, pane: batch, affectsInspect: true, label: "Image size", description: "Side of the square the images are resized to, for training, validation and serving. Larger sees small objects better and needs more GPU memory."}
+  multiscale: {type: boolean, default: true, pane: batch, affectsInspect: true, label: "Multi-scale training", description: "Each batch is resized to a random size around the image size (stage 1 only)."}
+  aug_strong: {type: boolean, default: true, pane: batch, affectsInspect: true, label: "Strong augmentation", description: "Colour distortion, zoom-out and random crop during stage 1."}
+  aug_flip: {type: boolean, default: true, pane: batch, affectsInspect: true, label: "Horizontal flip", description: "Turn off when left and right mean different things in your images."}
+canvas:
+  # CPU-only look at what a training would run (no data, no GPU): prints one MLP_INSPECT line (recipes/_shared/detr_family/inspect_recipe.py).
+  inspect: >
+    python /opt/recipe/shared/inspect_recipe.py --base /opt/recipe/src/{variant.config}
+    --num-classes {dataset.classes.count} --params-json {params.json}
+  inspectWorkdir: /opt/recipe/src
+  phases:
+    - {key: stage1, label: "Learning with augmentation", untilKey: train_dataloader.collate_fn.stop_epoch}
+    - {key: stage2, label: "Refining from the best checkpoint"}
+  blocks:
+    - {key: backbone, label: Backbone}
+    - {key: encoder, label: Encoder}
+    - {key: decoder, label: "Decoder and heads"}
+entrypoints:
+  train:
+    distributed: torchrun          # the repo only documents torchrun; a single GPU also runs torchrun --nproc_per_node=1
+    workdir: /opt/recipe/src       # backbone weight paths are relative to the repo directory
+    command: >
+      python /opt/recipe/shared/make_config.py --base /opt/recipe/src/{variant.config}
+      --data {data} --num-classes {params.num_classes} --epochs {params.epochs} --batch {params.batch}
+      --epoch-key epochs --output-dir {output} --out {output}/mlp_train.yml
+      {params.lr?--lr {params.lr}} {params.backbone_lr_scale?--backbone-lr-scale {params.backbone_lr_scale}}
+      {params.freeze?--freeze {params.freeze}} {params.img_size?--img-size {params.img_size}}
+      --multiscale {params.multiscale} --aug-strong {params.aug_strong} --aug-flip {params.aug_flip}
+      && torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      train.py -c {output}/mlp_train.yml {params.use_amp?--use-amp} --seed={params.seed} {weights?-t {weights}}
+    resume: {mode: replace, from: "{weights?-t {weights}}", to: "-r {checkpoint}"}   # -t and -r are mutually exclusive
+    checkpoints: ["{output}/last.pth", "{output}/best_stg1.pth"]   # R28: stage 2 reloads best_stg1.pth, so a resume needs both
+    # R24: progress from the repo's own lines — "Epoch: [3/24]  [ 50/106]  eta: …  loss: 21.3 (22.0) …" and "Test:  [ 5/12] …"
+    progress:
+      pattern: '^Epoch: \[(?<epoch>\d+)/(?<epochs>\d+)\]\s+\[\s*(?<step>\d+)/(?<steps>\d+)\].*?\bloss: (?<loss>\S+)'
+      validatePattern: '^Test:\s+\[\s*(?<step>\d+)/(?<steps>\d+)\]'
+      config: "{output}/mlp_train.yml"
+    fromScratch: true              # no -t: train from the pretrained backbone bundled in the image
+    # Trial (round 1 R15–R22): pass 1 = one stage-1 epoch; pass 2 resumes from last.pth into stage 2 (Refresh EMA at epoch 1).
+    trial:
+      overrides: {"epochs": 1, "train_dataloader.collate_fn.stop_epoch": 1, "train_dataloader.dataset.transforms.policy.epoch": 1, "print_freq": 1}
+      resumeOverrides: {"epochs": 2, "train_dataloader.collate_fn.stop_epoch": 1, "train_dataloader.dataset.transforms.policy.epoch": 1, "print_freq": 1}
+    runOverrides: {"print_freq": 10}
+  eval:
+    workdir: /opt/recipe/src
+    command: >
+      python /opt/recipe/shared/make_config.py --base {model}/config/mlp_train.yml --data {data}
+      --train-split '' --val-split test --output-dir {output} --out {output}/mlp_eval.yml
+      && torchrun --nproc_per_node=1 train.py -c {output}/mlp_eval.yml --test-only -r {model.weights}
+    metrics:
+      sources:
+        - jsonl: "{output}/log.txt"
+      primary: test/mAP50-95
+      map:
+        test_coco_eval_bbox[0]: test/mAP50-95
+        test_coco_eval_bbox[1]: test/mAP50
+  export:
+    formats: [onnx]
+    outputs: ["model.onnx"]                # TensorRT: build the engine on the target machine (GPU/driver dependent), not at export
+    workdir: /opt/recipe/src
+    command: >
+      cp {model.weights} {output}/model.pth
+      && python tools/deployment/export_onnx.py --check -c {model}/config/mlp_train.yml -r {output}/model.pth
+      && rm {output}/model.pth
+  serve:
+    handler: shared.handler:Handler
+  assist:
+    kinds: [prelabel, score]
+    handler: shared.handler:Handler
+failures:
+  - {pattern: '^Loss is (nan|inf)', reason: loss_invalid, retry: false,
+     message: "The loss became NaN or infinite, so training stopped. Lower the learning rate or turn mixed precision (AMP) off, then cook again."}
+metrics:
+  sources:
+    - tensorboard: "{output}/summary"
+    - jsonl: "{output}/log.txt"     # per epoch: train_loss, train_lr, test_coco_eval_bbox[0..], epoch
+    # Global precision/recall/F1 at a fixed 0.5 confidence, printed after each validation ("Metrics: {'f1': …, 'precision': …, 'recall': …}")
+    - regex:
+        pattern: '^Metrics: .*''f1'': (?:np\.float64\()?(?<f1>[0-9.eE+-]+).*''precision'': (?:np\.float64\()?(?<precision>[0-9.eE+-]+).*''recall'': (?:np\.float64\()?(?<recall>[0-9.eE+-]+)'
+  primary: val/mAP50-95
+  epochKeys: ["Test/*", "test_*", "train_*"]   # R25: logged per epoch → moved onto the global step axis
+  map:
+    f1: val/f1
+    precision: val/precision
+    recall: val/recall
+    Test/coco_eval_bbox_0: val/mAP50-95
+    Test/coco_eval_bbox_1: val/mAP50
+    Loss/total: train/loss
+    Lr/pg_0: lr/pg0
+    test_coco_eval_bbox[0]: val/mAP50-95
+    test_coco_eval_bbox[1]: val/mAP50
+    train_loss: train/loss_epoch
+artifacts:
+  best: {from: ["best_stg2.pth", "best_stg1.pth"], as: model.pth}   # stg2 if stop_epoch was passed, otherwise stg1
+  files:
+    - {from: mlp_train.yml, to: config/mlp_train.yml}
+    - {from: log.txt, to: config/log.txt}
+openItems:
+  - "last.pth is only written before stop_epoch → a crash in the final stage resumes from an epoch before stop_epoch."
+  - "torch.load(weights_only=True) is the default since torch 2.6 — the image pins torch 2.5.1 to avoid it; check when upgrading."
+  - "Order/length of the test_coco_eval_bbox array (12 or 14 elements) not verified; only elements 0 (AP50:95) and 1 (AP50) are used."
+  - "export_onnx.py writes the .onnx file next to the checkpoint (.pth → .onnx extension) — check on the built image."
+  - "Eval --test-only writes log.txt to the eval config output_dir — check that the test_coco_eval_bbox key appears on a test-only run."

@@ -1,0 +1,104 @@
+RootWebArea: Trash Settings on Ultralytics Platform
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Settings
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Trash Settings
+      StaticText: Trash Settings
+    StaticText: Manage your account settings and preferences
+    tablist: 
+      tab: Profile
+        StaticText: Profile
+      tab: API Keys
+        StaticText: API Keys
+      tab: Plans
+        StaticText: Plans
+      tab: Billing
+        StaticText: Billing
+      tab: Usage
+        StaticText: Usage
+      tab: Referrals
+        StaticText: Referrals
+      tab: Teams
+        StaticText: Teams
+      tab: Integrations
+        StaticText: Integrations
+      tab: Trash [selected]
+        StaticText: Trash
+    tabpanel: Trash
+      StaticText: Items in trash will be permanently deleted after 30 days
+      button: Refresh
+      tablist: 
+        tab: All [selected]
+          StaticText: All
+        tab: Datasets
+          StaticText: Datasets
+        tab: Projects
+          StaticText: Projects
+        tab: Models
+          StaticText: Models
+      StaticText: Trash is empty
+      StaticText: Deleted items will appear here.
+    StaticText: Training History
+    StaticText: No training yet
+    StaticText: Payment History
+    StaticText: No payments yet
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

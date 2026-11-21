@@ -1,0 +1,106 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+
+// Hugging Face Hub integration (M01 S-01-10 token, M04 dataset import, M11/M17 model import): search repos, browse files, import into the platform.
+service HubService {
+  rpc SearchHub(SearchHubRequest) returns (SearchHubResponse);
+  rpc GetHubRepo(GetHubRepoRequest) returns (HubRepo);              // fast: repo info + top-level files only
+  rpc ListHubTree(ListHubTreeRequest) returns (ListHubTreeResponse);   // one folder at a time (lazy tree)
+  rpc GetHubCard(GetHubRepoRequest) returns (HubCard);                 // README excerpt, loaded separately
+  rpc StartHubImport(StartHubImportRequest) returns (HubImport);
+  rpc ListHubImports(ListHubImportsRequest) returns (ListHubImportsResponse);
+  rpc GetHubToken(GetHubTokenRequest) returns (HubTokenStatus);
+  rpc SetHubToken(SetHubTokenRequest) returns (HubTokenStatus);   // checks whoami before saving
+  rpc DeleteHubToken(GetHubTokenRequest) returns (Empty);
+}
+
+message SearchHubRequest {
+  string workspace_id = 1;
+  string kind = 2;        // model | dataset
+  string query = 3;
+  string task = 4;        // pipeline_tag (model) / task_categories (dataset), empty = any
+  string sort = 5;        // downloads | likes | lastModified
+  int32 limit = 6;
+  string cursor = 7;      // next_cursor from the previous page; empty = first page
+}
+message HubRepoSummary {
+  string id = 1;
+  string kind = 2;
+  string task = 3;                  // pipeline_tag
+  int64 downloads = 4;
+  int64 likes = 5;
+  string license = 6;
+  bool gated = 7;
+  bool private = 8;
+  google.protobuf.Timestamp last_modified = 9;
+  repeated string tags = 10;
+  string library = 11;
+}
+message SearchHubResponse {
+  repeated HubRepoSummary items = 1;
+  string next_cursor = 2;   // empty = no more results
+}
+
+message GetHubRepoRequest { string workspace_id = 1; string kind = 2; string repo = 3; string revision = 4; }
+message HubFile { string path = 1; int64 size = 2; bool lfs = 3; bool dir = 4; }
+message HubRepo {
+  HubRepoSummary summary = 1;
+  string revision = 2;
+  string sha = 3;
+  repeated HubFile files = 4;       // top-level entries (folders have dir = true; open them with ListHubTree)
+  int64 total_bytes = 5;            // whole repo size when the Hub reports it (usedStorage), else 0
+  string card_excerpt = 6;          // README opening (model/dataset card)
+  bool needs_token = 7;             // gated/private and the workspace has no valid token yet
+}
+
+message ListHubTreeRequest { string workspace_id = 1; string kind = 2; string repo = 3; string revision = 4; string path = 5; }
+message ListHubTreeResponse { repeated HubFile files = 1; }
+message HubCard { string excerpt = 1; }
+
+message StartHubImportRequest {
+  string workspace_id = 1;
+  string kind = 2;                  // dataset | model
+  string repo = 3;
+  string revision = 4;
+  repeated string include = 5;      // glob (e.g. *.parquet, data/**); empty = all files
+  string dataset_id = 6;            // existing dataset; empty = create new
+  string target_name = 7;           // dataset / model name
+  string task = 8;                  // tasks.yaml key
+  string source = 9;                // hf (default) | url | s3
+  string mode = 10;                 // copy (default) = copy files into our storage now | reference = store addresses, download when used
+  repeated string urls = 11;        // source = url: http(s) file URLs
+}
+message HubImport {
+  string id = 1;
+  string kind = 2;
+  string repo = 3;
+  string revision = 4;
+  string target_id = 5;
+  string target_name = 6;
+  string task = 7;
+  string state = 8;                 // queued | running | succeeded | failed
+  int32 files_total = 9;
+  int32 files_done = 10;
+  int64 bytes_total = 11;
+  int64 bytes_done = 12;
+  string message = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp finished_at = 15;
+  string source = 16;
+  string mode = 17;
+}
+message ListHubImportsRequest { string workspace_id = 1; }
+message ListHubImportsResponse { repeated HubImport imports = 1; }
+
+message GetHubTokenRequest { string workspace_id = 1; }
+message SetHubTokenRequest { string workspace_id = 1; string token = 2; }
+message HubTokenStatus {
+  bool configured = 1;
+  string account = 2;
+  string status = 3;                // ok | invalid | unchecked
+  google.protobuf.Timestamp checked_at = 4;
+}

@@ -1,0 +1,112 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: hf-llm-sft
+  displayName: LLM SFT / LoRA (TRL)
+  family: llm
+  description: Fine-tune LLMs (SFT, LoRA/QLoRA) with the `trl sft` CLI; chat/prompt-completion data from M05.
+  homepage: https://github.com/huggingface/trl
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["trl[peft]==1.18.1", "transformers==5.23.0", "peft==0.21.3", "accelerate==1.16.0", "datasets==5.2.0", "tensorboard"]
+license:
+  code: Apache-2.0
+  weights: per the base model's model card
+  requiresAck: true
+  notes: "Base LLM licenses vary by model (some limit commercial use or user counts) — read the model card before use."
+tasks: [generate]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 16
+  python: "3.11"
+  shmSizeGb: 16
+data:
+  input: chat-jsonl              # {split}.jsonl: {"messages":[{"role","content"}…]}; TRL also accepts prompt-completion-jsonl
+  generatedFiles:
+    - path: "{output}/sft_config.yaml"
+      template: |
+        model_name_or_path: {weights}
+        output_dir: {output}
+        datasets:
+          - path: json
+            data_files:
+              train: {data.train}
+              test: {data.val}
+            split: train
+        dataset_test_split: test
+        use_peft: {params.use_peft}
+        lora_r: {params.lora_r}
+        lora_alpha: {params.lora_alpha}
+        lora_dropout: {params.lora_dropout}
+        load_in_4bit: {params.load_in_4bit}
+        num_train_epochs: {params.num_train_epochs}
+        per_device_train_batch_size: {params.per_device_train_batch_size}
+        gradient_accumulation_steps: {params.gradient_accumulation_steps}
+        learning_rate: {params.learning_rate}
+        max_length: {params.max_length}
+        packing: {params.packing}
+        eval_strategy: steps
+        eval_steps: {params.eval_steps}
+        save_steps: {params.eval_steps}
+        save_total_limit: 2
+        logging_steps: 10
+        report_to: tensorboard
+        bf16: {gpu.supports_bf16}
+        fp16: {gpu.supports_bf16|true=false|false=true}
+variants:
+  - {name: custom, displayName: Custom Hub model (enter id), weights: "hf://{params.base_model}", license: per model card, requiresAck: true}
+params:
+  base_model: {type: string, required: true, description: "e.g. Qwen/Qwen2.5-1.5B-Instruct — read the model card license"}
+  use_peft: {type: boolean, default: true}
+  lora_r: {type: integer, default: 16}
+  lora_alpha: {type: integer, default: 32}
+  lora_dropout: {type: number, default: 0.05}
+  load_in_4bit: {type: boolean, default: false}
+  num_train_epochs: {type: number, default: 1}
+  per_device_train_batch_size: {type: integer, default: 2}
+  gradient_accumulation_steps: {type: integer, default: 8}
+  learning_rate: {type: number, default: 2.0e-5}
+  max_length: {type: integer, default: 1024}
+  packing: {type: boolean, default: false}
+  eval_steps: {type: integer, default: 100}
+entrypoints:
+  train:
+    distributed: torchrun        # `trl sft` runs torchrun itself; torchrun flags are passed through
+    env:
+      TENSORBOARD_LOGGING_DIR: "{output}/runs"
+    command: >
+      trl sft --config {output}/sft_config.yaml
+      --nnodes {nnodes} --node_rank {node_rank} --nproc_per_node {gpus_per_node}
+      --master_addr {master_addr} --master_port {master_port}
+    resume: {mode: append, args: "--resume_from_checkpoint {checkpoint}"}
+    checkpoints: "{output}/checkpoint-*"
+  serve:
+    handler: handler:Handler
+    stream: true
+metrics:
+  sources:
+    - tensorboard: "{output}/runs"
+    - json: "{output}/trainer_state.json#log_history"
+  primary: val/loss
+  map:
+    eval/loss: val/loss
+    train/loss: train/loss
+    train/mean_token_accuracy: train/token_accuracy
+    eval/mean_token_accuracy: val/token_accuracy
+    train/learning_rate: lr/pg0
+    eval_loss: val/loss
+    loss: train/loss
+    mean_token_accuracy: train/token_accuracy
+    eval_mean_token_accuracy: val/token_accuracy
+    learning_rate: lr/pg0
+artifacts:
+  best: {from: ["."], as: hf}        # full model or PEFT adapter (trainer.save_model) → weights/hf/; skips checkpoint-*
+  baseWeights: "{params.use_peft?{weights.ref}}"   # PEFT → adapter model; records the base model ref (hf://…@rev)
+openItems:
+  - "Declaring a separate validation set via `datasets[].data_files.test` + `dataset_test_split: test` is an assumption based on TRL's DatasetMixtureConfig — verify during smoke test."
+  - "Torchrun flags passed through `trl sft` (`--nnodes`, `--master_addr`…): only `--nproc_per_node` is documented; check on multi-node runs."
+  - Serving uses transformers generate (slow); a separate vLLM recipe should be added for real serving (M15).

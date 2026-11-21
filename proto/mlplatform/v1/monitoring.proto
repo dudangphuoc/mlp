@@ -1,0 +1,83 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M13 — MonitoringService (first slice): prediction log (written by the gateway), late-arriving ground truth (REST /feedback),
+// baseline from a tabular dataset version, per-feature PSI/KS drift + prediction distribution, real quality, M16 alerts.
+service MonitoringService {
+  rpc GetMonitor(MonitorRef) returns (MonitorStatus);
+  rpc ConfigureMonitor(ConfigureMonitorRequest) returns (MonitorStatus);
+  rpc ComputeDrift(ComputeDriftRequest) returns (DriftSnapshot);
+  rpc ListSnapshots(ListSnapshotsRequest) returns (ListSnapshotsResponse);
+  rpc GetQuality(GetQualityRequest) returns (QualitySeries);
+  rpc ListPredictions(ListPredictionsRequest) returns (ListPredictionsResponse);
+}
+
+message MonitorRef { string workspace_id = 1; string deployment_id = 2; }
+
+message MonitorConfig {
+  string dataset_version_id = 1;
+  string label_column = 2;
+  int64 baseline_rows = 3;
+  repeated string features = 4;     // feature columns of the baseline
+  double psi_warn = 5;
+  double psi_alert = 6;
+  int32 window_size = 7;
+  int32 min_samples = 8;
+  bool enabled = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+message MonitorStatus { bool configured = 1; MonitorConfig config = 2; DriftSnapshot latest = 3; }
+
+message ConfigureMonitorRequest {
+  string workspace_id = 1;
+  string deployment_id = 2;
+  string dataset_version_id = 3;    // baseline (tabular CSV)
+  string label_column = 4;          // default "label"
+  double psi_warn = 5;              // default 0.1
+  double psi_alert = 6;             // default 0.25
+  int32 window_size = 7;            // number of most recent predictions per computation (default 500)
+  int32 min_samples = 8;            // minimum new predictions before the background loop recomputes (default 20)
+  bool enabled = 9;
+}
+
+message FeatureDrift {
+  string feature = 1;
+  string kind = 2;                  // numeric | categorical | prediction
+  optional double psi = 3;
+  optional double ks = 4;
+  int32 samples = 5;
+  optional double baseline_mean = 6;
+  optional double current_mean = 7;
+  string status = 8;                // ok | warn | alert | missing
+}
+message DriftSnapshot {
+  string id = 1;
+  google.protobuf.Timestamp at = 2;
+  int32 samples = 3;
+  string status = 4;                // ok | warn | alert
+  repeated FeatureDrift features = 5;
+  int32 labeled = 6;
+  optional double accuracy = 7;
+  optional double mae = 8;
+}
+message ComputeDriftRequest { string workspace_id = 1; string deployment_id = 2; int32 last_n = 3; }
+message ListSnapshotsRequest { string workspace_id = 1; string deployment_id = 2; int32 limit = 3; }
+message ListSnapshotsResponse { repeated DriftSnapshot snapshots = 1; }
+
+message GetQualityRequest { string workspace_id = 1; string deployment_id = 2; int32 days = 3; }
+message QualityPoint { google.protobuf.Timestamp day = 1; int64 labeled = 2; optional double accuracy = 3; optional double mae = 4; }
+message QualitySeries { repeated QualityPoint points = 1; }
+
+message ListPredictionsRequest { string workspace_id = 1; string deployment_id = 2; int32 limit = 3; }
+message PredictionRecord {
+  string id = 1;
+  google.protobuf.Timestamp at = 2;
+  double latency_ms = 3;
+  string features_json = 4;
+  string prediction_json = 5;
+  string ground_truth_json = 6;
+}
+message ListPredictionsResponse { repeated PredictionRecord predictions = 1; }

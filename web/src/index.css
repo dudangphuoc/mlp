@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/*
+ * Design system 30/01 §3. Semantic tokens (bg, surface, fg, primary, success…) and the Tailwind palettes (slate, white, brand, rose, amber,
+ * emerald, sky, violet) all point to CSS variables — switching dark/light only swaps variables, and every page (including slate-* pages) follows.
+ * Dark by default (30/01 §1); set `data-theme="light"` on <html> for light.
+ */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
+
+  --color-bg: var(--t-bg);
+  --color-surface: var(--t-surface);
+  --color-surface-2: var(--t-surface-2);
+  --color-overlay: var(--t-overlay);
+  --color-fg: var(--t-fg);
+  --color-fg-muted: var(--t-fg-muted);
+  --color-fg-subtle: var(--t-fg-subtle);
+  --color-line: var(--t-line);
+  --color-primary: var(--t-primary);
+  --color-primary-fg: var(--t-primary-fg);
+  --color-accent: var(--t-accent);
+  --color-success: var(--t-success);
+  --color-warning: var(--t-warning);
+  --color-danger: var(--t-danger);
+  --color-info: var(--t-info);
+  --color-split-train: #22c55e;
+  --color-split-val: #3b82f6;
+  --color-split-test: #a855f7;
+
+  --color-white: var(--t-surface);
+  --color-black: #000;
+  --color-slate-50: var(--s50); --color-slate-100: var(--s100); --color-slate-200: var(--s200); --color-slate-300: var(--s300);
+  --color-slate-400: var(--s400); --color-slate-500: var(--s500); --color-slate-600: var(--s600); --color-slate-700: var(--s700);
+  --color-slate-800: var(--s800); --color-slate-900: var(--s900); --color-slate-950: var(--s950);
+  --color-brand-50: var(--b50); --color-brand-100: var(--b100); --color-brand-500: var(--t-primary); --color-brand-600: var(--b600); --color-brand-700: var(--b700);
+  --color-rose-50: var(--r50); --color-rose-100: var(--r100); --color-rose-200: var(--r200); --color-rose-500: #f43f5e; --color-rose-600: var(--r600); --color-rose-700: var(--r700); --color-rose-800: var(--r800);
+  --color-amber-50: var(--a50); --color-amber-100: var(--a100); --color-amber-200: var(--a200); --color-amber-400: #fbbf24; --color-amber-500: #f59e0b; --color-amber-600: var(--a600); --color-amber-700: var(--a700); --color-amber-800: var(--a800);
+  --color-emerald-50: var(--e50); --color-emerald-100: var(--e100); --color-emerald-200: var(--e200); --color-emerald-500: #10b981; --color-emerald-600: var(--e600); --color-emerald-700: var(--e700); --color-emerald-800: var(--e800);
+  --color-sky-50: var(--k50); --color-sky-100: var(--k100); --color-sky-200: var(--k200); --color-sky-500: #0ea5e9; --color-sky-600: var(--k600); --color-sky-700: var(--k700); --color-sky-800: var(--k800);
+  --color-violet-50: var(--v50); --color-violet-100: var(--v100); --color-violet-200: var(--v200); --color-violet-500: #8b5cf6; --color-violet-600: var(--v600); --color-violet-700: var(--v700);
+}
+
+/* Light */
+:root, [data-theme=light] {
+  color-scheme: light;
+  --t-bg: #f6f7f9; --t-surface: #ffffff; --t-surface-2: #f3f4f6; --t-overlay: #ffffff;
+  --t-fg: #0f172a; --t-fg-muted: #475569; --t-fg-subtle: #94a3b8; --t-line: #e2e8f0;
+  --t-primary: #2563eb; --t-primary-fg: #ffffff; --t-accent: #7c3aed;
+  --t-success: #059669; --t-warning: #d97706; --t-danger: #e11d48; --t-info: #0284c7;
+  --s50: #f8fafc; --s100: #f1f5f9; --s200: #e2e8f0; --s300: #cbd5e1; --s400: #94a3b8; --s500: #64748b;
+  --s600: #475569; --s700: #334155; --s800: #1e293b; --s900: #0f172a; --s950: #020617;
+  --b50: #eff6ff; --b100: #dbeafe; --b600: #1d4ed8; --b700: #1e40af;
+  --r50: #fff1f2; --r100: #ffe4e6; --r200: #fecdd3; --r600: #e11d48; --r700: #be123c; --r800: #9f1239;
+  --a50: #fffbeb; --a100: #fef3c7; --a200: #fde68a; --a600: #d97706; --a700: #b45309; --a800: #92400e;
+  --e50: #ecfdf5; --e100: #d1fae5; --e200: #a7f3d0; --e600: #059669; --e700: #047857; --e800: #065f46;
+  --k50: #f0f9ff; --k100: #e0f2fe; --k200: #bae6fd; --k600: #0284c7; --k700: #0369a1; --k800: #075985;
+  --v50: #f5f3ff; --v100: #ede9fe; --v200: #ddd6fe; --v600: #7c3aed; --v700: #6d28d9;
+}
+
+/* Dark (default) — slate scale inverted: low numbers = dark backgrounds, high numbers = light text */
+[data-theme=dark] {
+  color-scheme: dark;
+  --t-bg: #0d1015; --t-surface: #151920; --t-surface-2: #1b2029; --t-overlay: #1b2029;
+  --t-fg: #e6e9ef; --t-fg-muted: #a3acba; --t-fg-subtle: #6b7484; --t-line: #262c37;
+  --t-primary: #4f8cff; --t-primary-fg: #ffffff; --t-accent: #a78bfa;
+  --t-success: #34d399; --t-warning: #fbbf24; --t-danger: #fb7185; --t-info: #38bdf8;
+  --s50: #11151b; --s100: #1b2029; --s200: #262c37; --s300: #343b48; --s400: #5b6475; --s500: #8a93a3;
+  --s600: #a9b1bf; --s700: #c7cdd7; --s800: #dfe3ea; --s900: #eef1f5; --s950: #f8fafc;
+  --b50: #16233d; --b100: #1c2d4f; --b600: #7aa7ff; --b700: #a5c3ff;
+  --r50: #2a1419; --r100: #3a1a21; --r200: #5a2430; --r600: #fb7185; --r700: #fda4af; --r800: #fecdd3;
+  --a50: #2a2010; --a100: #3a2c12; --a200: #5c4514; --a600: #fbbf24; --a700: #fcd34d; --a800: #fde68a;
+  --e50: #0f2620; --e100: #12342a; --e200: #18503f; --e600: #34d399; --e700: #6ee7b7; --e800: #a7f3d0;
+  --k50: #0f2231; --k100: #123044; --k200: #184a68; --k600: #38bdf8; --k700: #7dd3fc; --k800: #bae6fd;
+  --v50: #1e1733; --v100: #281e47; --v200: #3b2d6b; --v600: #a78bfa; --v700: #c4b5fd;
+}
+
+html, body { background: var(--t-bg); color: var(--t-fg); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+code, pre, .mono { font-family: var(--font-mono); }
+::selection { background: color-mix(in oklab, var(--t-primary) 35%, transparent); }
+
+/* Tailwind v4: shared classes declared with @utility. */
+@utility card { @apply rounded-xl border border-line bg-surface p-4; }
+@utility btn-base { @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply btn-base bg-primary text-primary-fg hover:brightness-110; }
+@utility btn-ghost { @apply btn-base border border-line bg-surface text-fg hover:bg-surface-2; }
+@utility btn-danger { @apply btn-base bg-danger text-white hover:brightness-110; }
+@utility input { @apply w-full rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm text-fg outline-none placeholder:text-fg-subtle focus:border-primary focus:ring-2 focus:ring-primary/25; }
+@utility label { @apply mb-1 block text-xs font-medium text-fg-muted; }
+@utility badge { @apply inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium; }
+@utility skeleton { @apply animate-pulse rounded-md bg-surface-2; }
+
+/* Right-side sheet (instead of popups): slides in from the right edge. */
+@keyframes sheet-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+.sheet-panel[data-state=open] { animation: sheet-in 180ms cubic-bezier(.2,.8,.2,1); }
+.sheet-overlay[data-state=open] { animation: sheet-fade 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .sheet-panel[data-state=open], .sheet-overlay[data-state=open] { animation: none; } }
+
+/* Phones: inputs under 16px make iOS Safari zoom in on focus and the page stays zoomed — keep form controls at 16px there. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; }
+}
+/* Touch screens have no hover: controls revealed on hover stay visible. */
+@media (hover: none) {
+  .touch-show { opacity: 1 !important; }
+}
+/* Long unbroken tokens (error codes, file names, ids) must never widen the page; grid/flex children may shrink. */
+body { overflow-wrap: break-word; }
+.card { min-width: 0; }
+.grid > * { min-width: 0; }
+/* Phones: hand-written tables scroll sideways inside their card / sheet instead of being cut (DataTable has its own scroller). */
+@media (max-width: 767px) {
+  table:not(.min-w-max) { display: block; max-width: 100%; overflow-x: auto; }
+}

@@ -1,0 +1,75 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/scheduler.proto";
+
+// 20/10 §2.6–2.7, §3 — operational view for users: system status (S-OPS-3), one push stream per tab (WatchWorkspace),
+// cluster map (S-02-5).
+service OpsService {
+  rpc GetSystemStatus(SystemStatusRequest) returns (SystemStatus);
+  rpc WatchWorkspace(WatchWorkspaceRequest) returns (stream WorkspaceUpdate);
+  rpc GetClusterMap(ClusterMapRequest) returns (ClusterMap);
+  // Ray cluster health: nodes (alive/dead, resource use), placement groups, pending demands — for diagnosing stuck or slow jobs.
+  rpc GetRayHealth(ClusterMapRequest) returns (RayHealth);
+}
+
+message HealthItem {
+  string name = 1;
+  string group = 2;            // component | loop
+  string status = 3;           // ok | degraded | down
+  string message = 4;          // users see the impact; technical details are Admin-only
+  google.protobuf.Timestamp last_ok_at = 5;
+  google.protobuf.Timestamp checked_at = 6;
+  double period_seconds = 7;
+}
+message SystemStatusRequest { string workspace_id = 1; }
+message SystemStatus { repeated HealthItem items = 1; string overall = 2; repeated OpsEvent incidents = 3; }
+
+message WatchWorkspaceRequest { string workspace_id = 1; string subscribe_job_id = 2; }   // open job → also receive that job's events + logs
+message ActiveJob {
+  string id = 1; string name = 2; string kind = 3; string state = 4; string state_reason = 5;
+  string phase = 6; double percent = 7; double eta_seconds = 8; string message = 9;
+  bool alert = 10;             // failed / stalled / lost signal / suspect
+  string alert_text = 11;
+}
+message WorkspaceUpdate {
+  repeated ActiveJob jobs = 1;            // snapshot of my running work (sent on change; sent immediately on reconnect)
+  SystemStatus system = 2;                // sent on change
+  repeated OpsEvent events = 3;           // new events of the subscribed job
+  repeated LogLine logs = 4;              // new logs of the subscribed job
+  int64 unread_notifications = 5;
+  bool jobs_changed = 6;                  // true when `jobs` is a new snapshot (even if empty)
+}
+
+message ClusterMapRequest { string workspace_id = 1; }
+message MapContainer { string name = 1; string attempt_id = 2; string job_id = 3; string job_name = 4; double cpu_percent = 5; int64 memory_bytes = 6; }
+message MapGpu {
+  string uuid = 1; string name = 2; double util_percent = 3; int64 memory_used_bytes = 4; int64 memory_bytes = 5;
+  string job_id = 6;             // first job on the GPU ("" = none)
+  string job_name = 7;           // every job on the GPU, comma-separated (D-50: a GPU is shared by memory budget)
+  int64 reserved_bytes = 8;      // sum of the jobs' memory budgets; = memory_bytes when a job holds the whole GPU
+}
+message MapHost {
+  string id = 1; string name = 2; string state = 3; google.protobuf.Timestamp last_seen_at = 4; google.protobuf.Timestamp metrics_at = 5;
+  int32 cpus = 6; int64 memory_bytes = 7; double cpu_percent = 8; int64 memory_used_bytes = 9;
+  repeated MapContainer containers = 10; repeated MapGpu gpus = 11; int32 recovering_jobs = 12;
+}
+message ClusterMap { repeated MapHost hosts = 1; }
+
+message RayNode {
+  string node_id = 1; string ip = 2; string host_id = 3; string host_name = 4; bool is_head = 5;
+  string state = 6;            // ALIVE | DEAD
+  string state_message = 7;    // why a node died
+  google.protobuf.Timestamp started_at = 8; google.protobuf.Timestamp ended_at = 9;
+  double cpu_used = 10; double cpu_total = 11; double gpu_used = 12; double gpu_total = 13;
+  double memory_used = 14; double memory_total = 15; double object_store_used = 16; double object_store_total = 17;
+  double idle_seconds = 18;
+}
+message RayPlacementGroup { string id = 1; string name = 2; string state = 3; string strategy = 4; string bundles_json = 5; }
+message RayHealth {
+  bool reachable = 1; string ray_version = 2; string error = 3;
+  repeated RayNode nodes = 4; repeated RayPlacementGroup placement_groups = 5;
+  string pending_json = 6;     // resource / placement-group demands Ray cannot place yet
+}

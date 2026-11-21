@@ -1,0 +1,166 @@
+RootWebArea: YOLO26n Model by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: E Example Project
+          StaticText: E
+          StaticText: Example Project
+        button: Private
+          StaticText: Private
+        StaticText: yolo26n
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Change model color
+    button: yolo26n
+      heading: yolo26n
+        StaticText: yolo26n
+    button: Download model
+    button: Star
+    button: More model actions
+    StaticText: Detect
+    StaticText: v
+    StaticText: 8.3.222
+    link: AGPL 3.0
+      StaticText: AGPL 3.0
+    StaticText: Updated 9 hours ago
+    StaticText: mAP
+    subscript: 
+      StaticText: 50
+    StaticText: 55.7%
+    StaticText: mAP
+    subscript: 
+      StaticText: 50-95
+    StaticText: 40.1%
+    StaticText: Precision
+    StaticText: 64.9%
+    StaticText: Recall
+    StaticText: 50.7%
+    link: Annotations overlay showing 9 labels Annotations overlay showing 13 labels Annotations overlay showing 3 labels Annotations overlay showing 
+      image: Annotations overlay showing 9 labels
+      image: Annotations overlay showing 13 labels
+      image: Annotations overlay showing 3 labels
+      image: Annotations overlay showing 12 labels
+      StaticText: COCO 2017
+      StaticText: 123.3k imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 118.3k
+      StaticText: 5.0k
+    tablist: 
+      tab: Overview
+        StaticText: Overview
+      tab: Train
+        StaticText: Train
+      tab: Predict [selected]
+        StaticText: Predict
+      tab: Export
+        StaticText: Export
+      tab: Deploy
+        StaticText: Deploy
+    tabpanel: Predict
+      StaticText: Input
+      StaticText: Upload an image or select an example to test
+      StaticText: yolo26n
+      StaticText: .
+      link: Predict Docs
+        StaticText: Predict Docs
+      button: Image
+        StaticText: Image
+      button: Webcam
+        StaticText: Webcam
+      status: 
+      button: Drop an image here or click to browse Supports JPEG, PNG, WebP, AVIF, HEIC, JP2, TIFF, BMP & more (max 10MB)
+        StaticText: Drop an image here
+        StaticText: or click to browse
+        StaticText: Supports JPEG, PNG, WebP, AVIF, HEIC, JP2, TIFF, BMP & more (max 10MB)
+      LabelText: 
+        StaticText: Or try an example
+      button: Dataset image (Val)
+      StaticText: 000000576566.jpg
+      button: Dataset image (Val)
+      StaticText: 000000573094.jpg
+      button: Dataset image (Val)
+      StaticText: 000000571857.jpg
+      button: Dataset image (Val)
+      StaticText: 000000568439.jpg
+      StaticText: Confidence
+      button: About Confidence
+      slider: Confidence
+      StaticText: 0.25
+      StaticText: IoU
+      button: About IoU
+      slider: IoU
+      StaticText: 0.50
+      StaticText: Image Size
+      button: About Image Size
+      slider: Image Size
+      StaticText: 640
+      tablist: Predict
+        tab: Results [selected]
+          StaticText: Results
+        tab: Response
+          StaticText: Response
+        tab: Docs
+          StaticText: Docs
+      tabpanel: Results
+        StaticText: Prediction results will appear here.
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

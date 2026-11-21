@@ -1,0 +1,89 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M15 — LlmOpsService (first slice): versioned prompt registry + variables, run/compare versions on an LLM deployment,
+// guardrails (PII, prompt injection, banned words) at the gateway, token/latency/estimated-cost counting (observational only, D-02), test-suite evals.
+service LlmOpsService {
+  rpc CreatePrompt(CreatePromptRequest) returns (Prompt);
+  rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResponse);
+  rpc GetPrompt(PromptRef) returns (PromptDetail);
+  rpc CreatePromptVersion(CreatePromptVersionRequest) returns (PromptVersion);
+  rpc RunPrompt(RunPromptRequest) returns (LlmCallResponse);
+  rpc GetGuardrails(DeploymentLlmRef) returns (LlmSettings);
+  rpc UpdateGuardrails(LlmSettings) returns (LlmSettings);
+  rpc GetUsage(GetLlmUsageRequest) returns (LlmUsage);
+  rpc CreateEvalSet(CreateEvalSetRequest) returns (EvalSet);
+  rpc ListEvalSets(ListEvalSetsRequest) returns (ListEvalSetsResponse);
+  rpc RunEval(RunEvalRequest) returns (EvalRun);
+  rpc ListEvalRuns(ListEvalRunsRequest) returns (ListEvalRunsResponse);
+}
+
+message Prompt { string id = 1; string name = 2; string description = 3; int32 latest_version = 4; google.protobuf.Timestamp created_at = 5; }
+message CreatePromptRequest { string workspace_id = 1; string name = 2; string description = 3; }
+message ListPromptsRequest { string workspace_id = 1; }
+message ListPromptsResponse { repeated Prompt prompts = 1; }
+message PromptRef { string workspace_id = 1; string prompt = 2; }   // id or name
+
+message PromptVersion {
+  int32 version = 1;
+  string system = 2;
+  string template = 3;
+  repeated string variables = 4;
+  string deployment_id = 5;
+  double temperature = 6;
+  int32 max_tokens = 7;
+  string note = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+message PromptDetail { Prompt prompt = 1; repeated PromptVersion versions = 2; }
+message CreatePromptVersionRequest {
+  string workspace_id = 1; string prompt = 2; string system = 3; string template = 4; string deployment_id = 5;
+  double temperature = 6; int32 max_tokens = 7; string note = 8;
+}
+
+message RunPromptRequest { string workspace_id = 1; string prompt = 2; int32 version = 3; map<string, string> variables = 4; string deployment_id = 5; }
+message LlmCallResponse {
+  int32 version = 1;
+  string output = 2;
+  int32 prompt_tokens = 3;
+  int32 completion_tokens = 4;
+  double latency_ms = 5;
+  double cost = 6;
+  bool blocked = 7;
+  string blocked_reason = 8;
+  repeated string flags = 9;            // pii:email, injection, term, output:pii:phone …
+  repeated string sent_messages = 10;   // "role: content" after PII masking — shows what the model actually received
+}
+
+message DeploymentLlmRef { string workspace_id = 1; string deployment_id = 2; }
+message LlmSettings {
+  string workspace_id = 1;
+  string deployment_id = 2;
+  string pii_mode = 3;                  // off | redact | block
+  bool block_injection = 4;
+  repeated string blocked_terms = 5;
+  bool check_output = 6;
+  double price_per_1k = 7;
+}
+
+message GetLlmUsageRequest { string workspace_id = 1; int32 days = 2; }
+message LlmUsageDay {
+  google.protobuf.Timestamp day = 1; string deployment_id = 2; string deployment = 3; int64 calls = 4;
+  int64 prompt_tokens = 5; int64 completion_tokens = 6; double cost = 7; double avg_latency_ms = 8; int64 blocked = 9;
+}
+message LlmUsage { repeated LlmUsageDay days = 1; }
+
+message EvalSet { string id = 1; string name = 2; string cases_json = 3; google.protobuf.Timestamp created_at = 4; }
+message CreateEvalSetRequest { string workspace_id = 1; string name = 2; string cases_json = 3; }
+message ListEvalSetsRequest { string workspace_id = 1; }
+message ListEvalSetsResponse { repeated EvalSet sets = 1; }
+message RunEvalRequest { string workspace_id = 1; string set_id = 2; string prompt = 3; int32 version = 4; string deployment_id = 5; }
+message EvalRun {
+  string id = 1; string set_id = 2; string set_name = 3; string prompt = 4; int32 prompt_version = 5;
+  double score = 6; string results_json = 7; google.protobuf.Timestamp created_at = 8;
+}
+message ListEvalRunsRequest { string workspace_id = 1; }
+message ListEvalRunsResponse { repeated EvalRun runs = 1; }

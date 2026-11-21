@@ -1,0 +1,10 @@
+P:System.DateTime.UtcNow;UTC-only: dùng IClock.UtcNow
+P:System.DateTime.Now;UTC-only: dùng IClock.UtcNow
+P:System.DateTimeOffset.Now;UTC-only: dùng IClock.UtcNow
+P:System.DateTimeOffset.UtcNow;UTC-only: dùng IClock.UtcNow
+T:Npgsql.NpgsqlBatch;SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
+M:Npgsql.NpgsqlConnection.CreateBatch;SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
+M:Npgsql.NpgsqlDataSource.CreateCommand(System.String);SQL thô bị cấm: viết file .sql + [SqlQuery] (20/02 §5)
+M:System.Reflection.Assembly.GetTypes;Không AOT: đăng ký bằng source generator (20/02 §4)
+M:System.Activator.CreateInstance(System.Type);Không AOT
+M:System.Type.GetType(System.String);Không AOT

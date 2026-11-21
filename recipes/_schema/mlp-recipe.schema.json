@@ -1,0 +1,997 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mlplatform/schemas/mlp-recipe.schema.json",
+  "title": "MLPlatform recipe manifest (mlp-recipe.yaml)",
+  "description": "Field reference: cookbook/20-kien-truc/08-recipe-va-runtime.md §3. Template grammar for command/env/resume/path strings: §4.",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "source",
+    "license",
+    "tasks",
+    "environment",
+    "data",
+    "variants",
+    "entrypoints",
+    "metrics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "mlplatform/v1"
+    },
+    "kind": {
+      "const": "Recipe"
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "displayName",
+        "family"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "family": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "homepage": {
+          "type": "string"
+        },
+        "maturity": {
+          "enum": [
+            "stable",
+            "experimental",
+            "draft"
+          ],
+          "default": "stable"
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sourcesCheckedAt": {
+              "type": "string",
+              "format": "date"
+            },
+            "built": {
+              "type": "boolean"
+            },
+            "smokeTested": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "git",
+            "commit"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "pip"
+                ]
+              },
+              {
+                "required": [
+                  "hf"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "pip"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "git"
+                ]
+              },
+              {
+                "required": [
+                  "hf"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "hf",
+            "revision"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "git"
+                ]
+              },
+              {
+                "required": [
+                  "pip"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "git": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "commitDate": {
+          "type": "string"
+        },
+        "subdir": {
+          "type": "string"
+        },
+        "pip": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "The main package (first entry) must be pinned with ==; unpinned secondary packages → validator warning, pinned via the lock file at build time",
+          "prefixItems": [
+            {
+              "type": "string",
+              "pattern": "=="
+            }
+          ]
+        },
+        "hf": {
+          "type": "string",
+          "description": "Hugging Face repo id; empty string means 'chosen per variant/model'"
+        },
+        "revision": {
+          "type": "string"
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "SPDX id or 'see notes'"
+        },
+        "weights": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Non-empty => users must acknowledge before first use (D-23)"
+        },
+        "requiresAck": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Keys from _tasks/tasks.yaml"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "dockerfile"
+          ],
+          "not": {
+            "required": [
+              "base"
+            ]
+          }
+        },
+        {
+          "required": [
+            "base"
+          ],
+          "not": {
+            "required": [
+              "dockerfile"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "dockerfile": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string",
+          "description": "Base image with tag or digest"
+        },
+        "setup": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Shell commands run as RUN layers on top of base"
+        },
+        "gpu": {
+          "enum": [
+            "required",
+            "optional",
+            "none"
+          ]
+        },
+        "minVramGb": {
+          "type": "number"
+        },
+        "minComputeCapability": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]$"
+        },
+        "python": {
+          "type": "string"
+        },
+        "shmSizeGb": {
+          "type": "number"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "input": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "task key -> converter key"
+            }
+          ]
+        },
+        "splitNames": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "train": {
+              "type": "string"
+            },
+            "val": {
+              "type": "string"
+            },
+            "test": {
+              "type": "string"
+            }
+          }
+        },
+        "generatedFiles": {
+          "type": "array",
+          "description": "Files rendered from templates (raw values, not shell-quoted) before running",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "template"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "template": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "converters": {
+      "type": "array",
+      "description": "Recipe-provided converters; run inside the recipe image",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "tasks",
+          "from",
+          "script"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "from": {
+            "type": "string",
+            "description": "Platform converter whose output this script reads"
+          },
+          "script": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string",
+            "description": "Human description of the output tree"
+          }
+        }
+      }
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "config": {
+            "type": "string"
+          },
+          "weights": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "task key -> weights source"
+              }
+            ]
+          },
+          "weightsSha256": {
+            "type": "string"
+          },
+          "requiresFiles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false,
+              "oneOf": [
+                {
+                  "required": [
+                    "zoo"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
+                  ]
+                }
+              ],
+              "properties": {
+                "zoo": {
+                  "type": "string",
+                  "description": "Model Zoo key"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Mount target inside the container (template allowed)"
+                }
+              }
+            }
+          },
+          "defaults": {
+            "type": "object",
+            "description": "Per-variant parameter defaults"
+          },
+          "params": {
+            "type": "number",
+            "description": "Parameter count (millions) as reported upstream"
+          },
+          "reported": {
+            "type": "object",
+            "description": "Metrics reported by authors, with dataset name"
+          },
+          "minVramGb": {
+            "type": "number"
+          },
+          "license": {
+            "type": "string",
+            "description": "Overrides license.weights for this variant"
+          },
+          "requiresAck": {
+            "type": "boolean"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "classes": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "key of recipes/_shared/classes/<key>.json"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "params": {
+      "type": "object",
+      "description": "JSON Schema per user-tunable parameter; 'from' binds a context value; 'required' forces a value",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "default": {},
+          "enum": {
+            "type": "array"
+          },
+          "minimum": {
+            "type": "number"
+          },
+          "maximum": {
+            "type": "number"
+          },
+          "from": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "pane": {
+            "type": "string",
+            "enum": [
+              "batch",
+              "learn",
+              "objective",
+              "schedule"
+            ],
+            "description": "Pane of the training-loop node that shows this parameter"
+          },
+          "label": {
+            "type": "string"
+          },
+          "help": {
+            "type": "string"
+          },
+          "exclusiveMinimum": {
+            "type": "number"
+          },
+          "multipleOf": {
+            "type": "number"
+          },
+          "affectsTrial": {
+            "type": "boolean",
+            "description": "false = changing it needs no new trial run"
+          },
+          "affectsInspect": {
+            "type": "boolean",
+            "description": "true = changing it changes what the inspection shows"
+          }
+        }
+      }
+    },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "train": {
+          "$ref": "#/$defs/entry"
+        },
+        "eval": {
+          "$ref": "#/$defs/entry"
+        },
+        "export": {
+          "$ref": "#/$defs/entry"
+        },
+        "predict": {
+          "$ref": "#/$defs/entry"
+        },
+        "serve": {
+          "type": "object",
+          "required": [
+            "handler"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "handler": {
+              "type": "string"
+            },
+            "batching": {
+              "type": "boolean"
+            },
+            "stream": {
+              "type": "boolean"
+            }
+          }
+        },
+        "assist": {
+          "type": "object",
+          "required": [
+            "kinds"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kinds": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "prelabel",
+                  "segment",
+                  "transcribe",
+                  "score"
+                ]
+              }
+            },
+            "handler": {
+              "type": "string"
+            }
+          }
+        },
+        "inspect": {
+          "$ref": "#/$defs/entry"
+        }
+      }
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "best": {
+          "type": "object",
+          "required": [
+            "as"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "Globs relative to {output}; first existing wins"
+            },
+            "as": {
+              "type": "string",
+              "description": "File or directory name under weights/"
+            }
+          },
+          "description": "'from' required when a train entrypoint exists (validator); inference-only recipes declare only 'as'"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "baseWeights": {
+          "type": "string",
+          "description": "Template; set => model is an adapter, recipe.lock.json records this base (D-28)"
+        }
+      }
+    },
+    "openItems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Facts not yet verified against upstream"
+    },
+    "canvas": {
+      "type": "object",
+      "description": "Round 1 (D-44): how the training canvas draws this recipe",
+      "properties": {
+        "inspect": {
+          "type": "string",
+          "description": "CPU-only command printing one MLP_INSPECT {json} line"
+        },
+        "inspectWorkdir": {
+          "type": "string"
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "key",
+              "label"
+            ],
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "untilKey": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "key",
+              "label"
+            ],
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "failures": {
+      "type": "array",
+      "description": "round 1 R26: output lines that end the run for good (no retry), with the reason shown to the user",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pattern",
+          "reason"
+        ],
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retry": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "metrics": {
+      "type": "object",
+      "required": [
+        "sources",
+        "primary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "primary": {
+          "type": "string"
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "epochKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "round 1 R25: raw keys (globs) logged per epoch; the shim moves them onto the global step axis ((epoch + 1) × steps per epoch)"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "workdir": {
+          "type": "string"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "distributed": {
+          "enum": [
+            "none",
+            "torchrun",
+            "accelerate",
+            "internal"
+          ],
+          "description": "'ray' is deferred to P3 (20/08 §3)"
+        },
+        "resume": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": [
+                "append",
+                "replace",
+                "command"
+              ]
+            },
+            "args": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "command": {
+              "type": "string"
+            }
+          }
+        },
+        "checkpoints": {
+          "description": "globs under {output}; a list = several files restored together (R28), the first is resumed from",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "resumeFidelity": {
+          "description": "20/10 §4.2: exact (full optimizer/scheduler/RNG) | epoch (restarts from the beginning of the epoch) | none (cannot resume)",
+          "enum": [
+            "exact",
+            "epoch",
+            "none"
+          ]
+        },
+        "checkpointEveryMin": {
+          "type": "number",
+          "minimum": 1
+        },
+        "progress": {
+          "description": "20/10 §2.2 + round 1 R24: either `metric` (progress from a metric) or `pattern` (epoch/step from output lines)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "metric": {
+              "type": "string"
+            },
+            "total": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "unit": {
+              "type": "string"
+            },
+            "stallAfterMin": {
+              "type": "number",
+              "minimum": 1
+            },
+            "pattern": {
+              "type": "string",
+              "description": "regex with named groups epoch, epochs (0-based epoch of epochs), step, steps, optional loss"
+            },
+            "validatePattern": {
+              "type": "string",
+              "description": "regex of validation lines (named groups step, steps)"
+            },
+            "config": {
+              "type": "string",
+              "description": "generated config file; canvas.phases[].untilKey is read from it for the stage strip"
+            }
+          },
+          "anyOf": [
+            {
+              "required": [
+                "metric"
+              ]
+            },
+            {
+              "required": [
+                "pattern"
+              ]
+            }
+          ]
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "fromScratch": {
+          "type": "boolean",
+          "description": "train only: {weights} may be empty (20/08 §4.2)"
+        },
+        "trial": {
+          "description": "train only: config overrides for the two short passes of a trial (round 1 R15–R22). The shim hands them to the process as MLP_EXTRA_JSON.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "overrides": {
+              "type": "object",
+              "description": "pass 1 (stage 1): dotted config key → value"
+            },
+            "resumeOverrides": {
+              "type": "object",
+              "description": "pass 2 (resumed from pass 1's checkpoint): dotted config key → value"
+            }
+          }
+        },
+        "runOverrides": {
+          "type": "object",
+          "description": "train only: config overrides for a real training (e.g. denser progress lines), handed over as MLP_EXTRA_JSON"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "export only: globs under {output} to upload; default all"
+        },
+        "inputs": {
+          "type": "object",
+          "description": "predict only: declared inputs → {input.<name>}",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "file",
+                  "text",
+                  "string",
+                  "number"
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "configSchema": {
+          "type": "object",
+          "description": "inspect only: JSON Schema per config/<file>.json the import UI renders as a form"
+        }
+      }
+    }
+  }
+}

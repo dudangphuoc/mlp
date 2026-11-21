@@ -1,0 +1,159 @@
+RootWebArea: Example Dataset Dataset by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: Datasets
+          StaticText: Datasets
+        link: Example Dataset
+          StaticText: Example Dataset
+        button: Private
+          StaticText: Private
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Customize Example Dataset icon
+      image: Example Dataset
+    button: Example Dataset
+      heading: Example Dataset
+        StaticText: Example Dataset
+    button: Detect
+      StaticText: Detect
+    button: CC BY 4.0
+      StaticText: CC BY 4.0
+    StaticText: Ready
+    button: New Model
+      StaticText: New Model
+    button: Upload images
+    button: Download dataset
+    button: Star
+    button: More dataset actions
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: 8 labeled
+    StaticText: ·
+    StaticText: 30 annotations
+    StaticText: ·
+    StaticText: 837.5 KB
+    StaticText: Updated 9 hours ago
+    button: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+      StaticText: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+    tablist: 
+      tab: Images
+        StaticText: Images
+      tab: Classes80
+        StaticText: Classes
+        superscript: 
+          StaticText: 80
+      tab: Charts [selected]
+        StaticText: Charts
+      tab: Models
+        StaticText: Models
+      tab: Versions
+        StaticText: Versions
+    StaticText: Split Distribution
+    StaticText: 8 images · 100.0% labeled
+    button: Fullscreen
+    button: More options
+    StaticText: Top Classes
+    StaticText: 80 classes · 30 annotations
+    button: Fullscreen
+    button: More options
+    StaticText: Image Dimensions
+    StaticText: Width and height distribution in pixels
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: Mean W: 587.5 px · Mean H: 487.5 px
+    button: Fullscreen
+    button: More options
+    StaticText: Image File Size
+    StaticText: File size distribution
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: Mean: 97.7 KB
+    button: Fullscreen
+    button: More options
+    StaticText: Image Dimensions 2D
+    StaticText: Width vs Height heatmap
+    StaticText: 8 total images · Mean AR: 1.24
+    button: Fullscreen
+    StaticText: Annotation Locations
+    StaticText: Bounding box center distribution
+    StaticText: 30 annotations
+    button: Fullscreen
+    StaticText: Image Formats
+    StaticText: 8 images · 1 format
+    button: Fullscreen
+    button: More options
+    StaticText: Bounding Box Dimensions
+    StaticText: Bounding box width and height
+    StaticText: 30 annotations
+    StaticText: ·
+    StaticText: Mean W: 175 px · Mean H: 158.7 px
+    button: Switch to normalized
+    button: Fullscreen
+    button: More options
+    StaticText: Objects per Image
+    StaticText: Annotation count per image
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: Mean: 3.8 objects
+    button: Fullscreen
+    button: More options
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

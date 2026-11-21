@@ -1,0 +1,72 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+
+// M08 — NotebookService (first slice: prebuilt profiles, JupyterLab servers via the scheduler, /nb/{id}/ proxy over the data channel,
+// durable home in a per-machine volume, auto-shutdown when idle). Environments, runs (papermill), home snapshots to S3 come later.
+service NotebookService {
+  rpc ListProfiles(ListNotebookProfilesRequest) returns (ListNotebookProfilesResponse);
+  rpc CreateServer(CreateNotebookRequest) returns (NotebookServer);
+  rpc ListServers(ListNotebooksRequest) returns (ListNotebooksResponse);
+  rpc GetServer(NotebookRef) returns (NotebookServer);
+  rpc StopServer(NotebookRef) returns (NotebookServer);
+  rpc ExtendIdle(NotebookRef) returns (NotebookServer);
+  rpc StartServer(StartNotebookRequest) returns (NotebookServer);   // restart a stopped/failed notebook
+  rpc DeleteServer(NotebookRef) returns (Empty);                     // delete a stopped/failed notebook
+}
+
+message NotebookProfile {
+  string name = 1;
+  string display_name = 2;
+  string description = 3;
+  string image_cpu = 4;
+  string image_gpu = 5;
+  string version = 6;
+}
+message ListNotebookProfilesRequest { string workspace_id = 1; }
+message ListNotebookProfilesResponse { repeated NotebookProfile profiles = 1; }
+
+message CreateNotebookRequest {
+  string workspace_id = 1;
+  string name = 2;
+  string profile = 3;           // defaults to base
+  string ide = 4;               // jupyterlab (vscode later)
+  double cpus = 5;
+  int32 memory_gb = 6;
+  int32 gpus = 7;
+  int32 idle_timeout_min = 8;   // 5…1440, default 60
+  string image_override = 9;    // dev/test
+  string network = 10;          // dev/test: docker network
+  string host_id = 11;          // machine (Fleet) that runs the notebook — required
+}
+
+message NotebookServer {
+  string id = 1;
+  string name = 2;
+  string owner = 3;
+  string profile = 4;
+  string image = 5;
+  string ide = 6;
+  double cpus = 7;
+  int32 memory_gb = 8;
+  int32 gpus = 9;
+  string host_id = 10;
+  string job_id = 11;
+  string state = 12;            // queued | starting | running | stopping | stopped | failed
+  string state_reason = 13;
+  int32 idle_timeout_min = 14;
+  google.protobuf.Timestamp last_activity_at = 15;
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp started_at = 17;
+  google.protobuf.Timestamp stopped_at = 18;
+  string url = 19;              // /nb/{id}/lab — only the owner can open it
+  string public_url = 20;       // https://nb-{id}.{domain}/ — dedicated subdomain (empty if no domain is configured)
+}
+message ListNotebooksRequest { string workspace_id = 1; bool all = 2; }
+message ListNotebooksResponse { repeated NotebookServer servers = 1; }
+message NotebookRef { string workspace_id = 1; string server_id = 2; }
+
+message StartNotebookRequest { string workspace_id = 1; string server_id = 2; string host_id = 3; }   // empty host_id = the previous machine

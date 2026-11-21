@@ -1,0 +1,53 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: toy-recipe
+  displayName: Toy (integration scenario fixture)
+  family: test
+  description: Minimal hand-written repo — just train.py + manifest; used by the shim integration scenarios.
+source:
+  pip: ["numpy==2.3.0"]
+license:
+  code: MIT
+tasks: [tabular-classify]
+environment:
+  base: python:3.12-slim
+  gpu: none
+data:
+  input: parquet
+variants:
+  - {name: tiny, weights: "zoo://toy-init"}
+params:
+  epochs: {type: integer, default: 3}
+  fail_with: {type: string, default: ""}
+  sleep: {type: number, default: 0}
+entrypoints:
+  train:
+    distributed: none
+    command: >
+      python3 {recipe.src}/train.py --data {data} --out {output} --epochs {params.epochs} --sleep {params.sleep}
+      {weights?--init {weights}} {params.fail_with?--fail {params.fail_with}}
+    resume: {mode: append, args: "--resume {checkpoint}"}
+    checkpoints: "{output}/ckpt-*.json"
+    resumeFidelity: exact
+    checkpointEveryMin: 1
+    progress: {metric: epoch, total: "{params.epochs}", unit: epoch, stallAfterMin: 30}
+    fromScratch: true
+  export:
+    command: python3 {recipe.src}/train.py --export {model.weights} --out {output} --format {format}
+    formats: [txt]
+    outputs: ["model.{format}"]
+  serve:
+    handler: handler:Handler
+metrics:
+  sources:
+    - jsonl: "{output}/log.jsonl"
+    - tensorboard: "{output}/tb"
+  primary: val/f1_macro
+  map:
+    f1: val/f1_macro
+    loss: train/loss
+artifacts:
+  best: {from: ["best.json"], as: model.json}
+  files:
+    - {from: log.jsonl, to: config/log.jsonl}

@@ -1,0 +1,55 @@
+# MLPlatform overlay hub (10.88.0.0/16) on k8s — runs with hostNetwork on one node so Traefik reaches the overlay IPs of plugged-in machines directly.
+# Plugged-in machines + the control plane (spoke 10.88.255.1) connect over UDP to the LoadBalancer Service :51821 → hub listens on :51822 (avoids clashing with the svclb hostPort).
+# Apply with: deploy/k8s/apply-hub.sh (fill in IMAGE, CP_PUB, node; the token comes from deploy/compose/.env MLP_WG_PEERS_TOKEN).
+apiVersion: v1
+kind: Namespace
+metadata: { name: mlp }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: mlp-net-hub, namespace: mlp, labels: { app: mlp-net-hub } }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: mlp-net-hub } }
+  template:
+    metadata: { labels: { app: mlp-net-hub } }
+    spec:
+      hostNetwork: true
+      nodeSelector: { kubernetes.io/hostname: __NODE__ }
+      containers:
+        - name: hub
+          image: __IMAGE__
+          imagePullPolicy: Never
+          args: ["hub"]
+          env:
+            - { name: IFACE, value: mlp0 }
+            - { name: WG_PORT, value: "51822" }
+            - { name: WG_ADDR, value: 10.88.0.1/16 }
+            - { name: MTU, value: "1300" }
+            - { name: ROUTE_IN, value: "1" }
+            - { name: STATIC_PEERS, value: "__CP_PUB__ 10.88.255.1" }
+            - { name: PEERS_URL, value: http://10.88.255.1:5081/overlay/peers }
+            - { name: PEERS_TOKEN, valueFrom: { secretKeyRef: { name: mlp-net, key: peers-token } } }
+          securityContext: { capabilities: { add: [NET_ADMIN] } }
+          volumeMounts: [{ name: state, mountPath: /state }, { name: net, mountPath: /net }]
+          resources: { requests: { cpu: 10m, memory: 16Mi }, limits: { memory: 64Mi } }
+      volumes:
+        - { name: state, hostPath: { path: /var/lib/mlp-net, type: DirectoryOrCreate } }
+        - { name: net, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: mlp-net-hub, namespace: mlp }
+spec:
+  type: LoadBalancer
+  selector: { app: mlp-net-hub }
+  ports: [{ name: wg, protocol: UDP, port: 51821, targetPort: 51822 }]
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata: { name: mlp-wildcard, namespace: mlp }
+spec:
+  secretName: mlp-wildcard-tls
+  dnsNames: ["*.mlp.hexbox.vn", "mlp.hexbox.vn"]
+  issuerRef: { name: letsencrypt-prod-dns01, kind: ClusterIssuer }

@@ -1,0 +1,134 @@
+# Single-machine MLPlatform stack (P0-10, 20/09 §1). Run:  cp .env.example .env && docker compose up -d
+# Build one image at a time (CLAUDE.md): COMPOSE_BAKE=false COMPOSE_PARALLEL_LIMIT=1 docker compose build api
+# Application only. PostgreSQL + S3 (MinIO) are existing external infrastructure — set MLP_DB_CONNECTION, MLP_S3_* in .env.
+# Integration scenarios (deploy/dev/stack.sh up|test) also use compose.test.yaml (local Postgres + S3, for testing only).
+# Overlay (P0-16, D-26): `wireguard` is either hub 10.88.0.1 (MLP_WG_MODE=hub) or a spoke connecting to a hub elsewhere (MLP_WG_MODE=spoke, e.g. a hub on k8s);
+# `api` and `ray-head` use its network namespace (MLP_OVERLAY_IP) → their ports are published on `wireguard`.
+name: mlplatform
+x-common: &common
+  restart: unless-stopped
+  networks: [mlp]
+
+services:
+  wireguard:   # overlay 10.88.0.0/16 (image mlp-net): hub here, or a spoke to an external hub (MLP_WG_ENDPOINT)
+    <<: *common
+    image: ${MLP_IMAGE_PREFIX:-mlp}/net:${MLP_VERSION:-dev}
+    build: { context: ../docker/net }
+    command: ["${MLP_WG_MODE:-hub}"]
+    environment:
+      WG_ADDR: ${MLP_OVERLAY_IP:-10.88.0.1}/16
+      MTU: ${MLP_WG_MTU:-1380}
+      PEER_PUB: ${MLP_WG_HUB_PUB:-}
+      PEER_ENDPOINT: ${MLP_WG_ENDPOINT:-}
+    cap_add: [NET_ADMIN]
+    sysctls: { net.ipv4.ip_forward: 1 }
+    volumes: [wg-state:/state, net:/net]
+    ports:
+      - "${MLP_WG_PORT:-51820}:51820/udp"
+      - "${MLP_API_GRPC_PORT:-5080}:5080"
+      - "${MLP_AGENT_PORT:-7443}:7443"
+      - "${MLP_RAY_DASHBOARD_PORT:-8265}:8265"
+      - "${MLP_WEB_PORT:-8080}:8080"
+
+  certs-init:   # self-signed certificate for the agent channel :7443 (the agent pins its SHA-256 — baked into the install command); kept if it already exists
+    image: alpine/openssl:3.5.4
+    networks: [mlp]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        [ -f /certs/agent-channel.pfx ] || (openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=mlp-agent-channel"
+        -keyout /tmp/k.pem -out /tmp/c.pem && openssl pkcs12 -export -inkey /tmp/k.pem -in /tmp/c.pem -out /certs/agent-channel.pfx -passout "pass:$$PW"
+        && chmod 644 /certs/agent-channel.pfx)
+    environment: { PW: "${MLP_AGENT_CERT_PASSWORD}" }
+    volumes: [certs:/certs]
+    restart: "no"
+
+  agent-builder:   # plug-and-play: keeps the agent source, builds mlp-agent for the platform of each plugged-in machine, and caches it in the agents volume
+    <<: *common
+    image: ${MLP_IMAGE_PREFIX:-mlp}/agent-builder:${MLP_VERSION:-dev}
+    build: { context: ../.., dockerfile: deploy/docker/agent-builder.Dockerfile }
+    environment: { MLP_AGENT_PREBUILD: "${MLP_AGENT_PREBUILD:-}" }
+    volumes: [agents:/agents]
+    cpus: ${MLP_BUILDER_CPUS:-2}
+
+  db-migrate:
+    image: ${MLP_IMAGE_PREFIX:-mlp}/api:${MLP_VERSION:-dev}
+    networks: [mlp]
+    command: ["db", "apply", "--root", "/app/db"]
+    environment: &apienv
+      MLP__Db__ConnectionString: ${MLP_DB_CONNECTION:?set MLP_DB_CONNECTION (PostgreSQL)}
+      MLP__Secrets__TokenPepper: ${MLP_TOKEN_PEPPER:?set MLP_TOKEN_PEPPER}
+      MLP__PublicUrl: ${MLP_PUBLIC_URL:?set MLP_PUBLIC_URL, e.g. https://mlp.example.com}
+      MLP__Admin__Email: ${MLP_ADMIN_EMAIL:?set MLP_ADMIN_EMAIL — the admin account is created automatically}
+      MLP__Admin__Password: ${MLP_ADMIN_PASSWORD:?set MLP_ADMIN_PASSWORD (≥ 12 characters)}
+      MLP__Admin__Name: ${MLP_ADMIN_NAME:-Admin}
+      MLP__S3__Endpoint: ${MLP_S3_ENDPOINT:?set MLP_S3_ENDPOINT (MinIO)}
+      MLP__S3__PublicEndpoint: ${MLP_S3_PUBLIC_URL}
+      # Machines upload checkpoints/models with presigned PUTs: a CDN in front of the public URL (e.g. Cloudflare, 100 MB body limit) breaks
+      # large files → MLP_S3_WORKLOAD_URL may point at an endpoint without that limit (defaults to the public URL).
+      MLP__S3__WorkloadEndpoint: ${MLP_S3_WORKLOAD_URL:-${MLP_S3_PUBLIC_URL}}
+      MLP__S3__AccessKey: ${MLP_S3_ACCESS_KEY}
+      MLP__S3__Region: ${MLP_S3_REGION:-us-east-1}
+      MLP__S3__SecretKey: ${MLP_S3_SECRET_KEY}
+      MLP__S3__DatasetsBucket: ${MLP_S3_DATASETS_BUCKET:-mlp-datasets}
+      MLP__S3__ArtifactsBucket: ${MLP_S3_ARTIFACTS_BUCKET:-mlp-artifacts}
+      MLP__Agent__CertPath: /certs/agent-channel.pfx
+      MLP__Agent__CertPassword: ${MLP_AGENT_CERT_PASSWORD}
+      MLP__Install__AgentAddress: ${MLP_AGENT_ADDRESS:?set MLP_AGENT_ADDRESS host:7443}
+      MLP__Install__AgentDir: /agents
+      MLP__Install__ScriptPath: /app/install/agent.sh
+      MLP__Scheduler__Enabled: "true"
+      MLP__Ray__HeadAddress: ${MLP_OVERLAY_IP:-10.88.0.1}:6379
+      MLP__Ray__DashboardUrl: http://127.0.0.1:8265/
+      MLP__Ray__NodeNetwork: ${MLP_NETWORK:-mlp}
+      MLP__Ray__AutoStartNodes: "true"
+      MLP__Scheduler__ApiAddressForRay: ${MLP_OVERLAY_IP:-10.88.0.1}:5080
+      MLP__Scheduler__ApiAddressForWorkloads: ${MLP_OVERLAY_IP:-10.88.0.1}:5080
+      MLP__WireGuard__HubKeyFile: ${MLP_WG_HUB_KEYFILE-/net/hub.pub}
+      MLP__WireGuard__HubPublicKey: ${MLP_WG_HUB_PUB:-}
+      MLP__WireGuard__PeersToken: ${MLP_WG_PEERS_TOKEN:-}
+      MLP__WireGuard__Mtu: ${MLP_WG_MTU:-}
+      MLP__Routes__Domain: ${MLP_ROUTES_DOMAIN:-}   # e.g. mlp.hexbox.vn: nb-{id}.<domain>, {slug}--{ws}.<domain> (wildcard DNS + cert at the ingress)
+      MLP__WireGuard__PeersFile: /net/peers
+      MLP__WireGuard__Endpoint: ${MLP_WG_ENDPOINT:?set MLP_WG_ENDPOINT to a host:51820 reachable from plugged-in machines}
+      MLP__Scheduler__DefaultWorkloadNetwork: ${MLP_NETWORK:-mlp}
+      MLP__Catalog__RecipesDir: /app/recipes
+      Kestrel__Endpoints__h2__Url: http://0.0.0.0:5080
+      Kestrel__Endpoints__h2__Protocols: Http2
+      Kestrel__Endpoints__web__Url: http://0.0.0.0:5081
+      Kestrel__Endpoints__web__Protocols: Http1
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    restart: "no"
+
+  api:
+    restart: unless-stopped
+    network_mode: service:wireguard   # D-26: same namespace as wireguard (MLP_OVERLAY_IP)
+    image: ${MLP_IMAGE_PREFIX:-mlp}/api:${MLP_VERSION:-dev}
+    build: { context: ../.., dockerfile: deploy/docker/api.Dockerfile }
+    environment: *apienv
+    volumes: [net:/net, certs:/certs:ro, agents:/agents, "${MLP_RECIPES_DIR:-../../recipes}:/app/recipes:ro"]
+    depends_on:
+      wireguard: { condition: service_started }
+      db-migrate: { condition: service_completed_successfully }
+      certs-init: { condition: service_completed_successfully }
+    healthcheck: { test: ["CMD", "/app/mlp-api", "probe", "http://127.0.0.1:5081/health/ready"], interval: 10s, retries: 30 }
+
+  web:
+    restart: unless-stopped
+    image: ${MLP_IMAGE_PREFIX:-mlp}/web:${MLP_VERSION:-dev}
+    build: { context: ../.., dockerfile: deploy/docker/web.Dockerfile }
+    network_mode: service:wireguard   # port 8080 is published on wireguard; Traefik (k8s) reaches web over the overlay
+    depends_on: [api]
+
+  ray-head:
+    restart: unless-stopped
+    network_mode: service:wireguard   # head advertises MLP_OVERLAY_IP — Ray nodes on plugged-in machines reach it over the overlay
+    image: rayproject/ray:2.60.0-py312-cpu
+    volumes: ["${MLP_PYTHON_DIR:-../../python}:/opt/mlp:ro"]   # mlp_holder (placement) runs on the head
+    environment: { MLP_OVERLAY_IP: "${MLP_OVERLAY_IP:-10.88.0.1}" }
+    command: ["bash", "/opt/mlp/mlp_holder/ray_head.sh"]   # trimmed head: job + state + status APIs only (see the script)
+    shm_size: 1g
+
+networks:
+  mlp: { name: "${MLP_NETWORK:-mlp}" }
+volumes: { agents: {}, certs: {}, net: {}, wg-state: {} }

@@ -1,0 +1,395 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+
+// M05 — LabelingService (first slice: schema, project, pull queue, save/submit/review, JSONL label sets).
+// Item = one dataset file (identified by path). Geometry/attributes are JSON (M05 §3.1, image coordinates 0–1).
+service LabelingService {
+  rpc CreateSchemaVersion(CreateSchemaVersionRequest) returns (LabelSchema);
+  rpc GetSchema(GetSchemaRequest) returns (LabelSchema);
+
+  rpc CreateProject(CreateLabelingProjectRequest) returns (LabelingProject);
+  rpc ListProjects(ListLabelingProjectsRequest) returns (ListLabelingProjectsResponse);
+  rpc SetProjectState(SetLabelingProjectStateRequest) returns (LabelingProject);
+  rpc GetProjectStats(LabelingProjectRef) returns (LabelingProjectStats);
+  rpc ListProjectMembers(LabelingProjectRef) returns (ListLabelingMembersResponse);
+  rpc AddProjectMember(LabelingMemberRequest) returns (ListLabelingMembersResponse);
+  rpc RemoveProjectMember(LabelingMemberRequest) returns (ListLabelingMembersResponse);
+
+  rpc NextItem(LabelingProjectRef) returns (NextItemResponse);
+  rpc NextReviewItem(LabelingProjectRef) returns (NextItemResponse);
+  rpc ListMyItems(LabelingProjectRef) returns (ListMyItemsResponse);
+  rpc GetItem(LabelItemRef) returns (LabelItem);
+  rpc ClaimItem(LabelItemRef) returns (LabelItem);                 // open a chosen item for editing (any status) instead of the next one
+  rpc SyncProject(LabelingProjectRef) returns (SyncProjectResponse);   // move to the dataset's latest version, new files become items
+  rpc DeleteProject(LabelingProjectRef) returns (Empty);           // labels stay with the dataset
+  rpc HeartbeatLock(LabelItemRef) returns (LockInfo);
+  rpc SaveDraft(SaveAnnotationsRequest) returns (LabelItemRef);
+  rpc SaveAnnotations(SaveAnnotationsRequest) returns (SaveAnnotationsResponse);
+  rpc SubmitItem(LabelItemRef) returns (ItemStatus);
+  rpc SkipItem(ItemActionRequest) returns (ItemStatus);
+  rpc AcceptItem(ItemActionRequest) returns (ItemStatus);
+  rpc RejectItem(ItemActionRequest) returns (ItemStatus);
+  rpc ReopenItem(ItemActionRequest) returns (ItemStatus);
+  rpc AddComment(ItemActionRequest) returns (LabelItem);
+  rpc GetItemHistory(LabelItemRef) returns (ItemHistory);
+
+  // Hermes label checks: rules first, then the decision model; every check is stored with its steps.
+  rpc CheckItem(LabelItemRef) returns (HermesCheck);
+  rpc ListHermesChecks(ListHermesChecksRequest) returns (ListHermesChecksResponse);
+  rpc GetHermesCheck(HermesCheckRef) returns (HermesCheck);
+  rpc UndoHermesAccept(HermesCheckRef) returns (HermesCheck);
+  rpc SetHermesSettings(SetHermesSettingsRequest) returns (LabelingProject);
+  rpc GetHermesStats(LabelingProjectRef) returns (HermesStats);
+  // Phase 4: AI explanation of a check (analyst role), annotator quality, calibration of Hermes against reviewers.
+  rpc ExplainHermesCheck(ExplainHermesCheckRequest) returns (HermesCheck);
+  rpc GetQualityReport(LabelingProjectRef) returns (QualityReport);
+  rpc SummarizeQuality(SummarizeQualityRequest) returns (QualitySummary);
+
+  // AI label proposals (M05 §4.2): sources, per-item proposals (pending until applied), batch pre-label.
+  rpc GetAssistSettings(LabelingProjectRef) returns (AssistSettings);
+  rpc SaveAssistSettings(SaveAssistSettingsRequest) returns (AssistSettings);
+  rpc ProposeItem(ProposeItemRequest) returns (SuggestionSet);
+  rpc ListSuggestionSets(ListSuggestionSetsRequest) returns (ListSuggestionSetsResponse);
+  rpc DecideSuggestionSet(DecideSuggestionSetRequest) returns (SuggestionSet);
+  rpc StartPrelabel(StartPrelabelRequest) returns (PrelabelJob);
+  rpc CancelPrelabel(PrelabelJobRef) returns (PrelabelJob);
+  rpc ListPrelabelJobs(LabelingProjectRef) returns (ListPrelabelJobsResponse);
+
+  // Depth pass (D-41): progress where people look for it, the item list, and labels as a trainable dataset version.
+  rpc ListItems(ListLabelItemsRequest) returns (ListLabelItemsResponse);
+  rpc ExportLabels(ExportLabelsRequest) returns (ExportLabelsResponse);
+  rpc CreateLabelSet(CreateLabelSetRequest) returns (LabelSet);
+  rpc ListLabelSets(ListLabelSetsRequest) returns (ListLabelSetsResponse);
+}
+
+message LabelSchema {
+  string id = 1;
+  string dataset_id = 2;
+  int32 version = 3;
+  string task = 4;
+  string classes_json = 5;      // [{id, name, color?}]
+  google.protobuf.Timestamp created_at = 6;
+}
+message CreateSchemaVersionRequest { string workspace_id = 1; string dataset_id = 2; string task = 3; string classes_json = 4; }
+message GetSchemaRequest { string workspace_id = 1; string dataset_id = 2; int32 version = 3; }
+
+message LabelingProject {
+  string id = 1;
+  string dataset_id = 2;
+  string name = 3;
+  string guideline_md = 4;
+  int32 schema_version = 5;
+  string review_mode = 6;       // none | all
+  int32 lock_ttl_min = 7;
+  string state = 8;             // draft | active | paused | completed
+  google.protobuf.Timestamp created_at = 9;
+  string version_id = 10;
+  double auto_accept_threshold = 11;
+  bool hermes_enabled = 12;     // check every submitted item automatically
+  // Filled by ListProjects / GetProjectStats: progress and the caller's own work.
+  string dataset_name = 13;
+  int64 total = 14;
+  int64 accepted = 15;
+  int64 in_review = 16;
+  int64 unlabeled = 17;
+  int64 my_open = 18;           // items the caller is labeling or got back
+  int64 my_returned = 19;       // of those, returned by a reviewer
+  repeated string my_roles = 20;
+}
+message ListLabelItemsRequest {
+  string workspace_id = 1; string project_id = 2;
+  string status = 3;            // empty = all
+  string search = 4;            // part of the file name
+  bool mine = 5;                // only items the caller labeled or reviewed (always true for non-leads)
+  int32 limit = 6; int32 offset = 7;
+}
+message LabelItemRow {
+  string path = 1; string status = 2; string annotator = 3; string reviewer = 4; int64 labels = 5;
+  google.protobuf.Timestamp submitted_at = 6; google.protobuf.Timestamp reviewed_at = 7; string skip_reason = 8;
+  string url = 9;   // signed image link (1 h) for thumbnails
+}
+message ListLabelItemsResponse { repeated LabelItemRow items = 1; int64 total = 2; }
+message ExportLabelsRequest {
+  string workspace_id = 1; string project_id = 2;
+  bool all_labeled = 3;         // also items still in review; default = accepted only
+  string note = 4;
+}
+message ExportLabelsResponse {
+  string dataset_id = 1; string version_id = 2; int32 version_number = 3;
+  int64 items = 4; int64 boxes = 5;
+  int64 other_labels = 6;       // labels that have no YOLO form (kept in labels.jsonl)
+  int64 file_count = 7;
+}
+message CreateLabelingProjectRequest {
+  string workspace_id = 1; string dataset_id = 2; string name = 3; string guideline_md = 4; string review_mode = 5; int32 lock_ttl_min = 6;
+  string version_id = 7;                // label this dataset version (copied or reference); empty = the uploaded files
+  double auto_accept_threshold = 8;     // AI labels with confidence >= this are accepted without review; 0 = off
+}
+message ListLabelingProjectsRequest { string workspace_id = 1; string dataset_id = 2; }
+message ListLabelingProjectsResponse { repeated LabelingProject projects = 1; }
+message SetLabelingProjectStateRequest { string workspace_id = 1; string project_id = 2; string state = 3; }
+message LabelingProjectRef { string workspace_id = 1; string project_id = 2; }
+message LabelingProjectStats { LabelingProject project = 1; map<string, int64> by_status = 2; int64 total = 3; }
+
+message LabelingMember {
+  string user_id = 1; string username = 2; string role = 3; int32 max_open_items = 4; int64 open_items = 5;
+  int64 submitted = 6; int64 accepted = 7; int64 returned = 8; google.protobuf.Timestamp last_submitted_at = 9;   // as annotator
+}
+message LabelingMemberRequest { string workspace_id = 1; string project_id = 2; string user_id = 3; string role = 4; int32 max_open_items = 5; }
+message ListLabelingMembersResponse { repeated LabelingMember members = 1; }
+
+message Annotation {
+  string id = 1;
+  string kind = 2;              // tag | bbox | obb | polygon | keypoints | span | …
+  int32 class_id = 3;
+  string geometry_json = 4;
+  string attributes_json = 5;
+  string source = 6;            // human | model | import
+  optional double confidence = 7;
+}
+message LabelComment { string id = 1; string author = 2; string body = 3; bool resolved = 4; google.protobuf.Timestamp created_at = 5; }
+
+message LabelItem {
+  string project_id = 1;
+  string path = 2;
+  string status = 3;
+  string annotator_id = 4;
+  string reviewer_id = 5;
+  int32 etag = 6;               // = revision
+  google.protobuf.Timestamp lock_expires_at = 7;
+  bool locked_by_me = 8;
+  string url = 9;               // presigned GET for display
+  string classes_json = 10;
+  repeated Annotation annotations = 11;
+  repeated LabelComment comments = 12;
+  string draft_json = 13;       // remaining draft (R1)
+  string draft_by = 14;
+  google.protobuf.Timestamp draft_saved_at = 15;
+  string skip_reason = 16;
+}
+message NextItemResponse { bool empty = 1; LabelItem item = 2; }
+message LabelItemRef { string workspace_id = 1; string project_id = 2; string path = 3; }
+message LockInfo { google.protobuf.Timestamp expires_at = 1; }
+message SaveAnnotationsRequest { string workspace_id = 1; string project_id = 2; string path = 3; int32 etag = 4; repeated Annotation annotations = 5; }
+message SaveAnnotationsResponse { int32 etag = 1; }
+message ItemActionRequest { string workspace_id = 1; string project_id = 2; string path = 3; string text = 4; }  // reason / comment
+message ItemStatus { string status = 1; HermesCheck hermes = 2; }   // hermes: the automatic check run on submit, if any
+message MyItem { string path = 1; string status = 2; int32 etag = 3; }
+message ListMyItemsResponse { repeated MyItem items = 1; }
+message HistoryEntry { string action = 1; string actor = 2; google.protobuf.Timestamp at = 3; }
+message ItemHistory { repeated HistoryEntry entries = 1; }
+
+message LabelSet {
+  string id = 1;
+  int32 number = 2;
+  int32 schema_version = 3;
+  int64 item_count = 4;
+  int64 annotation_count = 5;
+  string include_status = 6;    // accepted_only | all_labeled
+  google.protobuf.Timestamp created_at = 7;
+}
+message CreateLabelSetRequest { string workspace_id = 1; string dataset_id = 2; bool all_labeled = 3; }
+message ListLabelSetsRequest { string workspace_id = 1; string dataset_id = 2; }
+message ListLabelSetsResponse { repeated LabelSet label_sets = 1; }
+
+// ───── Hermes ─────
+message HermesStep {
+  string name = 1;              // "Item has labels", "Decision model", "Auto-accept", …
+  string kind = 2;              // rule | model | action
+  string outcome = 3;           // pass | flag | fail | skipped | error
+  string detail = 4;
+  int32 ms = 5;
+}
+message HermesCheck {
+  string id = 1;
+  string path = 2;
+  int32 revision = 3;
+  string trigger = 4;           // submit | manual
+  string verdict = 5;           // pass | flag | fail | error
+  double confidence = 6;        // < 0 = rules only (no model confidence)
+  string decided_by = 7;        // rules | rules+model
+  string summary = 8;
+  repeated HermesStep steps = 9;
+  string suggestion = 10;
+  string ai_run_id = 11;        // open it in the AI log
+  string action = 12;           // none | auto_accepted | undone
+  string actor_name = 13;
+  google.protobuf.Timestamp created_at = 14;
+  string undone_by_name = 15;
+  google.protobuf.Timestamp undone_at = 16;
+  bool can_undo = 17;
+  string explanation = 18;      // AI explanation (analyst role), empty until someone asks
+  string explanation_lang = 19;
+  string explanation_run_id = 20;
+  google.protobuf.Timestamp explained_at = 21;
+}
+message HermesCheckRef { string workspace_id = 1; string project_id = 2; string check_id = 3; }
+message ListHermesChecksRequest { string workspace_id = 1; string project_id = 2; string verdict = 3; string path = 4; int32 limit = 5; }  // verdict: "" | pass | flag | fail | error | auto_accepted | undone
+message ListHermesChecksResponse { repeated HermesCheck checks = 1; }
+message SetHermesSettingsRequest { string workspace_id = 1; string project_id = 2; bool enabled = 3; double auto_accept_threshold = 4; }
+message HermesStats {
+  LabelingProject project = 1;
+  int64 checked = 2;
+  int64 passed = 3;
+  int64 flagged = 4;
+  int64 failed = 5;
+  int64 errors = 6;
+  int64 auto_accepted = 7;
+  int64 undone = 8;
+  double avg_confidence = 9;    // < 0 = none
+  string decision_state = 10;   // ready | degraded | missing — can Hermes ask a model right now
+  string decision_model = 11;
+  bool decision_external = 15;  // the decision model is a hosted API: item text leaves the platform
+  repeated string decision_reasons = 12;
+  bool can_manage = 13;         // Lead / labeling.manage: may change settings
+  bool can_undo = 14;           // Lead / Reviewer
+}
+
+// ───── AI assist ─────
+message AssistSource {
+  string kind = 1;              // model | deployment
+  string id = 2;
+  string label = 3;
+  bool enabled = 4;             // listed in the project's sources
+  bool external = 5;            // data leaves the platform
+  string state = 6;             // ready | degraded | unavailable
+  string state_reason = 7;
+  repeated string media = 8;    // image | text | audio | video — what it can propose for
+  string detail = 9;            // e.g. "AI model · roles labeler, vision" / "Deployment · task detect"
+}
+message AssistSettings {
+  repeated AssistSource sources = 1;          // every possible source (enabled or not), so the choice is visible
+  map<string, int32> class_mapping = 2;       // model label → schema class id
+  bool allow_external = 3;
+  double min_confidence = 4;
+  bool saved = 5;
+  bool can_manage = 6;
+  string classes_json = 7;
+  string dataset_task = 8;
+}
+message SaveAssistSettingsRequest {
+  string workspace_id = 1; string project_id = 2;
+  repeated AssistSourceRef sources = 3;
+  map<string, int32> class_mapping = 4;
+  bool allow_external = 5;
+  double min_confidence = 6;
+}
+message AssistSourceRef { string kind = 1; string id = 2; }
+message ProposeItemRequest {
+  string workspace_id = 1; string project_id = 2; string path = 3;
+  AssistSourceRef source = 4;
+  bool confirm_external = 5;    // the person confirmed that this item is sent to an external API
+}
+message ProposedLabel {
+  string kind = 1;
+  int32 class_id = 2;
+  string geometry_json = 3;
+  double confidence = 4;        // < 0 = not reported
+  string label = 5;             // the model's own label
+}
+message UnmappedLabel { string label = 1; int32 count = 2; }
+message SuggestionSet {
+  string id = 1;
+  string path = 2;
+  int32 revision = 3;
+  string source_kind = 4;
+  string source_id = 5;
+  string source_label = 6;
+  bool external = 7;
+  string state = 8;             // proposed | failed
+  string detail = 9;
+  repeated ProposedLabel items = 10;
+  repeated UnmappedLabel unmapped = 11;
+  string ai_run_id = 12;
+  int32 latency_ms = 13;
+  string job_id = 14;
+  string decision = 15;         // pending | applied | dismissed
+  string created_by_name = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp decided_at = 18;
+}
+message ListSuggestionSetsRequest { string workspace_id = 1; string project_id = 2; string path = 3; string job_id = 4; int32 limit = 5; }
+message ListSuggestionSetsResponse { repeated SuggestionSet sets = 1; }
+message DecideSuggestionSetRequest { string workspace_id = 1; string project_id = 2; string id = 3; string decision = 4; }   // applied | dismissed
+message StartPrelabelRequest {
+  string workspace_id = 1; string project_id = 2;
+  AssistSourceRef source = 3;
+  int32 limit = 4;              // 0 = every item without labels
+  bool confirm_external = 5;
+}
+message PrelabelJobRef { string workspace_id = 1; string project_id = 2; string job_id = 3; }
+message PrelabelJob {
+  string id = 1;
+  string source_kind = 2;
+  string source_label = 3;
+  int32 total = 4;
+  int32 done = 5;
+  int32 failed = 6;
+  string state = 7;             // queued | running | succeeded | failed | cancelled
+  string error = 8;
+  string created_by_name = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp started_at = 11;
+  google.protobuf.Timestamp finished_at = 12;
+}
+message ListPrelabelJobsResponse { repeated PrelabelJob jobs = 1; int64 targets = 2; }   // targets: items without labels or pending proposals
+
+// ───── Phase 4: explanations, quality, calibration ─────
+message ExplainHermesCheckRequest { string workspace_id = 1; string project_id = 2; string check_id = 3; string lang = 4; bool confirm_external = 5; }
+
+message AnnotatorQuality {
+  string annotator_id = 1;
+  string annotator_name = 2;
+  int64 items = 3;
+  int64 submitted = 4;
+  int64 accepted = 5;
+  int64 rejected = 6;
+  int64 in_review = 7;
+  int64 returned_ever = 8;      // items a reviewer returned, a Lead reopened or an auto-accept was undone at least once
+  int64 checked = 9;
+  int64 hermes_pass = 10;
+  int64 hermes_flag = 11;
+  int64 hermes_fail = 12;
+  int64 auto_accepted = 13;
+  int64 undone = 14;
+  double avg_confidence = 15;   // < 0 = none
+}
+message CalibrationBucket { double lo = 1; double hi = 2; int32 reviewed = 3; int32 human_agreed = 4; }   // Hermes "pass" checks, by confidence
+message ThresholdOption {
+  double threshold = 1;
+  int32 would_auto_accept = 2;  // passing checks at or above it (all, reviewed or not)
+  int32 reviewed = 3;           // of those, decided by a person
+  int32 disagreed = 4;          // the person rejected, reopened or undid
+  double error_rate = 5;        // < 0 = no reviewed data
+}
+message Calibration {
+  int32 checks = 1;             // automatic checks considered
+  int32 reviewed = 2;           // followed by a human decision
+  int32 pass_reviewed = 3;
+  int32 pass_disagreed = 4;     // Hermes passed, the person did not accept
+  int32 fail_reviewed = 5;      // Hermes failed/flagged and a person decided
+  int32 fail_agreed = 6;        // … and the person rejected too
+  int32 auto_unreviewed = 7;    // auto-accepted and never looked at by a person
+  repeated CalibrationBucket buckets = 8;
+  repeated ThresholdOption options = 9;
+  double recommended = 10;      // < 0 = no recommendation
+  string recommendation = 11;   // why (or why not)
+  double current_threshold = 12;
+}
+message QualityReport {
+  repeated AnnotatorQuality annotators = 1;
+  Calibration calibration = 2;
+  bool can_manage = 3;
+  string analyst_state = 4;     // ready | degraded | missing
+  string analyst_model = 5;
+  bool analyst_external = 6;
+  bool allow_external = 7;
+  string review_mode = 8;
+}
+message SummarizeQualityRequest { string workspace_id = 1; string project_id = 2; string lang = 3; bool confirm_external = 4; }
+message QualitySummary { string text = 1; string ai_run_id = 2; string model = 3; bool external = 4; string sent_json = 5; map<string, string> legend = 6; }
+message SyncProjectResponse { int64 added = 1; }

@@ -1,0 +1,68 @@
+RootWebArea: <Tên người dùng> - Computer Vision YOLO Models, Projects & Datasets
+  region: Notifications
+  dialog: New Dataset
+    heading: New Dataset
+      StaticText: New Dataset
+    link: Datasets documentation
+    StaticText: Create a dataset for training images and annotations.
+    form: 
+      tablist: 
+        tab: Upload [selected]
+          StaticText: Upload
+        tab: URL
+          StaticText: URL
+        tab: Cloud
+          StaticText: Cloud
+        tab: On Premise
+          StaticText: On Premise
+      tabpanel: Upload
+        button: Drop images, videos, or datasets here or click to browse — supports YOLO, COCO, and Ultralytics NDJSON datasets Images <50 MB — AVIF, BMP, D
+          StaticText: Drop images, videos, or datasets here
+          StaticText: or click to browse — supports YOLO, COCO, and Ultralytics NDJSON datasets
+          StaticText: Images
+          StaticText: <
+          StaticText: 50
+          StaticText: MB —
+          StaticText: AVIF, BMP, DNG, HEIC, JP2, JPG, MPO, PNG, TIFF, WEBP
+          StaticText: Videos
+          StaticText: <
+          StaticText: 1
+          StaticText: GB —
+          StaticText: MP4, WEBM, MOV, MKV, M4V
+          StaticText: Datasets
+          StaticText: <
+          StaticText: 10
+          StaticText: GB —
+          StaticText: ZIP, TAR, NDJSON
+      LabelText: 
+        StaticText: Dataset Name
+      textbox: Dataset Name
+        StaticText: admiring-jellyfish
+      LabelText: 
+        StaticText: URL
+      StaticText: /<user>/datasets/
+      textbox: URL
+        StaticText: admiring-jellyfish
+      StaticText: Lowercase letters, numbers, and hyphens. Must be unique in this workspace.
+      StaticText: URL is available
+      LabelText: 
+        StaticText: Description (optional)
+      textbox: Description (optional)
+      StaticText: Task Type
+      link: YOLO tasks documentation
+      button: Detect
+        StaticText: Detect
+      StaticText: License
+      link: Creative Commons licenses
+      button: CC BY 4.0
+        StaticText: CC BY 4.0
+      switch: Blur faces
+      StaticText: New
+      link: Visibility documentation
+      switch: Visibility
+      button: Cancel
+        StaticText: Cancel
+      button: Create Dataset
+        StaticText: Create Dataset
+    button: Close
+      StaticText: Close

@@ -1,0 +1,66 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: generic-onnx
+  displayName: Generic ONNX (serve any .onnx model)
+  family: onnx-runtime
+  description: >
+    Serves a user-imported .onnx file (M11) without the original repo. Pre/post-processing is declared in
+    config/onnx.json in the model directory (the inspect_model job reads the graph to suggest it; the user confirms in S-11-4).
+    Supports: image classify, image detect (separate boxes/scores/labels outputs or YOLO-style [N, 4+C]),
+    tabular-classify/regress (feature-vector input). Inference-only recipe.
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["onnxruntime-gpu==1.32.0"]
+license:
+  code: MIT                       # onnxruntime
+  weights: "per the model the user imports"
+tasks: [classify, detect, tabular-classify, tabular-regress]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional
+  python: "3.11"
+data:
+  input: none
+variants:
+  - {name: onnx, displayName: File ONNX (import)}
+entrypoints:
+  inspect:                         # 20/08 §5.5: proposes config/onnx.json from the graph
+    workdir: /opt/recipe
+    command: python /opt/recipe/inspect_onnx.py --model {model.weights} --task {task} --out {output}
+    configSchema:
+      onnx.json:
+        type: object
+        required: [task, input]
+        properties:
+          task: {enum: [classify, detect, tabular-classify, tabular-regress]}
+          input:
+            type: object
+            properties:
+              name: {type: string}
+              size: {type: array, items: {type: integer}, minItems: 2, maxItems: 2}
+              layout: {enum: [NCHW, NHWC]}
+              scale: {type: number}
+              mean: {type: array, items: {type: number}}
+              std: {type: array, items: {type: number}}
+              rgb: {type: boolean}
+          features: {type: array, items: {type: string}}
+          detect_layout: {enum: [boxes_scores_labels, yolo]}
+          outputs: {type: object, additionalProperties: {type: string}}
+  serve:
+    handler: handler:Handler
+    batching: true
+  assist:
+    kinds: [prelabel]
+    handler: handler:Handler
+artifacts:
+  best: {as: model.onnx}
+metrics:
+  sources: []
+  primary: none
+openItems:
+  - "Pin numpy/pillow versions at build time; onnxruntime-gpu 1.32.0 needs CUDA 12.x + cuDNN 9 in the image."
+  - "Other detect output formats (e.g. NMS inside the graph of an RT-DETR export) are declared with `detect_layout` in onnx.json — add them as they come up."

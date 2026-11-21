@@ -1,0 +1,17 @@
+.dev/
+bin/
+obj/
+node_modules/
+web/dist/
+deploy/compose/.env
+deploy/dev/ssh-info.txt
+deploy/dev/id_ed25519_*
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.idea/
+artifacts/
+*.pfx
+*.key
+__pycache__/
+*.pyc
+.venv/

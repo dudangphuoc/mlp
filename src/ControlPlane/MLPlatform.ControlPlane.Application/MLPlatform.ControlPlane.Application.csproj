@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../Framework/MLPlatform.Cqrs/MLPlatform.Cqrs.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Data/MLPlatform.Data.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Security/MLPlatform.Security.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Recipes/MLPlatform.Recipes.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Storage/MLPlatform.Storage.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Cqrs.Generators/MLPlatform.Cqrs.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../Framework/MLPlatform.Data.Generators/MLPlatform.Data.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Sql/**/*.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../../python/mlp_optimize/pipeline.py" LogicalName="optimize/pipeline.py" />
+  </ItemGroup>
+</Project>

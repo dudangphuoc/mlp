@@ -1,0 +1,111 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: hf-text
+  displayName: HF Transformers — text classification & NER
+  family: text-encoder
+  description: >
+    Fine-tune any encoder model from the Hugging Face Hub for text-classify and NER using the transformers
+    example scripts. The scripts were removed from main on 2026-10-13 (PR #49357) → vendored from tag v5.19.0.
+  homepage: https://github.com/huggingface/transformers
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["transformers==5.19.0", "datasets", "evaluate==0.4.6", "seqeval", "accelerate", "tensorboard", "scikit-learn"]
+license:
+  code: Apache-2.0
+  weights: per each Hub model's model card
+  notes: ""
+tasks: [text-classify, ner]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional
+  minVramGb: 6
+  python: "3.11"
+data:
+  input:
+    text-classify: hf-jsonl         # {split}.jsonl: {"sentence", "label"}
+    ner: hf-jsonl-ner               # {split}.jsonl: {"tokens": [...], "ner_tags": [...]} + labels.json
+variants:   # base models; users can enter another model id via the base_model parameter
+  - {name: xlm-roberta-base, weights: hf://FacebookAI/xlm-roberta-base, license: MIT}
+  - {name: bert-base-multilingual-cased, weights: hf://google-bert/bert-base-multilingual-cased, license: Apache-2.0}
+  - {name: custom, displayName: Custom Hub model (enter id), weights: "hf://{params.base_model}", license: per model card, requiresAck: true}
+params:
+  base_model: {type: string, default: "", description: "Only used with the custom variant (required in that case)"}
+  num_train_epochs: {type: number, default: 3}
+  per_device_train_batch_size: {type: integer, default: 16}
+  learning_rate: {type: number, default: 2.0e-5}
+  max_seq_length: {type: integer, default: 256}
+  warmup_ratio: {type: number, default: 0.06}
+  weight_decay: {type: number, default: 0.01}
+entrypoints:
+  train:
+    distributed: torchrun
+    workdir: /opt/recipe
+    env:
+      TENSORBOARD_LOGGING_DIR: "{output}/runs"     # transformers ≥ 5.15 dropped --logging_dir
+    command: >
+      torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      {task|text-classify=run_classification.py --text_column_names sentence --label_column_name label --metric_name f1 --max_seq_length {params.max_seq_length}|ner=run_ner.py --text_column_name tokens --label_column_name ner_tags --return_entity_level_metrics}
+      --model_name_or_path {weights}
+      --train_file {data.train} --validation_file {data.val}
+      --output_dir {output} --do_train --do_eval
+      --num_train_epochs {params.num_train_epochs}
+      --per_device_train_batch_size {params.per_device_train_batch_size}
+      --learning_rate {params.learning_rate} --warmup_ratio {params.warmup_ratio} --weight_decay {params.weight_decay}
+      --eval_strategy epoch --save_strategy epoch --save_total_limit 2 --load_best_model_at_end
+      --logging_steps 25 --report_to tensorboard
+    resume: {mode: append, args: "--resume_from_checkpoint {checkpoint}"}
+    checkpoints: "{output}/checkpoint-*"
+  eval:
+    workdir: /opt/recipe
+    command: >
+      python {task|text-classify=run_classification.py --text_column_names sentence --label_column_name label --metric_name f1|ner=run_ner.py --text_column_name tokens --label_column_name ner_tags --return_entity_level_metrics}
+      --model_name_or_path {model.weights} --validation_file {data.test}
+      --output_dir {output} --do_eval --report_to none
+    metrics:
+      sources:
+        - json: "{output}/eval_results.json"
+      primary: test/f1
+      map:
+        eval_f1: test/f1
+        eval_accuracy: test/accuracy
+        eval_overall_f1: test/f1
+        eval_loss: test/loss
+  serve:
+    handler: handler:Handler
+    batching: true
+  assist:
+    kinds: [prelabel, score]
+    handler: handler:Handler
+metrics:
+  sources:
+    - tensorboard: "{output}/runs"
+    - json: "{output}/trainer_state.json#log_history"
+  primary: val/f1
+  map:
+    eval/f1: val/f1
+    eval/overall_f1: val/f1
+    eval/accuracy: val/accuracy
+    eval/overall_accuracy: val/accuracy
+    eval/loss: val/loss
+    train/loss: train/loss
+    train/learning_rate: lr/pg0
+    eval_f1: val/f1
+    eval_overall_f1: val/f1
+    eval_accuracy: val/accuracy
+    eval_overall_accuracy: val/accuracy
+    eval_loss: val/loss
+    loss: train/loss
+    learning_rate: lr/pg0
+artifacts:
+  best: {from: ["."], as: hf}       # HF directory (config, model.safetensors, tokenizer) → weights/hf/; skips checkpoint-*
+  files:
+    - {from: all_results.json, to: config/all_results.json}
+    - {from: trainer_state.json, to: config/trainer_state.json}
+openItems:
+  - "NER (`eval_overall_f1`) and text-classify (`eval_f1` with --metric_name f1) metric keys need confirming against a real trainer_state.json."
+  - "Whether the v5.19.0 scripts work with the latest datasets has not been checked."

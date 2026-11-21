@@ -1,0 +1,117 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: deimv2
+  displayName: DEIMv2
+  family: detr-realtime
+  description: >
+    Real-time DETR combining DINOv3 (S–X) and HGNetv2 (Atto–N), 8 sizes.
+  homepage: https://github.com/Intellindust-AI-Lab/DEIMv2
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  git: https://github.com/Intellindust-AI-Lab/DEIMv2
+  commit: f005f50ce565e63f6c298feccb51901a98c3d035
+  commitDate: "2026-10-23"
+license:
+  code: "DEIMv2 License — non-commercial only"
+  weights: "DEIMv2 License — non-commercial only · DINOv3 backbone (L/X): DINOv3 License"
+  requiresAck: true
+  notes: >
+    Since 2026-08-24 (commit bb64e5e) DEIMv2 code, configs and WEIGHTS may only be used for non-commercial purposes;
+    commercial use (including SaaS/API and commercial deployments) requires a separate license from Intellindust; governing law: PRC.
+    The last Apache-2.0 commit is add5bcdb499bf7b8a366bfeac1a47d3dc278de27 — using older commits/weights is a legal question
+    the recipe does not decide for the user. Trained models and deployments carry this warning.
+tasks: [detect]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 8
+  python: "3.11"
+  shmSizeGb: 8
+data:
+  input: coco
+variants:   # .pth checkpoints on Google Drive (the HF copy is safetensors only, unusable for -t/-r/export)
+  - {name: deimv2-atto,  config: configs/deimv2/deimv2_hgnetv2_atto_coco.yml,  weights: "gdrive://18sRJXX3FBUigmGJ1y5Oo_DPC5C3JCgYc", params: 0.5,  reported: {coco_ap50_95: 23.8}, classes: coco80}
+  - {name: deimv2-femto, config: configs/deimv2/deimv2_hgnetv2_femto_coco.yml, weights: "gdrive://16hh6l9Oln9TJng4V0_HNf_Z7uYb7feds", params: 1.0,  reported: {coco_ap50_95: 31.0}, classes: coco80}
+  - {name: deimv2-pico,  config: configs/deimv2/deimv2_hgnetv2_pico_coco.yml,  weights: "gdrive://1PXpUxYSnQO-zJHtzrCPqQZ3KKatZwzFT", params: 1.5,  reported: {coco_ap50_95: 38.5}, classes: coco80}
+  - {name: deimv2-n,     config: configs/deimv2/deimv2_hgnetv2_n_coco.yml,     weights: "gdrive://1G_Q80EVO4T7LZVPfHwZ3sT65FX5egp9K", params: 3.6,  reported: {coco_ap50_95: 43.0}, classes: coco80}
+  - {name: deimv2-s,     config: configs/deimv2/deimv2_dinov3_s_coco.yml,      weights: "gdrive://1MDOh8UXD39DNSew6rDzGFp1tAVpSGJdL", params: 9.7,  reported: {coco_ap50_95: 50.9}, requiresFiles: [{zoo: deimv2_vitt_distill, path: /opt/recipe/src/ckpts/vitt_distill.pt}], classes: coco80}
+  - {name: deimv2-m,     config: configs/deimv2/deimv2_dinov3_m_coco.yml,      weights: "gdrive://1nPKDHrotusQ748O1cQXJfi5wdShq6bKp", params: 18.1, reported: {coco_ap50_95: 53.0}, requiresFiles: [{zoo: deimv2_vittplus_distill, path: /opt/recipe/src/ckpts/vittplus_distill.pt}], classes: coco80}
+  - {name: deimv2-l,     config: configs/deimv2/deimv2_dinov3_l_coco.yml,      weights: "gdrive://1dRJfVHr9HtpdvaHlnQP460yPVHynMray", params: 32.2, reported: {coco_ap50_95: 56.0}, license: "DEIMv2 (non-commercial) + DINOv3 License", requiresFiles: [{zoo: dinov3_vits16, path: /opt/recipe/src/ckpts/dinov3_vits16_pretrain_lvd1689m-08c60483.pth}], classes: coco80}
+  - {name: deimv2-x,     config: configs/deimv2/deimv2_dinov3_x_coco.yml,      weights: "gdrive://1pTiQaBGt8hwtO0mbYlJ8nE-HGztGafS7", params: 50.3, reported: {coco_ap50_95: 57.8}, license: "DEIMv2 (non-commercial) + DINOv3 License", requiresFiles: [{zoo: dinov3_vits16plus, path: /opt/recipe/src/ckpts/dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth}], classes: coco80}
+params:
+  epochs: {type: integer, default: 50, minimum: 1, description: "The repo key is `epoches`; the schedule (flat_epoch, no_aug_epoch, stop_epoch, policy.epoch, mixup/copyblend, matcher_change_epoch) is scaled proportionally"}
+  batch: {type: integer, default: 16}
+  num_classes: {type: integer, from: dataset.classes.count}
+  seed: {type: integer, default: 0}
+  use_amp: {type: boolean, default: true}
+entrypoints:
+  train:
+    distributed: torchrun          # the repo only documents torchrun; a single GPU also runs torchrun --nproc_per_node=1
+    workdir: /opt/recipe/src       # backbone weight paths are relative to the repo directory
+    command: >
+      python /opt/recipe/shared/make_config.py --base /opt/recipe/src/{variant.config}
+      --data {data} --num-classes {params.num_classes} --epochs {params.epochs} --batch {params.batch}
+      --epoch-key epoches --output-dir {output} --out {output}/mlp_train.yml
+      && torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      train.py -c {output}/mlp_train.yml {params.use_amp?--use-amp} --seed={params.seed} {weights?-t {weights}}
+    resume: {mode: replace, from: "{weights?-t {weights}}", to: "-r {checkpoint}"}   # -t and -r are mutually exclusive
+    checkpoints: "{output}/last.pth"
+    fromScratch: true              # no -t: train from the pretrained backbone bundled in the image
+  eval:
+    workdir: /opt/recipe/src
+    command: >
+      python /opt/recipe/shared/make_config.py --base {model}/config/mlp_train.yml --data {data}
+      --train-split '' --val-split test --output-dir {output} --out {output}/mlp_eval.yml
+      && torchrun --nproc_per_node=1 train.py -c {output}/mlp_eval.yml --test-only -r {model.weights}
+    metrics:
+      sources:
+        - jsonl: "{output}/log.txt"
+      primary: test/mAP50-95
+      map:
+        test_coco_eval_bbox[0]: test/mAP50-95
+        test_coco_eval_bbox[1]: test/mAP50
+  export:
+    formats: [onnx]
+    outputs: ["model.onnx"]                # TensorRT: build the engine on the target machine (GPU/driver dependent), not at export
+    workdir: /opt/recipe/src
+    command: >
+      cp {model.weights} {output}/model.pth
+      && python tools/deployment/export_onnx.py --check -c {model}/config/mlp_train.yml -r {output}/model.pth
+      && rm {output}/model.pth
+  serve:
+    handler: shared.handler:Handler
+  assist:
+    kinds: [prelabel, score]
+    handler: shared.handler:Handler
+metrics:
+  sources:
+    - tensorboard: "{output}/summary"
+    - jsonl: "{output}/log.txt"     # per epoch: train_loss, train_lr, test_coco_eval_bbox[0..], epoch
+  primary: val/mAP50-95
+  map:
+    Test/coco_eval_bbox_0: val/mAP50-95
+    Test/coco_eval_bbox_1: val/mAP50
+    Loss/total: train/loss
+    Lr/pg_0: lr/pg0
+    test_coco_eval_bbox[0]: val/mAP50-95
+    test_coco_eval_bbox[1]: val/mAP50
+    train_loss: train/loss
+artifacts:
+  best: {from: ["best_stg2.pth", "best_stg1.pth"], as: model.pth}   # stg2 if stop_epoch was passed, otherwise stg1
+  files:
+    - {from: mlp_train.yml, to: config/mlp_train.yml}
+    - {from: log.txt, to: config/log.txt}
+openItems:
+  - "Backbone file names in ckpts/ (vitt_distill.pt, vittplus_distill.pt, dinov3_vits16*_pretrain_lvd1689m-*.pth) must match the paths in configs/deimv2/*.yml — check on the pinned commit."
+  - "S/M: distilled backbones are downloaded from the authors' Google Drive (cache_weights job); L/X: DINOv3 is manually approved by Meta → an Admin uploads it to the Model Zoo."
+  - "TensorRT ≥ 10.6 for FP16 (10.4 may give wrong results) — note from the README."
+  - "DINOv3 weights (L/X) must be uploaded to the Model Zoo by an Admin after Meta approval."
+  - "last.pth is only written before stop_epoch → a crash in the final stage resumes from an epoch before stop_epoch."
+  - "Order/length of the test_coco_eval_bbox array (12 or 14 elements) not verified; only elements 0 (AP50:95) and 1 (AP50) are used."
+  - "export_onnx.py writes the .onnx file next to the checkpoint (.pth → .onnx extension) — check on the built image."
+  - "Eval --test-only writes log.txt to the eval config output_dir — check that the test_coco_eval_bbox key appears on a test-only run."

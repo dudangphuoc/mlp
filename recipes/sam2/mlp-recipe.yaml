@@ -1,0 +1,48 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: sam2
+  displayName: SAM 2.1 (Meta) — interactive segmentation
+  family: promptable-segmentation
+  description: >
+    Segmentation from point/box prompts on images. Used as an `assist` deployment for the labeling tool (M05, M12 kind assist):
+    the annotator clicks positive/negative points or drags a box → polygon. Inference-only recipe; the repo has fine-tuning code
+    (training/README.md) but it is not included in the recipe yet.
+  homepage: https://github.com/facebookresearch/sam2
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  git: https://github.com/facebookresearch/sam2
+  commit: 2b90b9f5ceec907a1c18123530e92e794ad901a4
+  commitDate: "2024-12-16"
+license:
+  code: Apache-2.0
+  weights: Apache-2.0
+tasks: [segment]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional            # CPU works but is slow; GPU recommended for < 1 s interaction
+  minVramGb: 4
+  python: "3.11"
+data:
+  input: none
+variants:   # config + checkpoint SAM 2.1 (checkpoints/download_ckpts.sh @ commit ghim)
+  - {name: sam2.1-hiera-tiny,      config: configs/sam2.1/sam2.1_hiera_t.yaml,  weights: https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_tiny.pt}
+  - {name: sam2.1-hiera-small,     config: configs/sam2.1/sam2.1_hiera_s.yaml,  weights: https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_small.pt}
+  - {name: sam2.1-hiera-base-plus, config: configs/sam2.1/sam2.1_hiera_b+.yaml, weights: https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_base_plus.pt}
+  - {name: sam2.1-hiera-large,     config: configs/sam2.1/sam2.1_hiera_l.yaml,  weights: https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt, params: 224.4, minVramGb: 8}
+entrypoints:                     # assist only: not shown in the Deploy/Train dialogs (20/08 §3)
+  assist:
+    kinds: [segment]
+    handler: handler:Handler
+artifacts:
+  best: {as: sam2.pt}             # temporary model directory from the variant: weights/sam2.pt
+metrics:
+  sources: []
+  primary: none
+openItems:
+  - "The SAM2_BUILD_CUDA=0 flag skips the CUDA extension (only affects mask hole-filling post-processing) — check at build time."
+  - "SAM 2 fine-tuning (training/) is not included in the recipe yet."
+  - "Minimum VRAM per variant is an estimate; needs measuring."

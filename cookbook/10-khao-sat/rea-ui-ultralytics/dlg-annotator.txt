@@ -1,0 +1,394 @@
+RootWebArea: Example Dataset Dataset by <Tên người dùng>
+  region: Notifications
+  dialog: 000000000061
+    toolbar: 
+      button: Draw
+        StaticText: Draw
+      button: Smart
+        StaticText: Smart
+      separator: 
+      button: Undo [disabled]
+      button: Redo [disabled]
+      button: Delete selected [disabled]
+      button: Save [disabled]
+      separator: 
+      button: Keyboard shortcuts
+        StaticText: Keyboard shortcuts
+      button: Annotation visibility
+      button: View image information
+      button: Hide classes [expanded]
+      button: Rotate image clockwise
+      button: Download image
+      button: Delete image
+      button: Close
+    button: Zoom out
+    button: 100% [disabled]
+      StaticText: 100
+      StaticText: %
+    button: Zoom in
+    button: Reset to fit [disabled]
+    StaticText: 28.8
+    StaticText: px
+    button: Next image
+    textbox: Search classes...
+    button: Hide classes
+    button: person annotations
+    button: Change person color
+    button: person3
+      StaticText: person
+      superscript: 
+        StaticText: 3
+    button: Hide person annotations
+    button: Rename person
+    StaticText: 1
+    button: Change bicycle color
+    button: bicycle
+      StaticText: bicycle
+    button: Rename bicycle
+    StaticText: 2
+    button: Change car color
+    button: car
+      StaticText: car
+    button: Rename car
+    StaticText: 3
+    button: Change motorcycle color
+    button: motorcycle
+      StaticText: motorcycle
+    button: Rename motorcycle
+    StaticText: 4
+    button: Change airplane color
+    button: airplane
+      StaticText: airplane
+    button: Rename airplane
+    StaticText: 5
+    button: Change bus color
+    button: bus
+      StaticText: bus
+    button: Rename bus
+    StaticText: 6
+    button: Change train color
+    button: train
+      StaticText: train
+    button: Rename train
+    StaticText: 7
+    button: Change truck color
+    button: truck
+      StaticText: truck
+    button: Rename truck
+    StaticText: 8
+    button: Change boat color
+    button: boat
+      StaticText: boat
+    button: Rename boat
+    StaticText: 9
+    button: Change traffic light color
+    button: traffic light
+      StaticText: traffic light
+    button: Rename traffic light
+    button: Change fire hydrant color
+    button: fire hydrant
+      StaticText: fire hydrant
+    button: Rename fire hydrant
+    button: Change stop sign color
+    button: stop sign
+      StaticText: stop sign
+    button: Rename stop sign
+    button: Change parking meter color
+    button: parking meter
+      StaticText: parking meter
+    button: Rename parking meter
+    button: Change bench color
+    button: bench
+      StaticText: bench
+    button: Rename bench
+    button: Change bird color
+    button: bird
+      StaticText: bird
+    button: Rename bird
+    button: Change cat color
+    button: cat
+      StaticText: cat
+    button: Rename cat
+    button: Change dog color
+    button: dog
+      StaticText: dog
+    button: Rename dog
+    button: Change horse color
+    button: horse
+      StaticText: horse
+    button: Rename horse
+    button: Change sheep color
+    button: sheep
+      StaticText: sheep
+    button: Rename sheep
+    button: Change cow color
+    button: cow
+      StaticText: cow
+    button: Rename cow
+    button: elephant annotations
+    button: Change elephant color
+    button: elephant2
+      StaticText: elephant
+      superscript: 
+        StaticText: 2
+    button: Hide elephant annotations
+    button: Rename elephant
+    button: Change bear color
+    button: bear
+      StaticText: bear
+    button: Rename bear
+    button: Change zebra color
+    button: zebra
+      StaticText: zebra
+    button: Rename zebra
+    button: Change giraffe color
+    button: giraffe
+      StaticText: giraffe
+    button: Rename giraffe
+    button: Change backpack color
+    button: backpack
+      StaticText: backpack
+    button: Rename backpack
+    button: Change umbrella color
+    button: umbrella
+      StaticText: umbrella
+    button: Rename umbrella
+    button: Change handbag color
+    button: handbag
+      StaticText: handbag
+    button: Rename handbag
+    button: Change tie color
+    button: tie
+      StaticText: tie
+    button: Rename tie
+    button: Change suitcase color
+    button: suitcase
+      StaticText: suitcase
+    button: Rename suitcase
+    button: Change frisbee color
+    button: frisbee
+      StaticText: frisbee
+    button: Rename frisbee
+    button: Change skis color
+    button: skis
+      StaticText: skis
+    button: Rename skis
+    button: Change snowboard color
+    button: snowboard
+      StaticText: snowboard
+    button: Rename snowboard
+    button: Change sports ball color
+    button: sports ball
+      StaticText: sports ball
+    button: Rename sports ball
+    button: Change kite color
+    button: kite
+      StaticText: kite
+    button: Rename kite
+    button: Change baseball bat color
+    button: baseball bat
+      StaticText: baseball bat
+    button: Rename baseball bat
+    button: Change baseball glove color
+    button: baseball glove
+      StaticText: baseball glove
+    button: Rename baseball glove
+    button: Change skateboard color
+    button: skateboard
+      StaticText: skateboard
+    button: Rename skateboard
+    button: Change surfboard color
+    button: surfboard
+      StaticText: surfboard
+    button: Rename surfboard
+    button: Change tennis racket color
+    button: tennis racket
+      StaticText: tennis racket
+    button: Rename tennis racket
+    button: Change bottle color
+    button: bottle
+      StaticText: bottle
+    button: Rename bottle
+    button: Change wine glass color
+    button: wine glass
+      StaticText: wine glass
+    button: Rename wine glass
+    button: Change cup color
+    button: cup
+      StaticText: cup
+    button: Rename cup
+    button: Change fork color
+    button: fork
+      StaticText: fork
+    button: Rename fork
+    button: Change knife color
+    button: knife
+      StaticText: knife
+    button: Rename knife
+    button: Change spoon color
+    button: spoon
+      StaticText: spoon
+    button: Rename spoon
+    button: Change bowl color
+    button: bowl
+      StaticText: bowl
+    button: Rename bowl
+    button: Change banana color
+    button: banana
+      StaticText: banana
+    button: Rename banana
+    button: Change apple color
+    button: apple
+      StaticText: apple
+    button: Rename apple
+    button: Change sandwich color
+    button: sandwich
+      StaticText: sandwich
+    button: Rename sandwich
+    button: Change orange color
+    button: orange
+      StaticText: orange
+    button: Rename orange
+    button: Change broccoli color
+    button: broccoli
+      StaticText: broccoli
+    button: Rename broccoli
+    button: Change carrot color
+    button: carrot
+      StaticText: carrot
+    button: Rename carrot
+    button: Change hot dog color
+    button: hot dog
+      StaticText: hot dog
+    button: Rename hot dog
+    button: Change pizza color
+    button: pizza
+      StaticText: pizza
+    button: Rename pizza
+    button: Change donut color
+    button: donut
+      StaticText: donut
+    button: Rename donut
+    button: Change cake color
+    button: cake
+      StaticText: cake
+    button: Rename cake
+    button: Change chair color
+    button: chair
+      StaticText: chair
+    button: Rename chair
+    button: Change couch color
+    button: couch
+      StaticText: couch
+    button: Rename couch
+    button: Change potted plant color
+    button: potted plant
+      StaticText: potted plant
+    button: Rename potted plant
+    button: Change bed color
+    button: bed
+      StaticText: bed
+    button: Rename bed
+    button: Change dining table color
+    button: dining table
+      StaticText: dining table
+    button: Rename dining table
+    button: Change toilet color
+    button: toilet
+      StaticText: toilet
+    button: Rename toilet
+    button: Change tv color
+    button: tv
+      StaticText: tv
+    button: Rename tv
+    button: Change laptop color
+    button: laptop
+      StaticText: laptop
+    button: Rename laptop
+    button: Change mouse color
+    button: mouse
+      StaticText: mouse
+    button: Rename mouse
+    button: Change remote color
+    button: remote
+      StaticText: remote
+    button: Rename remote
+    button: Change keyboard color
+    button: keyboard
+      StaticText: keyboard
+    button: Rename keyboard
+    button: Change cell phone color
+    button: cell phone
+      StaticText: cell phone
+    button: Rename cell phone
+    button: Change microwave color
+    button: microwave
+      StaticText: microwave
+    button: Rename microwave
+    button: Change oven color
+    button: oven
+      StaticText: oven
+    button: Rename oven
+    button: Change toaster color
+    button: toaster
+      StaticText: toaster
+    button: Rename toaster
+    button: Change sink color
+    button: sink
+      StaticText: sink
+    button: Rename sink
+    button: Change refrigerator color
+    button: refrigerator
+      StaticText: refrigerator
+    button: Rename refrigerator
+    button: Change book color
+    button: book
+      StaticText: book
+    button: Rename book
+    button: Change clock color
+    button: clock
+      StaticText: clock
+    button: Rename clock
+    button: Change vase color
+    button: vase
+      StaticText: vase
+    button: Rename vase
+    button: Change scissors color
+    button: scissors
+      StaticText: scissors
+    button: Rename scissors
+    button: Change teddy bear color
+    button: teddy bear
+      StaticText: teddy bear
+    button: Rename teddy bear
+    button: Change hair drier color
+    button: hair drier
+      StaticText: hair drier
+    button: Rename hair drier
+    button: Change toothbrush color
+    button: toothbrush
+      StaticText: toothbrush
+    button: Rename toothbrush
+    button: Add class
+      StaticText: Add class
+    image: 000000000061
+    image: Interactive annotation canvas
+      StaticText: person
+      StaticText: elephant
+      StaticText: person
+    StaticText: 1
+    StaticText: /
+    StaticText: 8
+    button: 000000000061
+      StaticText: 000000000061
+    StaticText: 640
+    StaticText: ×
+    StaticText: 488
+    StaticText: Val
+    StaticText: 5 annotations
+    StaticText: person
+    superscript: 
+      StaticText: 3
+    StaticText: elephant
+    superscript: 
+      StaticText: 2

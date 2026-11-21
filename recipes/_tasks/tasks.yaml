@@ -1,0 +1,135 @@
+# Initial task catalog (D-22). Recipes declare `tasks:` using the keys below.
+# canonicalLabels: standard annotation types in the platform (M05 §3.1)
+# contract: proto message in inference.proto
+# primaryMetric: standard metric name for cross-recipe comparison (recipes map to this name; eval uses the test/ prefix)
+# converters: standard converter keys (directory trees: cookbook 20/08 §7); recipes add their own converters under their `converters:`
+apiVersion: mlplatform/v1
+kind: TaskCatalog
+tasks:
+  - key: detect
+    modality: {in: image, out: boxes}
+    canonicalLabels: [bbox]
+    converters: [coco, roboflow-coco, yolo, voc]
+    contract: mlplatform.v1.DetectResult
+    primaryMetric: val/mAP50-95
+    metrics: [val/mAP50-95, val/mAP50, val/precision, val/recall, train/loss]
+  - key: segment
+    modality: {in: image, out: masks}
+    canonicalLabels: [polygon, mask]
+    converters: [coco, roboflow-coco, yolo-seg]
+    contract: mlplatform.v1.SegmentResult
+    primaryMetric: val/mask_mAP50-95
+    metrics: [val/mask_mAP50-95, val/mAP50-95, train/loss]
+  - key: semantic
+    modality: {in: image, out: mask}
+    canonicalLabels: [mask]
+    converters: [mask-png]
+    contract: mlplatform.v1.SemanticResult
+    primaryMetric: val/mIoU
+    metrics: [val/mIoU, val/pixel_accuracy, train/loss]
+  - key: depth
+    modality: {in: image, out: depth}
+    canonicalLabels: [depth_map]
+    converters: [depth-png]
+    contract: mlplatform.v1.DepthResult
+    primaryMetric: val/abs_rel
+    metrics: [val/abs_rel, val/rmse, val/delta1, train/loss]
+  - key: obb
+    modality: {in: image, out: rotated_boxes}
+    canonicalLabels: [obb]
+    converters: [yolo-obb, dota]
+    contract: mlplatform.v1.ObbResult
+    primaryMetric: val/mAP50-95
+    metrics: [val/mAP50-95, val/mAP50, train/loss]
+  - key: pose
+    modality: {in: image, out: keypoints}
+    canonicalLabels: [keypoints]
+    converters: [coco-keypoints, yolo-pose]
+    contract: mlplatform.v1.PoseResult
+    primaryMetric: val/pose_mAP50-95
+    metrics: [val/pose_mAP50-95, val/mAP50-95, train/loss]
+  - key: classify
+    modality: {in: image, out: labels}
+    canonicalLabels: [tag]
+    converters: [cls-folders, hf-imagefolder]
+    contract: mlplatform.v1.ClassifyResult
+    primaryMetric: val/accuracy
+    metrics: [val/accuracy, val/top5_accuracy, train/loss]
+  - key: text-classify
+    modality: {in: text, out: labels}
+    canonicalLabels: [tag]
+    converters: [hf-jsonl]
+    contract: mlplatform.v1.ClassifyResult
+    primaryMetric: val/f1
+    metrics: [val/f1, val/accuracy, train/loss]
+  - key: ner
+    modality: {in: text, out: spans}
+    canonicalLabels: [span]
+    converters: [hf-jsonl-ner, conll]
+    contract: mlplatform.v1.NerResult
+    primaryMetric: val/f1
+    metrics: [val/f1, val/precision, val/recall, train/loss]
+  - key: generate
+    modality: {in: text, out: text}
+    canonicalLabels: [text_pair, preference]
+    converters: [chat-jsonl, prompt-completion-jsonl, preference-jsonl]
+    contract: mlplatform.v1.GenerateResult
+    primaryMetric: val/loss
+    metrics: [val/loss, train/loss, val/token_accuracy]
+  - key: asr
+    modality: {in: audio, out: text}
+    canonicalLabels: [transcript]
+    converters: [asr-manifest, hf-audiofolder]
+    contract: mlplatform.v1.AsrResult
+    primaryMetric: val/wer
+    metrics: [val/wer, val/cer, train/loss]
+  - key: audio-classify
+    modality: {in: audio, out: labels}
+    canonicalLabels: [tag]
+    converters: [audio-folders, hf-audiofolder]
+    contract: mlplatform.v1.ClassifyResult
+    primaryMetric: val/accuracy
+    metrics: [val/accuracy, val/f1, train/loss]
+  - key: tts
+    modality: {in: text, out: audio}
+    canonicalLabels: [transcript]
+    converters: [tts-manifest]
+    contract: mlplatform.v1.TtsResult
+    primaryMetric: val/loss          # TTS has no standard automatic metric; listening evaluation in M09 Artifacts
+    metrics: [train/loss, val/loss]
+  - key: tabular-classify
+    modality: {in: tabular, out: labels}
+    canonicalLabels: [value]
+    converters: [parquet]
+    contract: mlplatform.v1.TabularResult
+    primaryMetric: val/f1_macro
+    metrics: [val/f1_macro, val/accuracy, val/roc_auc]
+  - key: tabular-regress
+    modality: {in: tabular, out: number}
+    canonicalLabels: [value]
+    converters: [parquet]
+    contract: mlplatform.v1.TabularResult
+    primaryMetric: val/rmse
+    metrics: [val/rmse, val/mae, val/r2]
+  # Zero-shot (labeling assist): candidate classes arrive with each request (the project's schema); inference only.
+  - key: zero-shot-detect
+    modality: {in: image, out: boxes}
+    canonicalLabels: [bbox]
+    converters: []
+    contract: mlplatform.v1.DetectResult
+    primaryMetric: none
+    metrics: []
+  - key: zero-shot-classify
+    modality: {in: text, out: labels}
+    canonicalLabels: [tag]
+    converters: []
+    contract: mlplatform.v1.ClassifyResult
+    primaryMetric: none
+    metrics: []
+  - key: zero-shot-image-classify
+    modality: {in: image, out: labels}
+    canonicalLabels: [tag]
+    converters: []
+    contract: mlplatform.v1.ClassifyResult
+    primaryMetric: none
+    metrics: []

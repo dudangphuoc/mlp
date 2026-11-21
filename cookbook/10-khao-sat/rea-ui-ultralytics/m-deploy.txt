@@ -1,0 +1,330 @@
+RootWebArea: YOLO26n Model by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: E Example Project
+          StaticText: E
+          StaticText: Example Project
+        button: Private
+          StaticText: Private
+        StaticText: yolo26n
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Change model color
+    button: yolo26n
+      heading: yolo26n
+        StaticText: yolo26n
+    button: Download model
+    button: Star
+    button: More model actions
+    StaticText: Detect
+    StaticText: v
+    StaticText: 8.3.222
+    link: AGPL 3.0
+      StaticText: AGPL 3.0
+    StaticText: Updated 9 hours ago
+    StaticText: mAP
+    subscript: 
+      StaticText: 50
+    StaticText: 55.7%
+    StaticText: mAP
+    subscript: 
+      StaticText: 50-95
+    StaticText: 40.1%
+    StaticText: Precision
+    StaticText: 64.9%
+    StaticText: Recall
+    StaticText: 50.7%
+    link: Annotations overlay showing 9 labels Annotations overlay showing 13 labels Annotations overlay showing 3 labels Annotations overlay showing 
+      image: Annotations overlay showing 9 labels
+      image: Annotations overlay showing 13 labels
+      image: Annotations overlay showing 3 labels
+      image: Annotations overlay showing 12 labels
+      StaticText: COCO 2017
+      StaticText: 123.3k imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 118.3k
+      StaticText: 5.0k
+    tablist: 
+      tab: Overview
+        StaticText: Overview
+      tab: Train
+        StaticText: Train
+      tab: Predict
+        StaticText: Predict
+      tab: Export
+        StaticText: Export
+      tab: Deploy [selected]
+        StaticText: Deploy
+    tabpanel: Deploy
+      Canvas: 
+      button: Zoom in
+      button: Zoom out
+      button: Reset view
+      heading: Ultralytics Cloud
+        StaticText: Ultralytics Cloud
+      StaticText: 42
+      StaticText: regions worldwide
+      StaticText: Region Latency
+      StaticText: Sorted by network latency from your location. 42 regions tested.
+      button: Rescan
+        StaticText: Rescan
+      textbox: Search regions...
+      table: 
+        rowgroup: 
+          row: 
+            columnheader: Location
+              button: Location
+                StaticText: Location
+            columnheader: Zone
+              button: Zone
+                StaticText: Zone
+            columnheader: Latency
+              button: Latency
+                StaticText: Latency
+            columnheader: Distance
+              button: Distance
+                StaticText: Distance
+            columnheader: 
+              button: 
+        row: 
+          cell: Hong Kong Kowloon Hong Kong
+            image: Hong Kong
+            StaticText: Kowloon
+            StaticText: Hong Kong
+          cell: asia-east2
+            code: 
+              StaticText: asia-east2
+          cell: 38 ms
+            StaticText: 38
+            StaticText: ms
+          cell: 1,509 km
+            StaticText: 1,509 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Singapore Jurong West Singapore
+            image: Singapore
+            StaticText: Jurong West
+            StaticText: Singapore
+          cell: asia-southeast1
+            code: 
+              StaticText: asia-southeast1
+          cell: 42 ms
+            StaticText: 42
+            StaticText: ms
+          cell: 1,098 km
+            StaticText: 1,098 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Indonesia Jakarta Indonesia
+            image: Indonesia
+            StaticText: Jakarta
+            StaticText: Indonesia
+          cell: asia-southeast2
+            code: 
+              StaticText: asia-southeast2
+          cell: 49 ms
+            StaticText: 49
+            StaticText: ms
+          cell: 1,894 km
+            StaticText: 1,894 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Thailand Bangkok Thailand
+            image: Thailand
+            StaticText: Bangkok
+            StaticText: Thailand
+          cell: asia-southeast3
+            code: 
+              StaticText: asia-southeast3
+          cell: 61 ms
+            StaticText: 61
+            StaticText: ms
+          cell: 741 km
+            StaticText: 741 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Taiwan Changhua Taiwan
+            image: Taiwan
+            StaticText: Changhua
+            StaticText: Taiwan
+          cell: asia-east1
+            code: 
+              StaticText: asia-east1
+          cell: 71 ms
+            StaticText: 71
+            StaticText: ms
+          cell: 2,083 km
+            StaticText: 2,083 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Japan Tokyo Japan
+            image: Japan
+            StaticText: Tokyo
+            StaticText: Japan
+          cell: asia-northeast1
+            code: 
+              StaticText: asia-northeast1
+          cell: 79 ms
+            StaticText: 79
+            StaticText: ms
+          cell: 4,327 km
+            StaticText: 4,327 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Japan Osaka Japan
+            image: Japan
+            StaticText: Osaka
+            StaticText: Japan
+          cell: asia-northeast2
+            code: 
+              StaticText: asia-northeast2
+          cell: 101 ms
+            StaticText: 101
+            StaticText: ms
+          cell: 3,948 km
+            StaticText: 3,948 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: India Mumbai India
+            image: India
+            StaticText: Mumbai
+            StaticText: India
+          cell: asia-south1
+            code: 
+              StaticText: asia-south1
+          cell: 113 ms
+            StaticText: 113
+            StaticText: ms
+          cell: 3,733 km
+            StaticText: 3,733 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: South Korea Seoul South Korea
+            image: South Korea
+            StaticText: Seoul
+            StaticText: South Korea
+          cell: asia-northeast3
+            code: 
+              StaticText: asia-northeast3
+          cell: 113 ms
+            StaticText: 113
+            StaticText: ms
+          cell: 3,601 km
+            StaticText: 3,601 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+        row: 
+          cell: Australia Sydney Australia
+            image: Australia
+            StaticText: Sydney
+            StaticText: Australia
+          cell: australia-southeast1
+            code: 
+              StaticText: australia-southeast1
+          cell: 134 ms
+            StaticText: 134
+            StaticText: ms
+          cell: 6,845 km
+            StaticText: 6,845 km
+          cell: Deploy
+            button: Deploy
+              StaticText: Deploy
+      StaticText: Rows per page
+      combobox: Rows per page
+        StaticText: 10
+      navigation: pagination
+        button: Go to previous page [disabled]
+          StaticText: Previous
+        button: Go to page 1
+          StaticText: 1
+        button: Go to page 2
+          StaticText: 2
+        button: Go to page 3
+          StaticText: 3
+        button: Go to page 4
+          StaticText: 4
+        button: Go to page 5
+          StaticText: 5
+        button: Go to next page
+          StaticText: Next
+      StaticText: No deployments yet
+      StaticText: Create a deployment above to get a dedicated inference endpoint.
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

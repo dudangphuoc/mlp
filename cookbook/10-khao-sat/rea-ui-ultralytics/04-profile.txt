@@ -1,0 +1,128 @@
+RootWebArea: <Tên người dùng> - Computer Vision YOLO Models, Projects & Datasets
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Customize <Tên người dùng> icon
+      image: <Tên người dùng>
+    heading: <Tên người dùng>
+      StaticText: <Tên người dùng>
+    link: Free
+      StaticText: Free
+    StaticText: @
+    StaticText: <user>
+    StaticText: 0 followers
+    button: Share
+    link: Edit Profile
+      StaticText: Edit Profile
+    tablist: 
+      tab: Datasets1 [selected]
+        StaticText: Datasets
+        superscript: 
+          StaticText: 1
+      tab: Projects1
+        StaticText: Projects
+        superscript: 
+          StaticText: 1
+      tab: Deployments
+        StaticText: Deployments
+    tabpanel: Datasets1
+      heading: Datasets
+        StaticText: Datasets
+      button: New Dataset
+        StaticText: New Dataset
+      textbox: Search datasets...
+      button: Created ↓
+        StaticText: Created ↓
+      button: Grid view
+      button: Compact view
+      button: Table view
+      link: Example Dataset preview 1 Annotations overlay showing 2 labels Example Dataset preview 2 Annotations overlay showing 2 labels Example Datase
+        image: Example Dataset preview 1
+        image: Annotations overlay showing 2 labels
+        image: Example Dataset preview 2
+        image: Annotations overlay showing 2 labels
+        image: Example Dataset preview 3
+        image: Annotations overlay showing 1 label
+        image: Example Dataset preview 4
+        image: Annotations overlay showing 8 labels
+        StaticText: 8
+        StaticText: Example Dataset
+        button: <user>
+          StaticText: <user>
+        StaticText: Private
+        StaticText: Detect
+        StaticText: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+        StaticText: 80 classes
+        StaticText: 837.5 KB
+        StaticText: Nov 17, 2026
+        StaticText: person
+        StaticText: bicycle
+        StaticText: car
+        StaticText: motorcycle
+        StaticText: +
+        StaticText: 76
+        StaticText: Train
+        StaticText: 4
+        StaticText: Val
+        StaticText: 4
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

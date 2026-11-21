@@ -1,0 +1,2 @@
+-- mlp:query ListSweeps :many
+SELECT id, workspace_id, project_id, name, recipe, variant, task, algorithm, space::text AS space, base_params::text AS base_params, objective, direction, max_trials, parallel, seed, cpus, gpus, dataset_version_id, image_override, network, state, state_reason, best_trial, best_value, created_by, created_at, finished_at FROM tune.sweeps WHERE workspace_id = @workspace_id ORDER BY created_at DESC LIMIT 200;

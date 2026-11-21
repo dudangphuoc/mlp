@@ -1,0 +1,111 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: rf-detr
+  displayName: RF-DETR (Roboflow)
+  family: detr-realtime
+  description: Real-time DETR (detect, segment, keypoint preview) using the `rfdetr` pip package, trained with PyTorch Lightning.
+  homepage: https://github.com/roboflow/rf-detr
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["rfdetr[train,onnx]==1.12.1"]
+license:
+  code: Apache-2.0
+  weights: Apache-2.0 (Nano/Small/Medium/Large, all Seg, Keypoint Preview) · PML-1.0 (Atto/Femto/Pico/XL/2XL)
+  notes: ""        # warnings are set per PML variant below
+tasks: [detect, segment]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 8
+  python: "3.11"
+  shmSizeGb: 8
+data:
+  input: roboflow-coco            # {split}/*.jpg + {split}/_annotations.coco.json
+  splitNames: {val: valid}        # rfdetr reads train/valid/test
+variants:
+  - {name: rfdetr-nano,   displayName: RF-DETR Nano,   params: 30.5, reported: {coco_ap50_95: 48.4, resolution: 384}, tasks: [detect], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-small,  displayName: RF-DETR Small,  params: 32.1, reported: {coco_ap50_95: 53.0, resolution: 512}, tasks: [detect], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-medium, displayName: RF-DETR Medium, params: 33.7, reported: {coco_ap50_95: 54.7, resolution: 576}, tasks: [detect], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-large,  displayName: RF-DETR Large,  params: 33.9, reported: {coco_ap50_95: 56.5, resolution: 704}, tasks: [detect], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-xlarge, displayName: RF-DETR XLarge, params: 126.4, reported: {coco_ap50_95: 58.6, resolution: 700}, tasks: [detect], license: "PML-1.0 (needs rfdetr[plus]; commercial self-hosting needs Roboflow Enterprise)", classes: coco80}
+  - {name: rfdetr-2xlarge, displayName: RF-DETR 2XLarge, params: 126.9, reported: {coco_ap50_95: 60.1, resolution: 880}, tasks: [detect], license: "PML-1.0 (as above)", classes: coco80}
+  - {name: rfdetr-seg-nano,   params: 33.6, reported: {coco_mask_ap50_95: 40.3, resolution: 312}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-seg-small,  params: 33.7, reported: {coco_mask_ap50_95: 43.1, resolution: 384}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-seg-medium, params: 35.7, reported: {coco_mask_ap50_95: 45.3, resolution: 432}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-seg-large,  params: 36.2, reported: {coco_mask_ap50_95: 47.1, resolution: 504}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-seg-xlarge, params: 38.1, reported: {coco_mask_ap50_95: 48.8, resolution: 624}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  - {name: rfdetr-seg-2xlarge, params: 38.6, reported: {coco_mask_ap50_95: 49.9, resolution: 768}, tasks: [segment], license: Apache-2.0, classes: coco80}
+  # Atto/Femto/Pico (PML-1.0) and Keypoint Preview not included yet: need rfdetr[plus] / a separate keypoint task
+params:
+  epochs: {type: integer, default: 100, minimum: 1}
+  batch_size: {type: [integer, string], default: auto, description: "'auto' only on CUDA"}
+  grad_accum_steps: {type: integer, default: 1}
+  lr: {type: number, default: 1.0e-4}
+  lr_encoder: {type: number, default: 1.5e-4}
+  weight_decay: {type: number, default: 1.0e-4}
+  warmup_epochs: {type: number, default: 0.0}
+  amp_dtype: {enum: [auto, bf16, fp16, none], default: auto}
+  use_ema: {type: boolean, default: true}
+  early_stopping: {type: boolean, default: false}
+  early_stopping_patience: {type: integer, default: 10}
+  checkpoint_interval: {type: integer, default: 10}
+  seed: {type: integer, default: 0}
+entrypoints:
+  train:
+    distributed: torchrun     # the script calls train(devices="auto") — without it only 1 GPU is used (advanced.md docs)
+    workdir: /opt/recipe
+    command: >
+      torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      run_rfdetr.py train --variant {variant.name} --data {data} --output {output}
+      {weights?--weights {weights}} --params-json {params.json}   # no weights → the library downloads the variant's pretrained COCO weights itself
+    resume: {mode: append, args: "--resume {checkpoint}"}
+    checkpoints: "{output}/last.ckpt"
+  eval:
+    workdir: /opt/recipe
+    command: python run_rfdetr.py eval --model {model.weights} --data {data} --split test --output {output}
+    metrics:
+      sources:
+        - jsonl: "{output}/metrics.jsonl"
+      primary: test/mAP50-95
+      map:
+        map50_95: test/mAP50-95
+        map50: test/mAP50
+        segm_map50_95: test/mask_mAP50-95
+  export:
+    formats: [onnx, openvino, tflite, coreml]   # TensorRT: build the engine on the target machine
+    workdir: /opt/recipe
+    command: python run_rfdetr.py export --model {model.weights} --format {format} --output {output}
+  serve:
+    handler: handler:Handler
+    batching: false
+  assist:
+    kinds: [prelabel, score]
+    handler: handler:Handler
+metrics:
+  sources:
+    - tensorboard: "{output}"          # TensorBoard is on by default; event file location in output_dir not verified → scanned recursively
+    - csv: "{output}/metrics.csv"      # CSVLogger is always on
+  primary: val/mAP50-95
+  map:
+    val/mAP_50_95: val/mAP50-95
+    val/mAP_50: val/mAP50
+    val/precision: val/precision
+    val/recall: val/recall
+    val/segm_mAP_50_95: val/mask_mAP50-95
+    train/loss: train/loss
+    train/lr: lr/pg0
+artifacts:
+  best: {from: ["checkpoint_best_total.pth"], as: checkpoint_best_total.pth}
+  files:
+    - {from: training_config.json, to: config/training_config.json}
+    - {from: metrics.csv, to: config/metrics.csv}
+openItems:
+  - "Variant mode: the `rfdetr.util.coco_classes.COCO_CLASSES` path (COCO category_id → name) needs checking on 1.12.1."
+  - "Dict keys returned by RFDETR.evaluate() (map50_95, map50, segm_map50_95…) not verified — the eval entrypoint map is an assumption."
+  - TensorBoard event file location and metrics.csv column layout (CSVLogger mixes step/epoch keys) not verified.
+  - PML variants (Atto/Femto/Pico, XL/2XL) need `rfdetr[plus]`; the Dockerfile currently installs only [train,onnx] → XL/2XL cannot run until [plus] is added and the license confirmed.

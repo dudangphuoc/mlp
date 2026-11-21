@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <PublishAot>true</PublishAot>
+    <AssemblyName>mlp-api</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- D-38: the control plane sends the Dockerfile + mlp-net script for the agent to build on the host (ImageBuild) -->
+    <EmbeddedResource Include="../../../deploy/docker/net/Dockerfile" LogicalName="mlp-net/Dockerfile" />
+    <EmbeddedResource Include="../../../deploy/docker/net/mlp-net.sh" LogicalName="mlp-net/mlp-net.sh" />
+    <EmbeddedResource Include="../../../deploy/docker/notebook/Dockerfile" LogicalName="notebook/Dockerfile" />
+    <EmbeddedResource Include="../../../python/mlp_serve/__init__.py" LogicalName="serve/mlp_serve/__init__.py" />
+    <EmbeddedResource Include="../../../python/mlp_serve/server.py" LogicalName="serve/mlp_serve/server.py" />
+    <EmbeddedResource Include="../../../python/mlp_serve/types.py" LogicalName="serve/mlp_serve/types.py" />
+    <EmbeddedResource Include="../../../python/mlp_serve/selftest.py" LogicalName="serve/mlp_serve/selftest.py" />
+    <EmbeddedResource Include="../../../proto/mlplatform/v1/model_server.proto" LogicalName="serve/proto/mlplatform/v1/model_server.proto" />
+    <EmbeddedResource Include="../../../deploy/agent-upgrade/upgrade.sh" LogicalName="agent-upgrade/upgrade.sh" />
+    <EmbeddedResource Include="../../../deploy/agent-upgrade/upgrade.ps1" LogicalName="agent-upgrade/upgrade.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The ILCompiler shipped with SDK 10.0.401 is affected by this advisory; remove this line when upgrading to a patched SDK (noted in 50/02 P0-2). -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-p3jp-9v83-76w9" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="Grpc.AspNetCore.Web" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Framework/MLPlatform.Contracts/MLPlatform.Contracts.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.AgentProtocol/MLPlatform.AgentProtocol.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Ray/MLPlatform.Ray.csproj" />
+    <ProjectReference Include="../../Framework/MLPlatform.Storage/MLPlatform.Storage.csproj" />
+    <ProjectReference Include="../../ControlPlane/MLPlatform.ControlPlane.Application/MLPlatform.ControlPlane.Application.csproj" />
+  </ItemGroup>
+</Project>

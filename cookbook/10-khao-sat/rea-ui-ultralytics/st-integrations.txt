@@ -1,0 +1,160 @@
+RootWebArea: Integrations Settings on Ultralytics Platform
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Settings
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Integrations Settings
+      StaticText: Integrations Settings
+    StaticText: Manage your account settings and preferences
+    tablist: 
+      tab: Profile
+        StaticText: Profile
+      tab: API Keys
+        StaticText: API Keys
+      tab: Plans
+        StaticText: Plans
+      tab: Billing
+        StaticText: Billing
+      tab: Usage
+        StaticText: Usage
+      tab: Referrals
+        StaticText: Referrals
+      tab: Teams
+        StaticText: Teams
+      tab: Integrations [selected]
+        StaticText: Integrations
+      tab: Trash
+        StaticText: Trash
+    tabpanel: Integrations
+      complementary: 
+        textbox: Search integrations
+        StaticText: Infrastructure
+        button: On Premise
+          StaticText: On Premise
+        button: Amazon S3
+          StaticText: Amazon S3
+        button: Google Cloud Storage
+          StaticText: Google Cloud Storage
+        button: Azure Blob Storage
+          StaticText: Azure Blob Storage
+        StaticText: Notifications
+        button: Slack Slack
+          image: Slack
+          StaticText: Slack
+        StaticText: Imports
+        button: Weights & Biases Weights & Biases
+          image: Weights & Biases
+          StaticText: Weights & Biases
+        button: Roboflow Roboflow
+          image: Roboflow
+          StaticText: Roboflow
+        button: Labelbox Labelbox
+          image: Labelbox
+          StaticText: Labelbox
+        button: LabelMe
+          StaticText: LabelMe
+        button: CVAT
+          image: CVAT
+        StaticText: Coming Soon
+        button: Label Studio Label Studio
+          image: Label Studio
+          StaticText: Label Studio
+      heading: On Premise
+        StaticText: On Premise
+      StaticText: Run Platform workers on your own hardware to ingest local datasets and train models without moving source data off premises. Choose local da
+      link: View docs
+        StaticText: View docs
+      table: 
+        rowgroup: 
+          row: 
+            columnheader: Host
+              StaticText: Host
+            columnheader: Actions
+              StaticText: Actions
+        row: 
+          cell: No On Premise hosts connected.
+            StaticText: No On Premise hosts connected.
+      heading: Connect On Premise
+        StaticText: Connect On Premise
+      tablist: 
+        tab: Linux [selected]
+          StaticText: Linux
+        tab: macOS
+          StaticText: macOS
+        tab: Windows
+          StaticText: Windows
+      LabelText: 
+        StaticText: Dataset folder on this machine
+      textbox: Dataset folder on this machine
+        StaticText: /datasets
+      StaticText: All folders below this path become available as On Premise dataset sources.
+      LabelText: 
+        StaticText: Models folder on this machine
+      textbox: Models folder on this machine
+        StaticText: /models
+      StaticText: Trained weights and run artifacts stay in this folder.
+      button: Request a demo
+        StaticText: Request a demo
+    StaticText: Training History
+    StaticText: No training yet
+    StaticText: Payment History
+    StaticText: No payments yet
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

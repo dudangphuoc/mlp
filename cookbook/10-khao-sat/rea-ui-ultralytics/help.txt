@@ -1,0 +1,201 @@
+RootWebArea: Help & Support on Ultralytics Platform
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Help
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Help & Support
+      StaticText: Help & Support
+    StaticText: Find resources, tutorials, and support to get the most out of Ultralytics Platform.
+    heading: Video Tutorials
+      StaticText: Video Tutorials
+    button: Play video: Introducing Ultralytics Platform
+    StaticText: Introducing Ultralytics Platform
+    StaticText: Annotate, train, and deploy YOLO models — all from one platform.
+    button: Play video: Quickstart
+    StaticText: Quickstart
+    StaticText: Get started with Ultralytics Platform — sign up, explore the dashboard, and run your first project.
+    button: Play video: Data
+    StaticText: Data
+    StaticText: Upload, annotate, and manage datasets with powerful tools including SAM smart annotation.
+    button: Play video: Train
+    StaticText: Train
+    StaticText: Train YOLO models on cloud GPUs with real-time metrics and experiment tracking.
+    button: Play video: Deploy
+    StaticText: Deploy
+    StaticText: Deploy models to production with inference endpoints and real-time monitoring.
+    button: Play video: Account
+    StaticText: Account
+    StaticText: Manage your account settings, API keys, billing, and team collaboration.
+    heading: Documentation
+      StaticText: Documentation
+    link: View all docs
+      StaticText: View all docs
+    link: Annotate
+      StaticText: Annotate
+    StaticText: Prepare your data with powerful annotation tools and dataset management.
+    link: Datasets
+      StaticText: Datasets
+    StaticText: Upload, manage, and organize datasets for YOLO model training
+    link: Annotation
+      StaticText: Annotation
+    StaticText: Manual tools, SAM smart annotation, and auto-labeling for all task types
+    link: Explore
+      StaticText: Explore
+    StaticText: Discover and clone public datasets and projects from the community
+    link: Train
+      StaticText: Train
+    StaticText: Train YOLO models on cloud GPUs with real-time metrics and monitoring.
+    link: Cloud Training
+      StaticText: Cloud Training
+    StaticText: Train on cloud GPUs with real-time metrics streaming
+    link: Projects
+      StaticText: Projects
+    StaticText: Organize and manage projects for efficient model development
+    link: Models
+      StaticText: Models
+    StaticText: Analyze and export trained models in 23 deployment formats
+    link: Deploy
+      StaticText: Deploy
+    StaticText: Deploy models to production with inference endpoints and monitoring.
+    link: Inference
+      StaticText: Inference
+    StaticText: Test models via browser or programmatic API access
+    link: Endpoints
+      StaticText: Endpoints
+    StaticText: Deploy to dedicated endpoints in 42 global regions
+    link: Monitoring
+      StaticText: Monitoring
+    StaticText: Real-time metrics, request logs, and performance dashboards
+    link: Account
+      StaticText: Account
+    StaticText: Manage your account, billing, API keys, and team settings.
+    link: API Keys
+      StaticText: API Keys
+    StaticText: Create and manage API keys with AES-256-GCM encryption
+    link: Billing
+      StaticText: Billing
+    StaticText: Manage credits, payments, and subscriptions
+    link: Teams
+      StaticText: Teams
+    StaticText: Role-based access control and shared resources
+    heading: Resources
+      StaticText: Resources
+    link: GitHub GitHub 139.9k stars Source code, issues, and contributions
+      image: GitHub
+      StaticText: GitHub
+      StaticText: 139.9k
+      StaticText: stars
+      StaticText: Source code, issues, and contributions
+    link: Discord 6.7k members Real-time chat with the community
+      StaticText: Discord
+      StaticText: 6.7k
+      StaticText: members
+      StaticText: Real-time chat with the community
+    link: PyPI 352.2M downloads Python package for local training and inference ultralytics v8.4.214
+      StaticText: PyPI
+      StaticText: 352.2M
+      StaticText: downloads
+      StaticText: Python package for local training and inference
+      StaticText: ultralytics v8.4.214
+    link: YouTube YouTube 26.8k subscribers Video tutorials, demos, and walkthroughs
+      image: YouTube
+      StaticText: YouTube
+      StaticText: 26.8k
+      StaticText: subscribers
+      StaticText: Video tutorials, demos, and walkthroughs
+    link: Community Forum 1.2k users Ask questions and share knowledge
+      StaticText: Community Forum
+      StaticText: 1.2k
+      StaticText: users
+      StaticText: Ask questions and share knowledge
+    link: Reddit 5.9k subscribers Discussion and news on r/Ultralytics
+      StaticText: Reddit
+      StaticText: 5.9k
+      StaticText: subscribers
+      StaticText: Discussion and news on r/Ultralytics
+    heading: Feedback
+      StaticText: Feedback
+    StaticText: Help us improve
+    StaticText: Report bugs, request features, or share your thoughts.
+    LabelText: 
+      StaticText: Type
+    button: Bug
+      StaticText: Bug
+    button: Feature
+      StaticText: Feature
+    button: General
+      StaticText: General
+    LabelText: 
+      StaticText: Message
+      StaticText: *
+    textbox: Message *
+    LabelText: 
+      StaticText: Rating (optional)
+    button: 1 star, Poor
+    button: 2 stars, Fair
+    button: 3 stars, Good
+    button: 4 stars, Great
+    button: 5 stars, Excellent
+    button: Attach screenshot (optional)
+      StaticText: Attach screenshot (optional)
+    button: Submit Feedback [disabled]
+      StaticText: Submit Feedback
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

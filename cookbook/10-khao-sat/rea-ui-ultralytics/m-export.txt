@@ -1,0 +1,344 @@
+RootWebArea: YOLO26n Model by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: E Example Project
+          StaticText: E
+          StaticText: Example Project
+        button: Private
+          StaticText: Private
+        StaticText: yolo26n
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Change model color
+    button: yolo26n
+      heading: yolo26n
+        StaticText: yolo26n
+    button: Download model
+    button: Star
+    button: More model actions
+    StaticText: Detect
+    StaticText: v
+    StaticText: 8.3.222
+    link: AGPL 3.0
+      StaticText: AGPL 3.0
+    StaticText: Updated 9 hours ago
+    StaticText: mAP
+    subscript: 
+      StaticText: 50
+    StaticText: 55.7%
+    StaticText: mAP
+    subscript: 
+      StaticText: 50-95
+    StaticText: 40.1%
+    StaticText: Precision
+    StaticText: 64.9%
+    StaticText: Recall
+    StaticText: 50.7%
+    link: Annotations overlay showing 9 labels Annotations overlay showing 13 labels Annotations overlay showing 3 labels Annotations overlay showing 
+      image: Annotations overlay showing 9 labels
+      image: Annotations overlay showing 13 labels
+      image: Annotations overlay showing 3 labels
+      image: Annotations overlay showing 12 labels
+      StaticText: COCO 2017
+      StaticText: 123.3k imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 118.3k
+      StaticText: 5.0k
+    tablist: 
+      tab: Overview
+        StaticText: Overview
+      tab: Train
+        StaticText: Train
+      tab: Predict
+        StaticText: Predict
+      tab: Export [selected]
+        StaticText: Export
+      tab: Deploy
+        StaticText: Deploy
+    tabpanel: Export
+      StaticText: Export Formats
+      StaticText: Convert your PyTorch model to different formats for deployment. You can export multiple versions of each format with different settings (e.g
+      link: Learn more
+        StaticText: Learn more
+      button: Export All
+        StaticText: Export All
+      button: Expand exports [disabled]
+      image: PyTorch
+      StaticText: TorchScript
+      code: 
+        StaticText: torchscript
+      link: TorchScript documentation
+      StaticText: PyTorch C++ deployment
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: ONNX
+      StaticText: ONNX
+      code: 
+        StaticText: onnx
+      link: ONNX documentation
+      StaticText: Cross-platform inference, cloud and edge deployment
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Intel
+      StaticText: OpenVINO
+      code: 
+        StaticText: openvino
+      link: OpenVINO documentation
+      StaticText: Intel CPUs, GPUs, and VPUs
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: NVIDIA
+      StaticText: TensorRT
+      code: 
+        StaticText: engine
+      StaticText: GPU
+      link: TensorRT documentation
+      StaticText: NVIDIA GPU optimized inference
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Apple
+      StaticText: CoreML
+      code: 
+        StaticText: coreml
+      StaticText: iPhone app
+      link: CoreML documentation
+      StaticText: Apple iOS, macOS, and Apple Silicon
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Apple
+      StaticText: Core AI
+      code: 
+        StaticText: coreai
+      StaticText: iPhone app
+      link: Core AI documentation
+      StaticText: On-device inference for Apple silicon
+      StaticText: New
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: TensorFlow
+      StaticText: TF SavedModel
+      code: 
+        StaticText: saved_model
+      link: TF SavedModel documentation
+      StaticText: TensorFlow Serving and cloud deployment
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: TensorFlow
+      StaticText: TF GraphDef
+      code: 
+        StaticText: pb
+      link: TF GraphDef documentation
+      StaticText: TensorFlow frozen graph inference
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: TensorFlow
+      StaticText: TF Edge TPU
+      code: 
+        StaticText: edgetpu
+      link: TF Edge TPU documentation
+      StaticText: Google Coral and Edge TPU accelerators
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Google
+      StaticText: LiteRT
+      code: 
+        StaticText: litert
+      StaticText: Android app
+      link: LiteRT documentation
+      StaticText: Mobile and embedded devices (Android, Raspberry Pi)
+      StaticText: New
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Baidu
+      StaticText: PaddlePaddle
+      code: 
+        StaticText: paddle
+      link: PaddlePaddle documentation
+      StaticText: Baidu PaddlePaddle ecosystem
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Alibaba
+      StaticText: MNN
+      code: 
+        StaticText: mnn
+      link: MNN documentation
+      StaticText: Alibaba MNN mobile and embedded inference
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Tencent
+      StaticText: NCNN
+      code: 
+        StaticText: ncnn
+      link: NCNN documentation
+      StaticText: Mobile inference (Android, iOS, ARM)
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Sony
+      StaticText: IMX500
+      code: 
+        StaticText: imx
+      StaticText: Unsupported
+      link: IMX500 documentation
+      StaticText: Sony IMX500 intelligent vision sensor
+      button: Export [disabled]
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Rockchip
+      StaticText: RKNN
+      code: 
+        StaticText: rknn
+      link: RKNN documentation
+      StaticText: Rockchip NPU acceleration for all YOLO tasks
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: PyTorch
+      StaticText: ExecuTorch
+      code: 
+        StaticText: executorch
+      link: ExecuTorch documentation
+      StaticText: PyTorch on-device mobile inference
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Axelera AI
+      StaticText: Axelera
+      code: 
+        StaticText: axelera
+      link: Axelera documentation
+      StaticText: Requires Voyager runtime 1.9.0 and metis-dkms ≥1.7.0. Re-export models compiled with SDK 1.7 or earlier.
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: DeepX
+      StaticText: DeepX
+      code: 
+        StaticText: deepx
+      link: DeepX documentation
+      StaticText: DeepX NPU exports require DX-RT 3.5.0 or newer for inference
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Qualcomm
+      StaticText: Qualcomm
+      code: 
+        StaticText: qnn
+      link: Qualcomm documentation
+      StaticText: Qualcomm Snapdragon NPU (Hexagon HTP)
+      StaticText: New
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Hailo AI
+      StaticText: Hailo
+      code: 
+        StaticText: hailo
+      link: Hailo documentation
+      StaticText: Hailo AI accelerators and Raspberry Pi AI hardware
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: Huawei
+      StaticText: Huawei
+      code: 
+        StaticText: ascend
+      link: Huawei documentation
+      StaticText: Huawei Ascend AI Processors via the CANN runtime
+      StaticText: New
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: AMD
+      StaticText: AMD
+      code: 
+        StaticText: xilinx
+      link: AMD documentation
+      StaticText: AMD Xilinx Versal AI Edge NPUs via Vitis AI
+      StaticText: New
+      button: Export
+        StaticText: Export
+      button: Expand exports [disabled]
+      image: NXP
+      StaticText: NXP
+      code: 
+        StaticText: nxp
+      link: NXP documentation
+      StaticText: NXP i.MX95 NPU with Neutron 3.3.0 runtime
+      StaticText: New
+      button: Export
+        StaticText: Export
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

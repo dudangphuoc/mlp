@@ -1,0 +1,49 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: hf-auto
+  displayName: Hugging Face Auto (serve/import HF Hub models with a pipeline)
+  family: hf-pipeline
+  description: >
+    Import and serve a model from the Hugging Face Hub (or an uploaded HF directory) with `transformers.pipeline`
+    per task — no custom recipe needed. Used by M11 "Import model" when there is no dedicated recipe.
+    Inference-only recipe; to fine-tune, use the matching training recipe (hf-text, whisper, hf-llm-sft…).
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  pip: ["transformers==4.48.3"]   # matches the image's torch 2.5.1 (5.x needs torch >= 2.6)
+license:
+  code: Apache-2.0
+  weights: "per the imported model's model card"
+  requiresAck: true
+  notes: "License and terms of use come from each model's model card; the importer is responsible for reading them."
+tasks: [classify, detect, semantic, depth, text-classify, ner, generate, asr, audio-classify, zero-shot-detect, zero-shot-classify, zero-shot-image-classify]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional
+  python: "3.11"
+data:
+  input: none
+variants:
+  - {name: hub-model, displayName: HF Hub model (enter id + revision), weights: "hf://{params.model_id}"}
+params:
+  model_id: {type: string, required: true, description: "e.g. facebook/detr-resnet-50 — read the model card license"}
+  trust_remote_code: {type: boolean, default: false, description: "Runs arbitrary code from the HF repo; enable only for trusted repos"}
+entrypoints:
+  serve:
+    handler: handler:Handler
+    batching: true
+    stream: true
+  assist:
+    kinds: [prelabel, transcribe]
+    handler: handler:Handler
+artifacts:
+  best: {as: hf}                  # import/variant: weights/hf/ (20/08 §5.5, §8)
+metrics:
+  sources: []
+  primary: none
+openItems:
+  - "Pin torch/torchvision/torchaudio/timm/accelerate at build time; some models need extra packages (e.g. timm for DETR)."
+  - "trust_remote_code runs HF repo code inside the container — warned in the UI; no secrets other than HF_TOKEN are mounted."

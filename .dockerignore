@@ -1,0 +1,10 @@
+**/bin
+**/obj
+**/node_modules
+web/dist
+.dev
+.git
+deploy/compose/.env
+deploy/dev/ssh-info.txt
+deploy/dev/id_ed25519_*
+cookbook

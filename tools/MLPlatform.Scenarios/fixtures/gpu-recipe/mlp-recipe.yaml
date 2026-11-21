@@ -1,0 +1,45 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: gpu-recipe
+  displayName: GPU smoke (fixture for testing a real GPU machine)
+  family: test
+  description: PyTorch MLP on synthetic data, running on CUDA — verifies a GPU training job end to end on a real machine.
+source:
+  pip: ["torch"]
+license:
+  code: MIT
+tasks: [tabular-classify]
+environment:
+  base: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+  gpu: required
+data:
+  input: parquet
+variants:
+  - {name: small, weights: "zoo://gpu-init"}
+params:
+  epochs: {type: integer, default: 20}
+  hidden: {type: integer, default: 2048}
+  batch: {type: integer, default: 4096}
+entrypoints:
+  train:
+    distributed: none
+    command: >
+      python3 {recipe.src}/train_gpu.py --out {output} --epochs {params.epochs} --hidden {params.hidden} --batch {params.batch}
+    resume: {mode: append, args: "--resume {checkpoint}"}
+    checkpoints: "{output}/ckpt-*.pt"
+    resumeFidelity: exact
+    checkpointEveryMin: 1
+    progress: {metric: epoch, total: "{params.epochs}", unit: epoch, stallAfterMin: 10}
+    fromScratch: true
+metrics:
+  sources:
+    - jsonl: "{output}/log.jsonl"
+  primary: val/acc
+  map:
+    acc: val/acc
+    loss: train/loss
+    gpu_mem_gb: system/gpu_mem_gb
+    samples_per_s: system/samples_per_s
+artifacts:
+  best: {from: ["best.pt"], as: model.pt}

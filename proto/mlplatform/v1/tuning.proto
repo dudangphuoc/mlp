@@ -1,0 +1,70 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M10 — TuningService (first slice): grid/random sweeps; each trial is an M09 run (D-21) created by the coordinator in the control plane.
+service TuningService {
+  rpc CreateSweep(CreateSweepRequest) returns (Sweep);
+  rpc ListSweeps(ListSweepsRequest) returns (ListSweepsResponse);
+  rpc GetSweep(SweepRef) returns (SweepDetail);
+  rpc StopSweep(SweepRef) returns (Sweep);
+}
+
+message CreateSweepRequest {
+  string workspace_id = 1;
+  string project_id = 2;
+  string name = 3;
+  string recipe = 4;
+  string variant = 5;
+  string task = 6;
+  string algorithm = 7;           // grid | random (Bayesian/ASHA later)
+  string space_json = 8;          // {"epochs":{"values":[1,2,3]},"lr":{"min":1e-4,"max":1e-1,"log":true}}
+  string base_params_json = 9;    // fixed parameters for every trial
+  string objective = 10;          // defaults to the recipe's primary metric
+  string direction = 11;          // maximize | minimize
+  int32 max_trials = 12;          // budget (grid: at most the number of combinations)
+  int32 parallel = 13;            // number of trials run concurrently
+  int32 seed = 14;
+  double cpus = 15;
+  int32 gpus = 16;
+  string dataset_version_id = 17;
+  string image_override = 18;     // dev/test
+  string network = 19;            // dev/test
+}
+
+message Sweep {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string recipe = 4;
+  string variant = 5;
+  string algorithm = 6;
+  string space_json = 7;
+  string objective = 8;
+  string direction = 9;
+  int32 max_trials = 10;
+  int32 parallel = 11;
+  string state = 12;              // running | completed | stopped | failed
+  string state_reason = 13;
+  optional int32 best_trial = 14;
+  optional double best_value = 15;
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp finished_at = 17;
+}
+
+message Trial {
+  int32 number = 1;
+  string params_json = 2;
+  string run_id = 3;
+  string state = 4;
+  optional double value = 5;
+  string error = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ListSweepsRequest { string workspace_id = 1; }
+message ListSweepsResponse { repeated Sweep sweeps = 1; }
+message SweepRef { string workspace_id = 1; string sweep_id = 2; }
+message SweepDetail { Sweep sweep = 1; repeated Trial trials = 2; }

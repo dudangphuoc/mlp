@@ -1,0 +1,72 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M03 — SchedulerService
+service SchedulerService {
+  rpc SubmitJob(SubmitJobRequest) returns (Job);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc GetJob(GetJobRequest) returns (Job);
+  // 20/10 — operational view of a job: progress, attempts, recovery points, timeline; manual resume from a checkpoint
+  rpc GetJobOps(GetJobRequest) returns (JobOps);
+  rpc ResumeJob(GetJobRequest) returns (Job);
+  rpc CancelJob(GetJobRequest) returns (Job);            // any job that has not finished: waiting, reserving, preparing or running
+  rpc GetJobLogs(GetJobLogsRequest) returns (JobLogs);
+  rpc MoveAttemptNow(GetJobRequest) returns (Job);       // suspect attempt → move to another machine now (20/10 §4.4)
+  rpc ExtendGrace(ExtendGraceRequest) returns (Job);     // wait n more minutes for the machine to come back
+}
+
+message SubmitJobRequest {
+  string workspace_id = 1;
+  string kind = 2;
+  string name = 3;
+  string image = 4;
+  repeated string command = 5;
+  double cpus = 6;
+  int32 gpus = 7;
+  int64 memory_bytes = 8;
+  repeated string host_ids = 9;
+  int32 nnodes = 10;
+  map<string, string> env = 11;
+  int32 priority = 12;
+  string network = 13;   // dev only
+}
+
+message Job {
+  string id = 1;
+  string workspace_id = 2;
+  string kind = 3;
+  string name = 4;
+  string state = 5;
+  string state_reason = 6;
+  int32 attempt_count = 7;
+  string last_exit_reason = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+}
+
+message ListJobsRequest { string workspace_id = 1; }
+message ListJobsResponse { repeated Job jobs = 1; }
+message GetJobRequest { string workspace_id = 1; string job_id = 2; }
+
+message JobProgress {
+  string phase = 1; double current = 2; double total = 3; string unit = 4; double percent = 5; double rate = 6; double eta_seconds = 7;
+  string message = 8; google.protobuf.Timestamp at = 9;
+  string detail_json = 10;   // round 1 R24: training detail (epoch/step, train|validate, loss, stages) — empty when the recipe declares no pattern
+}
+message AttemptInfo {
+  string id = 1; int32 number = 2; repeated string host_ids = 3; string state = 4; int32 exit_code = 5; string exit_reason = 6; string message = 7;
+  google.protobuf.Timestamp started_at = 8; google.protobuf.Timestamp finished_at = 9; google.protobuf.Timestamp last_heartbeat_at = 10;
+  google.protobuf.Timestamp suspect_until = 11; string resumed_from = 12;
+}
+message CheckpointInfo { string id = 1; string attempt_id = 2; string host_id = 3; int64 step = 4; string name = 5; string location = 6; int64 size_bytes = 7; google.protobuf.Timestamp created_at = 8; }
+message OpsEvent { string id = 1; google.protobuf.Timestamp at = 2; string source = 3; string resource_type = 4; string resource_id = 5; string kind = 6; string severity = 7; string message = 8; string data_json = 9; }
+message AttemptMetric { string attempt_id = 1; google.protobuf.Timestamp at = 2; double cpu_percent = 3; int64 memory_bytes = 4; double gpu_util = 5; int64 vram_bytes = 6; }
+message JobOps { JobProgress progress = 1; repeated AttemptInfo attempts = 2; repeated CheckpointInfo checkpoints = 3; repeated OpsEvent events = 4; repeated AttemptMetric metrics = 5; }
+message GetJobLogsRequest { string workspace_id = 1; string job_id = 2; string attempt_id = 3; int32 tail = 4; int64 after_ts_ms = 5; }
+message LogLine { int64 ts_ms = 1; string text = 2; string attempt_id = 3; }
+message JobLogs { repeated LogLine lines = 1; }
+message ExtendGraceRequest { string workspace_id = 1; string job_id = 2; int32 minutes = 3; }

@@ -1,0 +1,211 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// AI providers and runs (Hermes). Connections hold declared models; one explicit default model per role.
+// Transparency: every AI call is an AiRun the user can open — model, why it was chosen, exact input/output, attempts, cost.
+// Admin calls (connections, models, defaults, tests, audit) need the Instance Admin; runs are visible to workspace members.
+service AiService {
+  rpc GetOverview(GetAiOverviewRequest) returns (AiOverview);
+  rpc SaveConnection(SaveAiConnectionRequest) returns (AiConnection);
+  rpc DeleteConnection(DeleteAiConnectionRequest) returns (AiOk);
+  rpc DiscoverModels(DiscoverAiModelsRequest) returns (DiscoverAiModelsResponse);
+  rpc SaveModel(SaveAiModelRequest) returns (AiModel);
+  rpc DeleteModel(DeleteAiModelRequest) returns (AiOk);
+  rpc SetRoleDefault(SetAiRoleDefaultRequest) returns (AiOk);
+  rpc TestModel(TestAiModelRequest) returns (AiRun);
+  rpc ListRuns(ListAiRunsRequest) returns (ListAiRunsResponse);
+  rpc GetRun(GetAiRunRequest) returns (AiRun);
+  rpc GetActivity(GetAiActivityRequest) returns (AiActivity);
+  rpc ListAudit(ListAiAuditRequest) returns (ListAiAuditResponse);
+}
+
+message AiOk { bool ok = 1; }
+
+message AiConnection {
+  string id = 1;
+  string name = 2;
+  string provider_type = 3;      // openai-compatible | openai | anthropic | deepseek | systemone | typesafe
+  string endpoint = 4;
+  bool has_key = 5;              // the key itself is never returned
+  int32 max_concurrency = 6;
+  int32 rpm_limit = 7;           // 0 = unlimited
+  int32 timeout_ms = 8;
+  bool is_active = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  int32 in_flight = 11;          // live: calls running now on this connection
+  bool is_external = 12;         // data sent here leaves the platform (hosted API)
+}
+
+message AiModel {
+  string id = 1;
+  string connection_id = 2;
+  string model_id = 3;
+  string display_name = 4;
+  repeated string roles = 5;
+  repeated string inputs = 6;
+  repeated string outputs = 7;
+  repeated string skills = 8;
+  string tier = 9;
+  double input_usd_per_1m = 10;   // < 0 = unknown
+  double output_usd_per_1m = 11;
+  int32 max_tokens = 12;
+  bool is_active = 13;
+  string health = 14;             // unknown | ok | degraded | failed
+  string health_reason = 15;
+  google.protobuf.Timestamp health_at = 16;
+  int32 consecutive_failures = 17;
+  AiRun last_test = 18;           // last test result, kept until the next test
+  AiModelStats stats = 19;        // last 24 h, from real runs
+  string circuit = 20;            // closed | open | half-open (live)
+}
+
+message AiModelStats { int64 runs = 1; int64 failures = 2; int64 fallbacks = 3; int32 p50_ms = 4; int32 p95_ms = 5; }
+
+// Why a role is (not) ready to use — shown at the top of the page, nothing hidden.
+message AiRoleReadiness {
+  string role = 1;
+  string state = 2;               // ready | degraded | missing
+  string model_id = 3;            // default model (ai model row id), empty when none
+  string model_label = 4;
+  repeated string reasons = 5;    // e.g. "No default model", "Key missing on connection X", "Last test failed: HTTP 401"
+  string used_by = 6;             // what uses this role (e.g. "Label analysis (Hermes)")
+}
+
+message AiCatalog {
+  repeated string provider_types = 1;
+  repeated string roles = 2;
+  repeated string inputs = 3;
+  repeated string outputs = 4;
+  repeated string skills = 5;
+  repeated string tiers = 6;
+}
+
+message GetAiOverviewRequest {}
+message AiOverview {
+  repeated AiConnection connections = 1;
+  repeated AiModel models = 2;
+  repeated AiRoleReadiness readiness = 3;
+  AiCatalog catalog = 4;
+}
+
+message SaveAiConnectionRequest {
+  string id = 1;                  // empty = create
+  string name = 2;
+  string provider_type = 3;       // create only
+  string endpoint = 4;
+  string api_key = 5;             // empty = keep; "-" = clear
+  int32 max_concurrency = 6;
+  int32 rpm_limit = 7;
+  int32 timeout_ms = 8;
+  bool is_active = 9;
+  bool is_external = 10;
+}
+message DeleteAiConnectionRequest { string id = 1; }
+
+// Ask the provider which models it serves (GET /models) — helps declaring, nothing is saved.
+message DiscoverAiModelsRequest { string connection_id = 1; }
+message DiscoverAiModelsResponse { repeated string model_ids = 1; string error = 2; int32 latency_ms = 3; }
+
+message SaveAiModelRequest {
+  string id = 1;                  // empty = declare new
+  string connection_id = 2;
+  string model_id = 3;
+  string display_name = 4;
+  repeated string roles = 5;
+  repeated string inputs = 6;
+  repeated string outputs = 7;
+  repeated string skills = 8;
+  string tier = 9;
+  double input_usd_per_1m = 10;   // < 0 = unknown
+  double output_usd_per_1m = 11;
+  int32 max_tokens = 12;
+  bool is_active = 13;
+}
+message DeleteAiModelRequest { string id = 1; }
+message SetAiRoleDefaultRequest { string role = 1; string model_id = 2; }   // empty model_id = clear
+
+// Test a model for real: chat models answer a sample prompt, decision models answer a labeling choice question.
+message TestAiModelRequest { string model_id = 1; string prompt = 2; }    // empty prompt = built-in sample
+
+// One recorded AI call.
+message AiAttempt {
+  int32 number = 1;
+  string model_id = 2;            // ai model row id
+  string model_label = 3;
+  int32 status = 4;               // HTTP status, 0 = no response
+  int32 latency_ms = 5;
+  string outcome = 6;             // ok | timeout | unreachable | rate-limited | auth | rejected | bad-response | circuit-open | busy
+  string detail = 7;
+}
+
+message AiCandidate {
+  string model_id = 1;
+  string model_label = 2;
+  bool eligible = 3;
+  string reason = 4;              // "Default for role decision" / "Excluded: no image input" / "Excluded: circuit open (3 failures)"
+  int32 rank = 5;                 // 1 = first choice; 0 = excluded
+}
+
+message AiRun {
+  string id = 1;
+  string workspace_id = 2;
+  string kind = 3;                // test | decision | chat
+  string purpose = 4;             // human-readable: "Model test", "Label check", …
+  string subject = 5;             // what it was about (e.g. "Item 3f2a… of project Cats")
+  string trigger = 6;             // manual | auto | auto-recovery | rule
+  string actor_name = 7;
+  string state = 8;               // running | succeeded | failed
+  string fallback = 9;            // non-empty = the first choice was not used, and why
+  string model_id = 10;
+  string model_label = 11;
+  repeated AiCandidate candidates = 12;
+  string selection_note = 13;
+  string input_json = 14;         // exact request content (no secrets)
+  string output_json = 15;        // exact answer content
+  string decided_by = 16;         // model | heuristic | fallback | none
+  double confidence = 17;         // < 0 = not reported
+  int32 latency_ms = 18;
+  int32 tokens_in = 19;
+  int32 tokens_out = 20;
+  double cost_usd = 21;           // < 0 = unknown price
+  repeated AiAttempt attempts = 22;
+  string error_code = 23;
+  string error = 24;
+  google.protobuf.Timestamp started_at = 25;
+  google.protobuf.Timestamp finished_at = 26;
+  string summary = 27;            // one line for lists: "choice=cat (0.91)" / "OK" / "HTTP 401: invalid key"
+}
+
+message ListAiRunsRequest {
+  string workspace_id = 1;        // empty = instance-level runs only (admin)
+  string state = 2;               // "" | running | succeeded | failed | fallback
+  string model_id = 3;
+  int32 limit = 4;
+}
+message ListAiRunsResponse { repeated AiRun runs = 1; }
+message GetAiRunRequest { string id = 1; }
+
+// Header indicator: what AI is doing right now.
+message GetAiActivityRequest { string workspace_id = 1; }
+message AiActivity {
+  int32 running = 1;
+  int32 failed_recent = 2;        // last hour
+  int32 fallback_recent = 3;
+  google.protobuf.Timestamp last_at = 4;
+  repeated AiRun recent = 5;      // latest runs (compact: no input/output)
+}
+
+message ListAiAuditRequest { int32 limit = 1; }
+message AiAuditEntry {
+  string id = 1;
+  string actor_name = 2;
+  string action = 3;
+  string target = 4;
+  string before_json = 5;
+  string after_json = 6;
+  google.protobuf.Timestamp at = 7;
+}
+message ListAiAuditResponse { repeated AiAuditEntry entries = 1; }

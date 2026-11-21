@@ -1,0 +1,201 @@
+RootWebArea: Settings on Ultralytics Platform
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Settings
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Settings
+      StaticText: Settings
+    StaticText: Manage your account settings and preferences
+    tablist: 
+      tab: Profile [selected]
+        StaticText: Profile
+      tab: API Keys
+        StaticText: API Keys
+      tab: Plans
+        StaticText: Plans
+      tab: Billing
+        StaticText: Billing
+      tab: Usage
+        StaticText: Usage
+      tab: Referrals
+        StaticText: Referrals
+      tab: Teams
+        StaticText: Teams
+      tab: Integrations
+        StaticText: Integrations
+      tab: Trash
+        StaticText: Trash
+    tabpanel: Profile
+      form: 
+        StaticText: Profile
+        StaticText: Your profile across Ultralytics.
+        button: Customize <Tên người dùng> icon
+          image: <Tên người dùng>
+        StaticText: Profile picture
+        StaticText: Choose a color, initials, or an image.
+        LabelText: 
+          StaticText: Display name
+        textbox: Display name
+          StaticText: <Tên người dùng>
+        StaticText: Username
+        textbox: Username [disabled]
+          StaticText: <user>
+        StaticText: Username cannot be changed
+        LabelText: 
+          StaticText: Company / Organization
+        textbox: Company / Organization
+        LabelText: 
+          StaticText: Primary use case
+        combobox: Primary use case
+          StaticText: Select your primary use case
+        LabelText: 
+          StaticText: Bio
+        textbox: Bio
+        separator: 
+        StaticText: Social profiles
+        StaticText: Links shown on your public profile.
+        LabelText: 
+          image: GitHub
+          StaticText: GitHub
+        textbox: GitHub GitHub
+        LabelText: 
+          image: LinkedIn
+          StaticText: LinkedIn
+        textbox: LinkedIn LinkedIn
+        LabelText: 
+          image: X
+          StaticText: X (Twitter)
+        textbox: X X (Twitter)
+        LabelText: 
+          image: YouTube
+          StaticText: YouTube
+        textbox: YouTube YouTube
+        LabelText: 
+          StaticText: Google Scholar
+        textbox: Google Scholar
+        LabelText: 
+          StaticText: Discord
+        textbox: Discord
+        LabelText: 
+          StaticText: Website
+        textbox: Website
+        StaticText: Default Visibility
+        StaticText: New projects and datasets start with this visibility. You can change it on each one.
+        link: Projects visibility documentation
+        switch: Projects
+        link: Datasets visibility documentation
+        switch: Datasets
+        StaticText: Opt in to the latest experimental updates.
+        switch: Early access
+      StaticText: Email
+      StaticText: Your sign-in email, used for account notifications and recovery. A new address takes effect once you confirm the code we send to it.
+      StaticText: Get
+      StaticText: $25 free credits
+      StaticText: with company email
+      StaticText: <email>
+      StaticText: Verified
+      form: 
+        LabelText: 
+          StaticText: Change email address
+        textbox: Change email address
+        button: Send code [disabled]
+          StaticText: Send code
+      StaticText: Data Region
+      StaticText: Where your models and datasets are stored
+      StaticText: Asia Pacific
+      StaticText: Asia-Pacific data centers
+      StaticText: AP
+      StaticText: Data region was selected during onboarding. Contact support to request a region change.
+      StaticText: Export Your Data
+      StaticText: Download a JSON export of all your data (metadata only, no binary files)
+      StaticText: Your export will include: profile information, project metadata, dataset metadata, model metadata, and activity history. Images and model fi
+      button: Export All Data
+        StaticText: Export All Data
+      StaticText: Connected accounts
+      StaticText: Accounts linked to your Ultralytics sign-in.
+      image: Google
+      StaticText: Google
+      button: Disconnect [disabled]
+        StaticText: Disconnect
+      button: GitHub Connect GitHub
+        image: GitHub
+        StaticText: Connect GitHub
+      StaticText: Delete My Account
+      StaticText: Permanently delete your Ultralytics Platform account and data
+      StaticText: This action cannot be undone
+      StaticText: This will permanently delete:
+      ListMarker: •
+      StaticText: All projects and trained models
+      ListMarker: •
+      StaticText: All datasets and images
+      ListMarker: •
+      StaticText: All API keys and credentials
+      ListMarker: •
+      StaticText: All activity history
+      StaticText: $5.00 in remaining credits will be permanently removed.
+      StaticText: Your sign-in account will also be permanently removed.
+      button: Delete My Account
+        StaticText: Delete My Account
+    StaticText: Training History
+    StaticText: No training yet
+    StaticText: Payment History
+    StaticText: No payments yet
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

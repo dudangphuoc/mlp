@@ -1,0 +1,89 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: vibevoice-asr
+  displayName: VibeVoice-ASR (Microsoft, LoRA fine-tune)
+  family: speech-recognition
+  description: >
+    Long-form ASR (up to ~60 minutes per file) with speaker diarization and timestamps. The official repo has a
+    LoRA fine-tuning script (finetuning-asr/lora_finetune.py).
+  homepage: https://github.com/microsoft/VibeVoice
+  maturity: experimental      # serve handler not written yet; no WER eval
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+source:
+  git: https://github.com/microsoft/VibeVoice
+  commit: 16fb2cb1217c9934a886e1948ffb06120caa2df5
+  commitDate: "2026-10-08"
+license:
+  code: MIT
+  weights: MIT
+  notes: ""
+tasks: [asr]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 24          # no official figure yet; ~8.7B-parameter model, bf16 + LoRA — see openItems
+  minComputeCapability: "8.0"   # flash_attention_2 is hard-coded in lora_finetune.py → Ampere or newer
+  python: "3.12"         # per the NVIDIA PyTorch 25.x container
+  shmSizeGb: 16
+data:
+  input: vibevoice-asr-dir       # the recipe's converter, reads asr-manifest output
+converters:
+  - key: vibevoice-asr-dir
+    tasks: [asr]
+    from: asr-manifest
+    script: python /opt/recipe/shared/converters/vibevoice_asr_dir.py --src {converter.src} --dst {converter.dst}
+    output: "{split}/N.<mp3|wav|flac> + N.json (audio_duration, audio_path, segments[speaker,text,start,end], customized_context?)"
+variants:
+  - {name: vibevoice-asr-8b, displayName: VibeVoice-ASR, weights: hf://microsoft/VibeVoice-ASR, params: 8674}
+params:
+  num_train_epochs: {type: integer, default: 3, minimum: 1}
+  per_device_train_batch_size: {type: integer, default: 1}
+  gradient_accumulation_steps: {type: integer, default: 8}
+  learning_rate: {type: number, default: 5.0e-5}
+  lora_r: {type: integer, default: 16}
+  lora_alpha: {type: integer, default: 32}
+  lora_dropout: {type: number, default: 0.05}
+  use_customized_context: {type: boolean, default: true}
+  max_audio_length: {type: [number, "null"], default: null}
+  gradient_checkpointing: {type: boolean, default: true}
+entrypoints:
+  train:
+    distributed: torchrun
+    workdir: /opt/recipe/src/finetuning-asr
+    command: >
+      torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      lora_finetune.py --model_path {weights} --data_dir {data.train} --output_dir {output}
+      --num_train_epochs {params.num_train_epochs}
+      --per_device_train_batch_size {params.per_device_train_batch_size}
+      --gradient_accumulation_steps {params.gradient_accumulation_steps}
+      --learning_rate {params.learning_rate}
+      --lora_r {params.lora_r} --lora_alpha {params.lora_alpha} --lora_dropout {params.lora_dropout}
+      --use_customized_context {params.use_customized_context}
+      {params.max_audio_length?--max_audio_length {params.max_audio_length}}
+      {params.gradient_checkpointing?--gradient_checkpointing}
+      --bf16 --logging_steps 10 --save_steps 500 --save_total_limit 2
+      --report_to tensorboard --logging_dir {output}/runs
+    resume: {mode: append, args: "--resume_from_checkpoint {checkpoint}"}
+    checkpoints: "{output}/checkpoint-*"
+  # eval: none yet — lora_finetune.py only trains; a WER script must be written from inference_lora.py (openItems)
+  # serve/assist: not declared — handler.py is still a skeleton (M17 R2: declare once the handler passes smoke test)
+metrics:
+  sources:
+    - tensorboard: "{output}/runs"
+  primary: train/loss            # the recipe doesn't measure WER yet; the asr task's val/wer is unavailable
+  map:
+    train/loss: train/loss
+    train/learning_rate: lr/pg0
+artifacts:
+  best: {from: ["."], as: adapter}   # PEFT adapter + processor → weights/adapter/; skips checkpoint-*
+  baseWeights: "{weights.ref}"       # adapter model: recipe.lock.json records the base ref (hf://microsoft/VibeVoice-ASR@…)
+openItems:
+  - "lora_finetune.py only trains and does not evaluate WER; an eval script based on inference_lora.py is needed, then an eval entrypoint."
+  - "No official LoRA training VRAM figure; 24 GB is an estimate, measure during smoke test."
+  - "handler.py must call internal APIs of the vibevoice package (inference_lora.py) — class/function names not verified; maturity stays experimental until then."
+  - "transformers as pinned by VibeVoice (still accepts --logging_dir) — check at build time."

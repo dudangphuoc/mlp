@@ -1,0 +1,2 @@
+-- mlp:query ListEvaluations :many
+SELECT id, workspace_id, model_version_id, dataset_version_id, path_filter, max_samples, conf_threshold, deployment_id, state, state_reason, total, done, errors, metrics::text AS metrics, per_class::text AS per_class, confusion::text AS confusion, created_by, created_at, started_at, finished_at FROM registry.evaluations WHERE workspace_id = @workspace_id AND model_version_id = @model_version_id ORDER BY created_at DESC LIMIT 50;

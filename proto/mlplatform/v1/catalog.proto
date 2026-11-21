@@ -1,0 +1,113 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+
+// M17 — CatalogService
+service CatalogService {
+  rpc ListTasks(Empty) returns (ListTasksResponse);
+  rpc ListRecipes(ListRecipesRequest) returns (ListRecipesResponse);
+  rpc GetRecipe(GetRecipeRequest) returns (Recipe);
+  rpc RenderTemplate(RenderTemplateRequest) returns (RenderTemplateResponse);
+  // Round 1 slice 2 (D-44): the recipe's environment per machine, a CPU-only inspection of what a training would run, and the recipe's files.
+  rpc ListEnvironments(RecipeEnvRequest) returns (ListEnvironmentsResponse);
+  rpc BuildEnvironment(BuildEnvironmentRequest) returns (Environment);      // builds the recipe image on the machine; holds no GPU
+  rpc GetInspection(GetInspectionRequest) returns (Inspection);             // cached per (environment, variant, parameters, classes)
+  rpc ListRecipeFiles(RecipeEnvRequest) returns (ListRecipeFilesResponse);  // manifest, Dockerfile, shared scripts — read-only
+  rpc ReadRecipeFile(ReadRecipeFileRequest) returns (RecipeFileContent);
+}
+
+message TaskDef {
+  string key = 1;
+  string modality_in = 2;
+  string modality_out = 3;
+  repeated string converters = 4;
+  string primary_metric = 5;
+  repeated string metrics = 6;
+}
+message ListTasksResponse { repeated TaskDef tasks = 1; }
+
+message ListRecipesRequest { string workspace_id = 1; string task = 2; }
+message ListRecipesResponse { repeated Recipe recipes = 1; }
+message GetRecipeRequest { string workspace_id = 1; string name = 2; }
+
+message Recipe {
+  string id = 1;
+  string name = 2;
+  string display_name = 3;
+  string family = 4;
+  string description = 5;
+  string maturity = 6;
+  repeated string tasks = 7;
+  string license_code = 8;
+  string license_weights = 9;
+  string license_notes = 10;
+  bool requires_ack = 11;
+  string gpu = 12;
+  double min_vram_gb = 13;
+  string source = 14;            // git@commit | pip pin | hf@rev
+  string state = 15;             // verified | draft | failed …
+  bool builtin = 16;
+  repeated Variant variants = 17;
+  repeated string entrypoints = 18;
+  repeated string selfcheck_errors = 19;
+  string manifest_json = 20;     // validated manifest (JSON) for the Commands/Parameters tab
+}
+
+message Variant {
+  string name = 1;
+  string display_name = 2;
+  repeated string tasks = 3;
+  string license = 4;
+  double params_m = 5;
+  double min_vram_gb = 6;
+  repeated string requires_zoo = 7;
+  string reported_json = 8;
+}
+
+message RenderTemplateRequest {
+  string workspace_id = 1;
+  string recipe = 2;
+  string entrypoint = 3;
+  string task = 4;
+  bool weights_empty = 5;
+}
+message RenderTemplateResponse { string command = 1; string error = 2; }
+
+message RecipeEnvRequest { string workspace_id = 1; string recipe = 2; }
+message Environment {
+  string host_id = 1; string host_name = 2;
+  string env_tag = 3;              // image tag the recipe needs today (changes when the recipe, shared scripts or the platform layer change)
+  string state = 4;                // unknown (never built or checked from here) | building | ready | failed
+  string error = 5;
+  google.protobuf.Timestamp started_at = 6;   // building: when the build began
+  google.protobuf.Timestamp built_at = 7;
+  bool online = 8;
+}
+message ListEnvironmentsResponse { repeated Environment environments = 1; }
+message BuildEnvironmentRequest { string workspace_id = 1; string recipe = 2; string host_id = 3; }
+
+message GetInspectionRequest {
+  string workspace_id = 1; string recipe = 2; string variant = 3;
+  string params_json = 4;          // only the values that were set
+  int32 num_classes = 5;           // 0 = keep the variant's own class count
+  string host_id = 6;              // machine to inspect on; empty = any online machine whose environment is ready
+  bool start = 7;                  // true = run the inspection when no cached result exists (otherwise only report what is known)
+}
+message ModelBlock { string key = 1; string label = 2; int64 params = 3; int64 trainable = 4; }
+message Inspection {
+  string state = 1;                // none | running | ready | failed | no_environment
+  string error = 2;
+  string overlay_yaml = 3;         // what the platform and the person set on top of the variant's config
+  string config_json = 4;          // the merged config the training would load
+  repeated ModelBlock blocks = 5;
+  string env_tag = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string sources_json = 8;         // {pane: [{name, file, line, code}]}: the upstream code the merged config selects, per canvas pane
+}
+message RecipeFile { string path = 1; int64 size_bytes = 2; }
+message ListRecipeFilesResponse { repeated RecipeFile files = 1; }
+message ReadRecipeFileRequest { string workspace_id = 1; string recipe = 2; string path = 3; }
+message RecipeFileContent { string path = 1; string text = 2; bool truncated = 3; }

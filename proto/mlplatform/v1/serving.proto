@@ -1,0 +1,60 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/model_server.proto";
+
+// M12 — ServingService (first slice: 1 replica per deployment, REST gateway + mlpd_ keys)
+service ServingService {
+  rpc CreateDeployment(CreateDeploymentRequest) returns (Deployment);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc StopDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc CreateEndpointKey(CreateEndpointKeyRequest) returns (EndpointKey);
+  // Stopped or failed → start again on the same or another version of the model (same keys and address).
+  rpc StartDeployment(StartDeploymentRequest) returns (Deployment);
+  // Stopped or failed only; keys and monitoring history go with it.
+  rpc DeleteDeployment(GetDeploymentRequest) returns (DeleteDeploymentResponse);
+  rpc ListEndpointKeys(GetDeploymentRequest) returns (ListEndpointKeysResponse);
+  rpc RevokeEndpointKey(RevokeEndpointKeyRequest) returns (EndpointKeyInfo);
+  // Model playground: reuse a running replica of the version or start a test replica (stops after 30 min without calls).
+  rpc StartTest(StartTestRequest) returns (Deployment);
+  // Calls a healthy replica with the user's session (no mlpd_ key); not written to the monitoring prediction log.
+  rpc TryPredict(TryPredictRequest) returns (TryPredictResponse);
+}
+
+message Deployment {
+  string id = 1;
+  string workspace_id = 2;
+  string slug = 3;
+  string model_version_id = 4;
+  string model_name = 5;
+  int32 model_version = 6;
+  string task = 7;
+  string state = 8;               // creating | deploying | healthy | degraded | failed | stopped
+  string state_reason = 9;
+  string job_id = 10;
+  string predict_url = 11;        // /v1/deployments/{ws}/{slug}/predict
+  google.protobuf.Timestamp created_at = 12;
+  string public_url = 13;         // https://{slug}--{workspace}.{domain} (POST /predict) — empty if no domain is configured
+  string purpose = 14;            // service | test (playground replica)
+  int32 idle_stop_min = 15;       // 0 = never stops by itself
+  google.protobuf.Timestamp last_used_at = 16;
+  int32 gpus = 17;                // -1 = follows the recipe
+}
+message CreateDeploymentRequest { string workspace_id = 1; string slug = 2; string model_version_id = 3; double cpus = 4; int32 gpus = 5; string image_override = 6; }
+message ListDeploymentsRequest { string workspace_id = 1; }
+message ListDeploymentsResponse { repeated Deployment deployments = 1; }
+message GetDeploymentRequest { string workspace_id = 1; string deployment_id = 2; }
+message CreateEndpointKeyRequest { string workspace_id = 1; string deployment_id = 2; string name = 3; }
+message EndpointKey { string id = 1; string key = 2; string prefix = 3; }   // key is returned only once
+message EndpointKeyInfo { string id = 1; string name = 2; string prefix = 3; google.protobuf.Timestamp created_at = 4; google.protobuf.Timestamp revoked_at = 5; }
+message ListEndpointKeysResponse { repeated EndpointKeyInfo keys = 1; }
+message RevokeEndpointKeyRequest { string workspace_id = 1; string deployment_id = 2; string key_id = 3; }
+message StartDeploymentRequest { string workspace_id = 1; string deployment_id = 2; string model_version_id = 3; }   // empty version = the current one
+message DeleteDeploymentResponse {}
+
+message StartTestRequest { string workspace_id = 1; string model_version_id = 2; int32 gpus = 3; string image_override = 4; }   // gpus < 0 = follow the recipe
+message TryPredictRequest { string workspace_id = 1; string deployment_id = 2; repeated TaskInput inputs = 3; }
+message TryPredictResponse { repeated TaskOutput outputs = 1; double latency_ms = 2; string model = 3; }

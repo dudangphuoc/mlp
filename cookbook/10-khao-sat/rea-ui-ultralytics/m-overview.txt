@@ -1,0 +1,455 @@
+RootWebArea: YOLO26n Model by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: E Example Project
+          StaticText: E
+          StaticText: Example Project
+        button: Private
+          StaticText: Private
+        StaticText: yolo26n
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Change model color
+    button: yolo26n
+      heading: yolo26n
+        StaticText: yolo26n
+    button: Download model
+    button: Star
+    button: More model actions
+    StaticText: Detect
+    StaticText: v
+    StaticText: 8.3.222
+    link: AGPL 3.0
+      StaticText: AGPL 3.0
+    StaticText: Updated 9 hours ago
+    StaticText: mAP
+    subscript: 
+      StaticText: 50
+    StaticText: 55.7%
+    StaticText: mAP
+    subscript: 
+      StaticText: 50-95
+    StaticText: 40.1%
+    StaticText: Precision
+    StaticText: 64.9%
+    StaticText: Recall
+    StaticText: 50.7%
+    link: Annotations overlay showing 9 labels Annotations overlay showing 13 labels Annotations overlay showing 3 labels Annotations overlay showing 
+      image: Annotations overlay showing 9 labels
+      image: Annotations overlay showing 13 labels
+      image: Annotations overlay showing 3 labels
+      image: Annotations overlay showing 12 labels
+      StaticText: COCO 2017
+      StaticText: 123.3k imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 118.3k
+      StaticText: 5.0k
+    tablist: 
+      tab: Overview [selected]
+        StaticText: Overview
+      tab: Train
+        StaticText: Train
+      tab: Predict
+        StaticText: Predict
+      tab: Export
+        StaticText: Export
+      tab: Deploy
+        StaticText: Deploy
+    tabpanel: Overview
+      StaticText: Run Information
+      StaticText: Training timing and environment details
+      StaticText: Completed
+      StaticText: Runtime
+      StaticText: 1d 2h
+      StaticText: Completed
+      StaticText: Dec 15, 2025, 06:36 AM UTC
+      StaticText: Ultralytics
+      link: 8.3.222
+        StaticText: 8.3.222
+      StaticText: Documentation
+      link: https://docs.ultralytics.com
+        StaticText: https://docs.ultralytics.com
+      StaticText: Parent Model
+      StaticText: yolo26n-objv1-150.pt
+      StaticText: Command. Requires
+      code: 
+        StaticText: ultralytics>=8.4.214
+      button: Ultralytics installation command
+      button: Copy to clipboard
+      code: 
+        StaticText: yolo train model=yolo26n-objv1-150.pt data=ul:/
+        StaticText: /ultralytics/datasets/coco
+        StaticText: 2017 task=detect project=<user>
+        StaticText: /example-project
+        StaticText: name=yolo26n classes=None mode=train epochs=245 batch=128 save=
+        StaticText: true
+        StaticText: device=5 exist_ok=
+        StaticText: false
+        StaticText: optimizer=MuSGD verbose=
+        StaticText: true
+        StaticText: split
+        StaticText: =val save_json=
+        StaticText: true
+        StaticText: conf=None half=
+        StaticText: false
+        StaticText: dnn=
+        StaticText: false
+        StaticText: plots=
+        StaticText: false
+        StaticText: source
+        StaticText: =None vid_stride=1 stream_buffer=
+        StaticText: false
+        StaticText: visualize=
+        StaticText: false
+        StaticText: augment=
+        StaticText: false
+        StaticText: agnostic_nms=
+        StaticText: false
+        StaticText: retina_masks=
+        StaticText: false
+        StaticText: embed=None show=
+        StaticText: false
+        StaticText: save_frames=
+        StaticText: false
+        StaticText: save_txt=
+        StaticText: false
+        StaticText: save_conf=
+        StaticText: false
+        StaticText: save_crop=
+        StaticText: false
+        StaticText: show_labels=
+        StaticText: true
+        StaticText: show_conf=
+        StaticText: true
+        StaticText: show_boxes=
+        StaticText: true
+        StaticText: line_width=None format=torchscript keras=
+        StaticText: false
+        StaticText: optimize=
+        StaticText: false
+        StaticText: int8=
+        StaticText: false
+        StaticText: dynamic=
+        StaticText: false
+        StaticText: simplify=
+        StaticText: true
+        StaticText: opset=None workspace=None nms=
+        StaticText: false
+        StaticText: lr0=0.0054 lrf=0.04952 momentum=0.94676 weight_decay=0.00064 warmup_epochs=0.98124 warmup_momentum=0.6576 warmup_bias_lr=0.08114 o2m=1 muon_
+        StaticText: true
+        StaticText: box=5.62767 cls=0.56099 dfl=9.03871 hsv_h=0.01373 hsv_s=0.64481 hsv_v=0.56565 degrees=1.11032 translate=0.07105 scale=0.56232 shear=1.46386 
+      StaticText: Training Configuration
+      StaticText: Hyperparameters used during training
+      button: Export data
+        StaticText: Export data
+      textbox: Search parameters...
+      table: 
+        rowgroup: 
+          row: 
+            columnheader: Parameter
+              button: Parameter
+                StaticText: Parameter
+            columnheader: Value
+              button: Value
+                StaticText: Value
+        row: 
+          cell: agnostic nms
+            StaticText: agnostic nms
+          cell: false
+            StaticText: false
+        row: 
+          cell: amp
+            StaticText: amp
+          cell: true
+            StaticText: true
+        row: 
+          cell: augment
+            StaticText: augment
+          cell: false
+            StaticText: false
+        row: 
+          cell: auto augment
+            StaticText: auto augment
+          cell: randaugment
+            StaticText: randaugment
+        row: 
+          cell: batch
+            StaticText: batch
+          cell: 128
+            StaticText: 128
+        row: 
+          cell: bgr
+            StaticText: bgr
+          cell: 0.10567
+            StaticText: 0.10567
+        row: 
+          cell: box
+            StaticText: box
+          cell: 5.62767
+            StaticText: 5.62767
+        row: 
+          cell: cache
+            StaticText: cache
+          cell: false
+            StaticText: false
+        row: 
+          cell: cfg
+            StaticText: cfg
+          cell: null
+            StaticText: null
+        row: 
+          cell: classes
+            StaticText: classes
+          cell: null
+            StaticText: null
+        row: 
+          cell: close mosaic
+            StaticText: close mosaic
+          cell: 10
+            StaticText: 10
+        row: 
+          cell: cls
+            StaticText: cls
+          cell: 0.56099
+            StaticText: 0.56099
+        row: 
+          cell: cls w
+            StaticText: cls w
+          cell: 2.7371
+            StaticText: 2.7371
+        row: 
+          cell: compile
+            StaticText: compile
+          cell: false
+            StaticText: false
+        row: 
+          cell: conf
+            StaticText: conf
+          cell: null
+            StaticText: null
+        row: 
+          cell: copy paste
+            StaticText: copy paste
+          cell: 0.07504
+            StaticText: 0.07504
+        row: 
+          cell: copy paste mode
+            StaticText: copy paste mode
+          cell: flip
+            StaticText: flip
+        row: 
+          cell: cos lr
+            StaticText: cos lr
+          cell: false
+            StaticText: false
+        row: 
+          cell: cutmix
+            StaticText: cutmix
+          cell: 0
+            StaticText: 0
+        row: 
+          cell: data
+            StaticText: data
+          cell: /home/lq/codes/ultralytics/ultralytics/cfg/datasets/coco.yaml
+            StaticText: /home/lq/codes/ultralytics/ultralytics/cfg/datasets/coco.yaml
+      StaticText: Rows per page
+      combobox: Rows per page
+        StaticText: 20
+      navigation: pagination
+        button: Go to previous page [disabled]
+          StaticText: Previous
+        button: Go to page 1
+          StaticText: 1
+        button: Go to page 2
+          StaticText: 2
+        button: Go to page 3
+          StaticText: 3
+        button: Go to page 4
+          StaticText: 4
+        button: Go to page 5
+          StaticText: 5
+        button: Go to page 6
+          StaticText: 6
+        button: Go to next page
+          StaticText: Next
+      StaticText: Performance Metrics
+      StaticText: Final evaluation results
+      button: Export data
+        StaticText: Export data
+      textbox: Search metrics...
+      table: 
+        rowgroup: 
+          row: 
+            columnheader: Metric
+              button: Metric
+                StaticText: Metric
+            columnheader: Value
+              button: Value
+                StaticText: Value
+        row: 
+          cell: epoch
+            StaticText: epoch
+          cell: 245
+            StaticText: 245
+        row: 
+          cell: lr/pg0
+            StaticText: lr/pg0
+          cell: 0.000288
+            StaticText: 0.000288
+        row: 
+          cell: lr/pg1
+            StaticText: lr/pg1
+          cell: 0.000288
+            StaticText: 0.000288
+        row: 
+          cell: lr/pg2
+            StaticText: lr/pg2
+          cell: 0.000288
+            StaticText: 0.000288
+        row: 
+          cell: lr/pg3
+            StaticText: lr/pg3
+          cell: 0.000288
+            StaticText: 0.000288
+        row: 
+          cell: mAP large
+            StaticText: mAP large
+          cell: 0.58111
+            StaticText: 0.58111
+        row: 
+          cell: mAP medium
+            StaticText: mAP medium
+          cell: 0.44124
+            StaticText: 0.44124
+        row: 
+          cell: mAP small
+            StaticText: mAP small
+          cell: 0.19715
+            StaticText: 0.19715
+        row: 
+          cell: mAP50
+            StaticText: mAP50
+          cell: 0.55748
+            StaticText: 0.55748
+        row: 
+          cell: mAP50-95
+            StaticText: mAP50-95
+          cell: 0.40111
+            StaticText: 0.40111
+        row: 
+          cell: precision
+            StaticText: precision
+          cell: 0.64915
+            StaticText: 0.64915
+        row: 
+          cell: recall
+            StaticText: recall
+          cell: 0.50701
+            StaticText: 0.50701
+        row: 
+          cell: time
+            StaticText: time
+          cell: 94330.1
+            StaticText: 94330.1
+        row: 
+          cell: train/box loss
+            StaticText: train/box loss
+          cell: 1.0363
+            StaticText: 1.0363
+        row: 
+          cell: train/cls loss
+            StaticText: train/cls loss
+          cell: 1.66011
+            StaticText: 1.66011
+        row: 
+          cell: train/dfl loss
+            StaticText: train/dfl loss
+          cell: 0.05388
+            StaticText: 0.05388
+        row: 
+          cell: val/box loss
+            StaticText: val/box loss
+          cell: 0.99456
+            StaticText: 0.99456
+        row: 
+          cell: val/cls loss
+            StaticText: val/cls loss
+          cell: 1.6366
+            StaticText: 1.6366
+        row: 
+          cell: val/dfl loss
+            StaticText: val/dfl loss
+          cell: 0.06101
+            StaticText: 0.06101
+      StaticText: Rows per page
+      combobox: Rows per page
+        StaticText: 20
+      navigation: pagination
+        button: Go to previous page [disabled]
+          StaticText: Previous
+        button: Go to page 1
+          StaticText: 1
+        button: Go to next page [disabled]
+          StaticText: Next
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

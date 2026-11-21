@@ -1,0 +1,61 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// M14 — PipelineService (first slice): DAG declared as JSON (train | job | gate | register | promote), engine in the control plane,
+// manual / scheduled / event triggers (deployment.drift → continuous training), rerun from the failed step. Agents (inference blocks) later.
+service PipelineService {
+  rpc CreatePipeline(CreatePipelineRequest) returns (Pipeline);
+  rpc ListPipelines(ListPipelinesRequest) returns (ListPipelinesResponse);
+  rpc StartRun(StartPipelineRunRequest) returns (PipelineRun);
+  rpc ListRuns(ListPipelineRunsRequest) returns (ListPipelineRunsResponse);
+  rpc GetRun(PipelineRunRef) returns (PipelineRunDetail);
+  rpc RetryRun(RetryPipelineRunRequest) returns (PipelineRun);
+  rpc CancelRun(PipelineRunRef) returns (PipelineRun);
+}
+
+message Pipeline {
+  string id = 1;
+  string name = 2;
+  string definition_json = 3;
+  string trigger_json = 4;
+  bool enabled = 5;
+  google.protobuf.Timestamp last_triggered_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+message CreatePipelineRequest { string workspace_id = 1; string name = 2; string definition_json = 3; string trigger_json = 4; }
+message ListPipelinesRequest { string workspace_id = 1; }
+message ListPipelinesResponse { repeated Pipeline pipelines = 1; }
+
+message PipelineRun {
+  string id = 1;
+  string pipeline_id = 2;
+  string pipeline_name = 3;
+  int32 number = 4;
+  string state = 5;              // running | succeeded | gated | failed | cancelled
+  string params_json = 6;
+  string trigger = 7;            // manual | interval | event:<kind>
+  string error = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp finished_at = 10;
+}
+message PipelineStep {
+  string id = 1;
+  string kind = 2;
+  string state = 3;              // pending | running | succeeded | failed | skipped | gated
+  int32 attempt = 4;
+  string ref_id = 5;             // run M09 / job M03 / model version
+  string output_json = 6;
+  string error = 7;
+  repeated string needs = 8;
+  google.protobuf.Timestamp started_at = 9;
+  google.protobuf.Timestamp finished_at = 10;
+}
+message StartPipelineRunRequest { string workspace_id = 1; string pipeline_id = 2; string params_json = 3; }
+message ListPipelineRunsRequest { string workspace_id = 1; string pipeline_id = 2; }
+message ListPipelineRunsResponse { repeated PipelineRun runs = 1; }
+message PipelineRunRef { string workspace_id = 1; string run_id = 2; }
+message PipelineRunDetail { PipelineRun run = 1; repeated PipelineStep steps = 2; }
+message RetryPipelineRunRequest { string workspace_id = 1; string run_id = 2; string params_json = 3; }

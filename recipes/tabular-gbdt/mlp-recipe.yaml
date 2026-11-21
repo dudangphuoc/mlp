@@ -1,0 +1,74 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: tabular-gbdt
+  displayName: Tabular (scikit-learn · XGBoost · LightGBM)
+  family: tabular
+  description: >
+    Classification/regression on tables with gradient-boosted trees or scikit-learn baselines.
+    No upstream repo: the training script ships with this recipe (train.py).
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+    notes: Package pins must be refreshed from PyPI when building (see openItems).
+source:
+  pip:
+    - scikit-learn==1.9.1     # PyPI 2026-11-17
+    - xgboost==3.4.1
+    - lightgbm==4.7.0
+    - pandas
+    - pyarrow
+    - joblib
+license:
+  code: BSD-3-Clause / Apache-2.0 / MIT   # scikit-learn / XGBoost / LightGBM
+  weights: n/a (trained from scratch)
+  notes: ""
+tasks: [tabular-classify, tabular-regress]
+environment:
+  dockerfile: Dockerfile
+  gpu: optional            # XGBoost device=cuda when a GPU is granted
+  python: "3.11"
+data:
+  input: parquet                  # {split}.parquet + schema.json (task, target, features) — M04 S-04-9
+variants:
+  - {name: xgboost, displayName: XGBoost}
+  - {name: lightgbm, displayName: LightGBM}
+  - {name: random-forest, displayName: scikit-learn RandomForest}
+  - {name: logistic-linear, displayName: scikit-learn Logistic/Linear regression}
+params:
+  n_estimators: {type: integer, default: 500, minimum: 1}
+  learning_rate: {type: number, default: 0.05, exclusiveMinimum: 0}
+  max_depth: {type: integer, default: 8, minimum: 1}
+  early_stopping_rounds: {type: integer, default: 50, minimum: 0}
+  class_weight: {enum: [none, balanced], default: none}
+  seed: {type: integer, default: 0}
+entrypoints:
+  train:
+    distributed: none
+    command: >
+      python /opt/recipe/train.py --mode train --variant {variant.name}
+      --data {data} --output {output} --params-json {params.json}
+      --device {device}
+    checkpoints: "{output}/model.joblib"
+  eval:
+    command: python /opt/recipe/train.py --mode eval --data {data} --model {model} --output {output}
+    metrics:
+      sources:
+        - jsonl: "{output}/metrics.jsonl"
+      primary: "{task|tabular-classify=test/f1_macro|tabular-regress=test/rmse}"
+  serve:
+    handler: handler:Handler
+    batching: true
+metrics:
+  sources:
+    - jsonl: "{output}/metrics.jsonl"     # one JSON line per evaluation: {"step": n, "val/f1_macro": …}
+  primary: "{task|tabular-classify=val/f1_macro|tabular-regress=val/rmse}"
+artifacts:
+  best: {from: ["model.joblib"], as: model.joblib}
+  files:
+    - {from: schema.json, to: config/schema.json}
+    - {from: feature_importance.csv, to: config/feature_importance.csv}
+openItems:
+  - "pandas, pyarrow, joblib are not pinned — lock file at build time."
+  - ONNX export needs skl2onnx/onnxmltools; add to Dockerfile when export is enabled.

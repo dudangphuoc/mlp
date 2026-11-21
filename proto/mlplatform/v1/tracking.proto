@@ -1,0 +1,246 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+import "mlplatform/v1/scheduler.proto";
+
+// M09 — TrackingService
+service TrackingService {
+  rpc CreateProject(CreateProjectRequest) returns (Project);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc StartTraining(StartTrainingRequest) returns (Run);
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  rpc GetRun(GetRunRequest) returns (Run);
+  rpc LogMetrics(LogMetricsRequest) returns (Empty);            // user (SDK) or mlpj_ job token (shim)
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  // Depth pass (D-41): everything a person needs to follow, stop, tidy up and reuse a run from its own page.
+  rpc ListMetricKeys(GetRunRequest) returns (ListMetricKeysResponse);    // one row per metric, no points
+  rpc StopRun(GetRunRequest) returns (Run);
+  rpc UpdateRun(UpdateRunRequest) returns (Run);                          // rename
+  rpc DeleteRun(GetRunRequest) returns (Empty);                           // finished runs without a registered model
+  rpc ListArtifacts(GetRunRequest) returns (ListArtifactsResponse);       // the run's model directory, with download links
+  // Round 1 (D-49): a project works on its own copy of a recipe. People edit a draft; a trial or a training freezes it into a revision.
+  rpc AdoptRecipe(AdoptRecipeRequest) returns (ProjectRecipe);            // idempotent per (project, recipe)
+  rpc ListProjectRecipes(ListProjectRecipesRequest) returns (ListProjectRecipesResponse);
+  rpc GetDraft(ProjectRecipeRef) returns (DraftState);                    // the caller's draft; created on first use
+  rpc UpdateDraft(UpdateDraftRequest) returns (DraftState);
+  rpc ResetDraft(ResetDraftRequest) returns (DraftState);                 // "cook again from #n", back to a revision, or take the Catalog recipe again
+  rpc ListRevisions(ProjectRecipeRef) returns (ListRevisionsResponse);
+  rpc DiffRevisions(DiffRevisionsRequest) returns (RevisionDiff);        // round 1 §6: what changed between two revisions
+  rpc CompareRuns(CompareRunsRequest) returns (Comparison);              // round 1 §8.6: same val / same axis + the lines that differ
+  rpc ListRecipeUsage(ListRecipeUsageRequest) returns (ListRecipeUsageResponse);   // projects working with a Catalog recipe
+  // Round 1 slice 3 (D-43): a few-minute trial of the draft on a data subset, through the same code path as training. Train opens only after
+  // a passed trial with the same revision content, data version, starting point and machine.
+  rpc StartTrial(ProjectRecipeRef) returns (RecipeTrial);
+  rpc GetTrial(GetTrialRequest) returns (RecipeTrial);
+  rpc CancelTrial(GetTrialRequest) returns (RecipeTrial);
+}
+
+// One step of a trial, as the shim reports it in the log ("[mlp-trial] {json}").
+message TrialStage {
+  string key = 1;                  // data | weights | stage1 | resume | package | reload
+  string state = 2;                // pending | running | passed | failed | skipped
+  double seconds = 3;
+  string detail = 4;               // one line for the canvas ("6 layers created for 2 classes", "went through both stages")
+}
+message RecipeTrial {
+  string id = 1;
+  string project_recipe_id = 2;
+  int32 revision_number = 3;
+  string state = 4;                // queued | running | passed | failed | cancelled
+  string error = 5;
+  repeated TrialStage stages = 6;
+  double steps_per_second = 7;     // stage 1, first 3 steps left out
+  int64 peak_vram_mb = 8;          // allocated by the training process ("max mem"); real use is higher
+  bool vram_estimated = 9;         // multi-scale on and the largest size was not met: scaled up
+  string host_id = 10; string host_name = 11;
+  int32 train_images = 12; int32 val_images = 13;
+  string run_id = 14;              // the hidden run that carries the trial's log and files
+  string job_state = 15; string state_reason = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp finished_at = 18;
+}
+message GetTrialRequest { string workspace_id = 1; string trial_id = 2; }
+// Estimated duration of the real training, from the trial's measurements.
+message TrainEstimate {
+  double low_seconds = 1; double high_seconds = 2;
+  string source = 3;          // machine the trial ran on
+  bool val_measured = 4;      // validation time is included (measured in the trial)
+  double data_seconds = 5;    // data preparation included in the range (0 = not known)
+}
+
+message ProjectRecipe {
+  string id = 1;
+  string project_id = 2;
+  string recipe = 3;               // name of the Catalog recipe it was taken from
+  string display_name = 4;
+  bool origin_changed = 5;         // the Catalog recipe changed since it was taken
+  int32 latest_revision = 6;       // 0 = nothing frozen yet
+  google.protobuf.Timestamp created_at = 7;
+  string manifest_json = 8;        // the manifest the draft works on
+}
+message AdoptRecipeRequest { string workspace_id = 1; string project_id = 2; string recipe = 3; }
+message ListProjectRecipesRequest { string workspace_id = 1; string project_id = 2; }
+message ListProjectRecipesResponse { repeated ProjectRecipe recipes = 1; }
+message ProjectRecipeRef { string workspace_id = 1; string project_recipe_id = 2; }
+
+message Draft {
+  string project_recipe_id = 1;
+  string variant = 2;
+  string params_json = 3;          // only the values the person set; a missing key = the recipe's default
+  string dataset_version_id = 4;
+  string start_kind = 5;           // pretrained | backbone (keep only the pretrained backbone)
+  string train_kind = 6;           // fine_tune | retrain
+  string retrain_of_run_id = 7;
+  string host_id = 8;              // empty = any machine that fits
+  int32 gpus = 9;
+  double cpus = 10;
+  string run_name = 11;
+  int32 base_revision = 12;        // revision the draft started from; 0 = the recipe's defaults
+}
+// One difference between the draft and the revision it started from.
+message DraftChange { string field = 1; string pane = 2; string from = 3; string to = 4; }   // field: "variant" | "params.<name>"
+message TrainGate {
+  bool can_train = 1;
+  repeated string reasons = 2;
+  bool can_trial = 3;              // the draft is complete enough to try (reasons may still say "run a trial first")
+  RecipeTrial trial = 4;                 // latest trial of this draft's content on this data and start (any state); unset = none
+  TrainEstimate estimate = 5;      // set when that trial passed
+}
+// The dataset version the draft trains on, as node "Data" shows it.
+message DraftDataset {
+  string dataset_id = 1; string dataset_name = 2; int32 version_number = 3; int64 file_count = 4;
+  string split_state = 5;          // none | folders | file
+  map<string, int64> split_counts = 6;   // images per train / val / test
+}
+message DraftState {
+  Draft draft = 1;
+  string etag = 2;
+  repeated DraftChange changes = 3;
+  TrainGate gate = 4;
+  ProjectRecipe recipe = 5;
+  DraftDataset dataset = 6;        // unset when no version is chosen
+}
+message UpdateDraftRequest { string workspace_id = 1; Draft draft = 2; string etag = 3; }
+message ResetDraftRequest {
+  string workspace_id = 1; string project_recipe_id = 2;
+  int32 revision_number = 3;       // one of the three: a revision,
+  string run_id = 4;               // a run ("cook again from #n"),
+  bool origin = 5;                 // or the Catalog recipe as it is now
+  bool retrain = 6;                // with run_id: "train again" (R5) — same revision and start, another dataset version
+}
+message Revision {
+  int32 number = 1; string variant = 2; string params_json = 3; int32 parent = 4;
+  string created_by = 5; google.protobuf.Timestamp created_at = 6; int32 run_count = 7;
+}
+message ListRevisionsResponse { repeated Revision revisions = 1; }
+
+message Project {
+  string id = 1;
+  string workspace_id = 2;
+  string slug = 3;
+  string name = 4;
+  string task = 5;
+  google.protobuf.Timestamp created_at = 6;
+  int32 run_count = 7;
+  int32 active_count = 8;                   // runs still waiting or training
+  google.protobuf.Timestamp last_run_at = 9;
+  bool has_best = 10;                       // best run by the primary metric (direction follows the metric: loss-like = lower)
+  int32 best_run_number = 11;
+  string best_run_name = 12;
+  string best_metric_key = 13;
+  double best_metric_value = 14;
+}
+message CreateProjectRequest { string workspace_id = 1; string slug = 2; string name = 3; string task = 4; }
+message ListProjectsRequest { string workspace_id = 1; }
+message ListProjectsResponse { repeated Project projects = 1; }
+
+message StartTrainingRequest {
+  string workspace_id = 1;
+  string project_id = 2;
+  string name = 3;
+  string recipe = 4;
+  string variant = 5;
+  string task = 6;
+  string params_json = 7;         // parameter values per the recipe's schema
+  string dataset_version_id = 8;
+  bool from_scratch = 9;
+  double cpus = 10;
+  int32 gpus = 11;
+  string image_override = 12;     // dev/test only: run an unbuilt recipe with a given image
+  string network = 13;            // dev only
+  string project_recipe_id = 14;  // canvas path: train the caller's draft of this project recipe (the fields above are ignored)
+}
+
+message Run {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string state = 4;
+  string recipe = 5;
+  string variant = 6;
+  string task = 7;
+  string job_id = 8;
+  string params_json = 9;
+  string primary_metric_key = 10;
+  double primary_metric_value = 11;
+  bool has_primary_metric = 12;
+  google.protobuf.Timestamp created_at = 13;
+  int32 number = 14;                        // #n inside the project
+  string dataset_version_id = 15;
+  string dataset_id = 16;
+  string dataset_name = 17;
+  int32 dataset_version_number = 18;
+  bool from_scratch = 19;
+  int32 gpus = 20;
+  double cpus = 21;
+  string job_state = 22;                    // queued | starting | running … — finer than `state` before the first metric arrives
+  string state_reason = 23;                 // why it waits or why it failed
+  google.protobuf.Timestamp started_at = 24;
+  google.protobuf.Timestamp ended_at = 25;
+  int32 attempt_count = 26;
+  JobProgress progress = 27;                // only while the job is active
+  string created_by = 28;
+  int32 revision_number = 29;               // 0 = started before revisions existed, or by a pipeline / sweep
+  string train_kind = 30;                   // fine_tune | retrain
+  string start_kind = 31;                   // pretrained | backbone
+  int32 retrain_of_number = 32;
+  string host_id = 33;                      // machine the run was pinned to, if any
+}
+message ListRunsRequest { string workspace_id = 1; string project_id = 2; }
+message ListRunsResponse { repeated Run runs = 1; }
+message GetRunRequest { string workspace_id = 1; string run_id = 2; }
+
+message MetricPoint { string key = 1; int64 step = 2; double value = 3; google.protobuf.Timestamp at = 4; }
+message LogMetricsRequest { string run_id = 1; repeated MetricPoint points = 2; }
+message GetMetricsRequest {
+  string workspace_id = 1; string run_id = 2; repeated string keys = 3;
+  int32 max_points = 4;                     // per metric; 0 = server default (600). Longer series are averaged into buckets.
+}
+message MetricSeries { string key = 1; repeated MetricPoint points = 2; }
+message GetMetricsResponse { repeated MetricSeries series = 1; }
+
+message MetricInfo { string key = 1; int64 points = 2; int64 last_step = 3; double last = 4; double min = 5; double max = 6; }
+message ListMetricKeysResponse { repeated MetricInfo metrics = 1; }
+message UpdateRunRequest { string workspace_id = 1; string run_id = 2; string name = 3; }
+message RunArtifact { string path = 1; int64 size_bytes = 2; string url = 3; }
+message ListArtifactsResponse { repeated RunArtifact artifacts = 1; }
+
+message DiffRevisionsRequest { string workspace_id = 1; string project_recipe_id = 2; int32 from = 3; int32 to = 4; }
+message RevisionDiff { int32 from = 1; int32 to = 2; bool manifest_changed = 3; repeated DraftChange rows = 4; }
+message CompareRunsRequest { string workspace_id = 1; repeated string run_ids = 2; }
+message CompareRow { string field = 1; string pane = 2; repeated string values = 3; }   // field: recipe | variant | revision | data | start | train_kind | gpus | params.<name>
+message Comparison {
+  bool same_val = 1;               // every run trained on the same dataset version (fixed split)
+  bool same_axis = 2;              // the primary metric is on the same x axis for every run
+  repeated string axes = 3;        // per run: step | epoch | "" (no result yet)
+  repeated CompareRow rows = 4;    // only lines that differ
+}
+message ListRecipeUsageRequest { string workspace_id = 1; string recipe = 2; }
+message RecipeUsage {
+  string project_id = 1; string project_name = 2; string project_recipe_id = 3; int32 latest_revision = 4; int64 run_count = 5;
+  google.protobuf.Timestamp last_run_at = 6;
+}
+message ListRecipeUsageResponse { repeated RecipeUsage usages = 1; }

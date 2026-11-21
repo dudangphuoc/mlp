@@ -1,0 +1,229 @@
+RootWebArea: Home on Ultralytics Platform
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Home
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Home
+      StaticText: Home
+    StaticText: Welcome to Ultralytics Platform. Annotate, train, and deploy your computer vision models.
+    button: Dismiss storage announcement
+    link: Your datasets stay put.Link GCS, S3, or Azure and train without moving your data.
+      StaticText: Your datasets stay put.
+      StaticText: Link GCS, S3, or Azure and train without moving your data.
+    button: Customize <Tên người dùng> icon
+      image: <Tên người dùng>
+    StaticText: Welcome back, <Tên người dùng>
+    link: Free
+      StaticText: Free
+    link: @<user>
+      StaticText: @<user>
+    StaticText: ·
+    StaticText: <email>
+    link: 1 Datasets
+      StaticText: 1
+      StaticText: Datasets
+    link: 8 Images
+      StaticText: 8
+      StaticText: Images
+    link: 30 Annotations
+      StaticText: 30
+      StaticText: Annotations
+    link: 1 Projects
+      StaticText: 1
+      StaticText: Projects
+    link: 1 Models
+      StaticText: 1
+      StaticText: Models
+    link: 0 Exports
+      StaticText: 0
+      StaticText: Exports
+    link: 0 Deployments
+      StaticText: 0
+      StaticText: Deployments
+    button: Play video: Get Started with Platform
+    link: Datasets
+      StaticText: Datasets
+    button: New Dataset
+      StaticText: New Dataset
+    StaticText: Upload images, videos, and datasets
+    button: Drop images, videos or datasets Images <50 MB · Videos <1 GB · Datasets <10 GB — ZIP, TAR, NDJSON
+      StaticText: Drop images, videos or datasets
+      StaticText: Images <50 MB · Videos <1 GB · Datasets <10 GB — ZIP, TAR, NDJSON
+    link: Annotations overlay showing 2 labels Annotations overlay showing 2 labels Annotations overlay showing 1 label Annotations overlay showing 8 
+      image: Annotations overlay showing 2 labels
+      image: Annotations overlay showing 1 label
+      image: Annotations overlay showing 8 labels
+      StaticText: Example Dataset
+      StaticText: 8 imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 4
+    link: View all
+      StaticText: View all
+    link: Projects
+      StaticText: Projects
+    button: New Project
+      StaticText: New Project
+    StaticText: Create a project to organize models
+    button: Drop .pt model files PyTorch models up to 1 GB
+      StaticText: Drop .pt model files
+      StaticText: PyTorch models up to 1 GB
+    link: E Example Project 1 model 5.3 MB
+      StaticText: E
+      StaticText: Example Project
+      StaticText: 1 model
+      StaticText: 5.3 MB
+    link: View all
+      StaticText: View all
+    StaticText: Storage
+    StaticText: 6.1 MB
+    StaticText: /
+    StaticText: 100 GB
+    StaticText: (0%)
+    StaticText: By category
+    StaticText: Datasets
+    StaticText: (
+    StaticText: 837.5 KB
+    StaticText: )
+    StaticText: Models
+    StaticText: (
+    StaticText: 5.3 MB
+    StaticText: )
+    StaticText: Resources
+    StaticText: Projects
+    StaticText: 1
+    StaticText: Datasets
+    StaticText: 1
+    StaticText: Models
+    StaticText: 1
+    StaticText: /
+    StaticText: 100
+    StaticText: Images
+    StaticText: 8
+    StaticText: Deployments
+    StaticText: 0
+    StaticText: /
+    StaticText: 3
+    StaticText: Largest items
+    link: yolo26n 5.3 MB
+      StaticText: yolo26n
+      StaticText: 5.3 MB
+    link: Example Dataset 837.5 KB
+      StaticText: Example Dataset
+      StaticText: 837.5 KB
+    StaticText: Recent Activity
+    StaticText: Your latest datasets, projects, and deployments
+    textbox: Search activity...
+    table: 
+      rowgroup: 
+        row: 
+          columnheader: Name
+            button: Name
+              StaticText: Name
+          columnheader: Type
+            button: Type
+              StaticText: Type
+          columnheader: Description
+            button: Description
+              StaticText: Description
+          columnheader: Status
+            button: Status
+              StaticText: Status
+          columnheader: Updated
+            button: Updated
+              StaticText: Updated
+      row: 
+        cell: Example Dataset
+          link: Example Dataset
+            StaticText: Example Dataset
+        cell: Dataset
+          StaticText: Dataset
+        cell: 8 images
+          StaticText: 8 images
+        cell: Ready
+          StaticText: Ready
+        cell: 9 hours ago
+          StaticText: 9 hours ago
+      row: 
+        cell: E Example Project
+          link: E Example Project
+            StaticText: E
+            StaticText: Example Project
+        cell: Project
+          StaticText: Project
+        cell: Example project with a pre-trained YOLO26n model. Try deploying it or use it as a starting point for training.
+          StaticText: Example project with a pre-trained YOLO26n model. Try deploying it or use it as a starting point for training.
+        cell: Completed
+          StaticText: Completed
+        cell: 9 hours ago
+          StaticText: 9 hours ago
+    StaticText: Rows per page
+    combobox: Rows per page
+      StaticText: 20
+    navigation: pagination
+      button: Go to previous page [disabled]
+        StaticText: Previous
+      button: Go to page 1
+        StaticText: 1
+      button: Go to next page [disabled]
+        StaticText: Next
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

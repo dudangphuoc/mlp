@@ -1,0 +1,84 @@
+RootWebArea: Example Project Models by <Tên người dùng>
+  region: Notifications
+  dialog: Train New Model
+    heading: Train New Model
+      StaticText: Train New Model
+    link: Cloud training documentation
+    StaticText: Configure a cloud training run or generate a local training command.
+    StaticText: Base Model
+    combobox: 
+      image: YOLO26
+      StaticText: yolo26n
+    StaticText: Dataset
+    combobox: 
+      StaticText: COCO8
+      StaticText: Detect
+    link: Annotations overlay showing 2 labels Annotations overlay showing 1 label Annotations overlay showing 2 labels Annotations overlay showing 8 
+      image: Annotations overlay showing 2 labels
+      image: Annotations overlay showing 1 label
+      image: Annotations overlay showing 2 labels
+      image: Annotations overlay showing 8 labels
+      StaticText: COCO8
+      StaticText: 8 imgs
+      StaticText: ·
+      StaticText: 80 cls
+      StaticText: ·
+      StaticText: 4
+    LabelText: 
+      StaticText: Epochs
+    button: About Epochs
+    textbox: Epochs
+      StaticText: 100
+    LabelText: 
+      StaticText: Batch Size
+    button: About Batch Size
+    textbox: Batch Size
+    StaticText: Image Size
+    button: About Image Size
+    slider: Image Size
+    StaticText: 640
+    LabelText: 
+      StaticText: Name
+    button: About Name
+    textbox: Name
+    button: Advanced Settings
+      StaticText: Advanced Settings
+    button: Reset advanced settings
+    tablist: 
+      tab: Cloud Training [selected]
+        StaticText: Cloud Training
+      tab: Local Training
+        StaticText: Local Training
+    tabpanel: Cloud Training
+      LabelText: 
+        checkbox: Save Dataset Version [disabled]
+        StaticText: Save Dataset Version
+      button: About dataset versions
+      StaticText: GPU Type
+      combobox: 
+        StaticText: RTX PRO 6000
+        StaticText: New
+        StaticText: 96
+        StaticText: GB
+        StaticText: • $2.49/hr
+      StaticText: Balance
+      status: 
+        StaticText: Balance:
+        StaticText: $5.00
+      button: Top Up
+        StaticText: Top Up
+      StaticText: Estimated Cost
+      StaticText: ~1 min at $2.49/hr
+      StaticText: ~0.2s/epoch • 8 images
+      StaticText: $0.03
+      StaticText: RTX PRO 6000
+      StaticText: •
+      StaticText: 96
+      StaticText: GB
+      StaticText: Estimate only — actual training time and cost may vary. You are billed for actual GPU time used.
+    button: Close
+      StaticText: Close
+    button: Start Training
+      StaticText: Start Training
+    button: Close
+      StaticText: Close

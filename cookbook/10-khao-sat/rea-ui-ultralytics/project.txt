@@ -1,0 +1,120 @@
+RootWebArea: Example Project Models by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: E Example Project
+          StaticText: E
+          StaticText: Example Project
+        button: Private
+          StaticText: Private
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Customize Example Project icon
+      StaticText: E
+    button: Example Project
+      heading: Example Project
+        StaticText: Example Project
+    link: AGPL 3.0
+      StaticText: AGPL 3.0
+    button: New Model
+      StaticText: New Model
+    button: Upload models
+    button: Star
+    button: More project actions
+    StaticText: 1 model
+    StaticText: ·
+    StaticText: 1 completed
+    StaticText: ·
+    StaticText: 5.3 MB
+    StaticText: ·
+    StaticText: Updated 9 hours ago
+    button: Example project with a pre-trained YOLO26n model. Try deploying it or use it as a starting point for training.
+      StaticText: Example project with a pre-trained YOLO26n model. Try deploying it or use it as a starting point for training.
+    textbox: Search models...
+    button: by task · Created ↓
+      StaticText: by task · Created ↓
+    button: Grid view
+    button: Compact view
+    button: Table view
+    StaticText: Models
+    StaticText: 1 selected
+    checkbox: Select all models
+    button: Deselect all
+      StaticText: Deselect all
+    button: Detect 1 [expanded]
+      StaticText: Detect
+      StaticText: 1
+    checkbox: Select yolo26n
+    button: Change yolo26n color
+    link: yolo26n
+      StaticText: yolo26n
+    StaticText: 40.1%
+    StaticText: ·
+    StaticText: 5
+    StaticText: MB
+    button: Download yolo26n
+    button: Delete yolo26n
+    button: Drop .pt model files PyTorch models up to 1 GB
+      StaticText: Drop .pt model files
+      StaticText: PyTorch models up to 1 GB
+    StaticText: Metrics
+    StaticText: Training Loss
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

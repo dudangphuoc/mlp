@@ -1,0 +1,580 @@
+RootWebArea: Explore YOLO Models and Computer Vision Datasets
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        StaticText: Explore
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    heading: Explore Models & Datasets
+      StaticText: Explore Models & Datasets
+    StaticText: Discover public datasets, images, models and projects from the community
+    tablist: 
+      tab: Datasets [selected]
+        StaticText: Datasets
+      tab: Images
+        StaticText: Images
+      tab: Models
+        StaticText: Models
+      tab: Projects
+        StaticText: Projects
+    tabpanel: Datasets
+      heading: Public Datasets
+        StaticText: Public Datasets
+      StaticText: Explore public datasets from the community
+      textbox: Search datasets...
+      button: Search by image
+      button: Relevance ↓
+        StaticText: Relevance ↓
+      button: Grid view
+      button: Compact view
+      button: Table view
+      link: 街景 preview 1 1 街景 mioo Detect 1 class 50.7 KB Nov 17, 2026 Class 0 Val1
+        image: 街景 preview 1
+        StaticText: 1
+        StaticText: 街景
+        button: mioo
+          StaticText: mioo
+        StaticText: Detect
+        StaticText: 1 class
+        StaticText: 50.7 KB
+        StaticText: Nov 17, 2026
+        StaticText: Class 0
+        StaticText: Val
+        StaticText: 1
+      link: dataset hipotubos sintetico preview 1 Annotations overlay showing 13 labels dataset hipotubos sintetico preview 2 Annotations overlay showin
+        image: dataset hipotubos sintetico preview 1
+        image: Annotations overlay showing 13 labels
+        image: dataset hipotubos sintetico preview 2
+        image: Annotations overlay showing 12 labels
+        image: dataset hipotubos sintetico preview 3
+        image: Annotations overlay showing 15 labels
+        image: dataset hipotubos sintetico preview 4
+        image: Annotations overlay showing 24 labels
+        StaticText: 500
+        StaticText: dataset hipotubos sintetico
+        button: D daniel-rayod
+          StaticText: D
+          StaticText: daniel-rayod
+        StaticText: Detect
+        StaticText: 3 classes
+        StaticText: 1.1 GB
+        StaticText: Nov 17, 2026
+        StaticText: deformation
+        StaticText: stain
+        StaticText: scratch
+        StaticText: Train
+        StaticText: 400
+        StaticText: Val
+        StaticText: 100
+      link: valorant.v1i.yolo26 (2) preview 1 Annotations overlay showing 2 labels valorant.v1i.yolo26 (2) preview 2 Annotations overlay showing 2 label
+        image: valorant.v1i.yolo26 (2) preview 1
+        image: Annotations overlay showing 2 labels
+        image: valorant.v1i.yolo26 (2) preview 2
+        image: Annotations overlay showing 2 labels
+        image: valorant.v1i.yolo26 (2) preview 3
+        image: Annotations overlay showing 2 labels
+        image: valorant.v1i.yolo26 (2) preview 4
+        image: Annotations overlay showing 2 labels
+        StaticText: 3,364
+        StaticText: valorant.v1i.yolo26 (2)
+        button: S sun-qh
+          StaticText: S
+          StaticText: sun-qh
+        StaticText: Detect
+        StaticText: First-person perspective gameplay footage from a tactical shooter game, featuring object detection annotations for identifying enemy player 
+        StaticText: 2 classes
+        StaticText: 76.5 MB
+        StaticText: Nov 17, 2026
+        StaticText: 0
+        StaticText: 1
+        StaticText: Train
+        StaticText: 2.4k
+        StaticText: Val
+        StaticText: 470
+        StaticText: Test
+        StaticText: 465
+      link: sharp-iguana preview 1 Annotations overlay showing 3 labels sharp-iguana preview 2 Annotations overlay showing 4 labels sharp-iguana preview
+        image: sharp-iguana preview 1
+        image: Annotations overlay showing 3 labels
+        image: sharp-iguana preview 2
+        image: Annotations overlay showing 4 labels
+        image: sharp-iguana preview 3
+        image: Annotations overlay showing 3 labels
+        image: sharp-iguana preview 4
+        image: Annotations overlay showing 3 labels
+        StaticText: 38
+        StaticText: sharp-iguana
+        button: juan-gonzalo-aguinaga
+          StaticText: juan-gonzalo-aguinaga
+        StaticText: Detect
+        StaticText: Uso correcto de equipo de protección.
+        StaticText: 8 classes
+        StaticText: 11.6 MB
+        StaticText: Nov 17, 2026
+        StaticText: Personas con lentes de protección
+        StaticText: chaleco
+        StaticText: guantes
+        StaticText: casco
+        StaticText: +
+        StaticText: 4
+        StaticText: Train
+        StaticText: 36
+        StaticText: Val
+        StaticText: 2
+      link: helmet detection dataset (1) preview 1 Annotations overlay showing 1 label helmet detection dataset (1) preview 2 Annotations overlay showin
+        image: helmet detection dataset (1) preview 1
+        image: Annotations overlay showing 1 label
+        image: helmet detection dataset (1) preview 2
+        image: Annotations overlay showing 2 labels
+        image: helmet detection dataset (1) preview 3
+        image: Annotations overlay showing 1 label
+        image: helmet detection dataset (1) preview 4
+        image: Annotations overlay showing 15 labels
+        StaticText: 17,823
+        StaticText: helmet detection dataset (1)
+        button: adhithyan
+          StaticText: adhithyan
+        StaticText: Detect
+        StaticText: 2 classes
+        StaticText: 2 GB
+        StaticText: Nov 17, 2026
+        StaticText: Helmet
+        StaticText: No Helmet
+        StaticText: Train
+        StaticText: 16.1k
+        StaticText: Val
+        StaticText: 1.1k
+        StaticText: Test
+        StaticText: 630
+      link: merged fall dataset yolo preview 1 Annotations overlay showing 1 label merged fall dataset yolo preview 2 Annotations overlay showing 1 labe
+        image: merged fall dataset yolo preview 1
+        image: Annotations overlay showing 1 label
+        image: merged fall dataset yolo preview 2
+        image: Annotations overlay showing 1 label
+        image: merged fall dataset yolo preview 3
+        image: Annotations overlay showing 1 label
+        image: merged fall dataset yolo preview 4
+        image: Annotations overlay showing 1 label
+        StaticText: 17,901
+        StaticText: merged fall dataset yolo
+        button: rajanesh-j
+          StaticText: rajanesh-j
+        StaticText: Detect
+        StaticText: Indoor human detection dataset featuring people in indoor settings and fallen individuals, annotated with bounding boxes for fall and non-fa
+        StaticText: 2 classes
+        StaticText: 1.2 GB
+        StaticText: Nov 17, 2026
+        StaticText: fall
+        StaticText: non-fall
+        StaticText: Train
+        StaticText: 13.5k
+        StaticText: Val
+        StaticText: 1.8k
+        StaticText: Test
+        StaticText: 2.6k
+      link: 小球 preview 1 小球 preview 2 Annotations overlay showing 2 labels 小球 preview 3 Annotations overlay showing 3 labels 3 小球 S sun-qh Detect 1 clas
+        image: 小球 preview 1
+        image: 小球 preview 2
+        image: Annotations overlay showing 2 labels
+        image: 小球 preview 3
+        image: Annotations overlay showing 3 labels
+        StaticText: 3
+        StaticText: 小球
+        button: S sun-qh
+          StaticText: S
+          StaticText: sun-qh
+        StaticText: Detect
+        StaticText: 1 class
+        StaticText: 13.8 KB
+        StaticText: Nov 17, 2026
+        StaticText: 小球
+        StaticText: Train
+        StaticText: 1
+        StaticText: Val
+        StaticText: 1
+        StaticText: Test
+        StaticText: 1
+      link: Construction PPE preview 1 Annotations overlay showing 19 labels Construction PPE preview 2 Annotations overlay showing 8 labels Constructio
+        image: Construction PPE preview 1
+        image: Annotations overlay showing 19 labels
+        image: Construction PPE preview 2
+        image: Annotations overlay showing 8 labels
+        image: Construction PPE preview 3
+        image: Annotations overlay showing 25 labels
+        image: Construction PPE preview 4
+        image: Annotations overlay showing 25 labels
+        StaticText: 1,000
+        StaticText: Construction PPE
+        button: santhosh-a-2
+          StaticText: santhosh-a-2
+        StaticText: Detect
+        StaticText: Ultralytics Construction-PPE is an original dataset created and open-sourced in November 2026 by the Ultralytics team. It combines human-col
+        StaticText: 12 classes
+        StaticText: 632.3 MB
+        StaticText: Nov 17, 2026
+        StaticText: helmet
+        StaticText: gloves
+        StaticText: vest
+        StaticText: boots
+        StaticText: +
+        StaticText: 8
+        StaticText: construction
+        StaticText: ppe
+        StaticText: safety
+        StaticText: +
+        StaticText: 2
+        StaticText: Train
+        StaticText: 800
+        StaticText: Val
+        StaticText: 200
+      link: Person preview 1 Annotations overlay showing 12 labels Person preview 2 Annotations overlay showing 1 label Person preview 3 Annotations ove
+        image: Person preview 1
+        image: Annotations overlay showing 12 labels
+        image: Person preview 2
+        image: Annotations overlay showing 1 label
+        image: Person preview 3
+        image: Annotations overlay showing 10 labels
+        image: Person preview 4
+        image: Annotations overlay showing 1 label
+        StaticText: 7,099
+        StaticText: Person
+        button: Z zcj-zcj
+          StaticText: Z
+          StaticText: zcj-zcj
+        StaticText: Detect
+        StaticText: Object detection dataset featuring people in diverse environments including outdoor forests, sports events, industrial warehouses, and urban
+        StaticText: 1 class
+        StaticText: 1.2 GB
+        StaticText: Nov 17, 2026
+        StaticText: Person
+        StaticText: Train
+        StaticText: 5.4k
+        StaticText: Val
+        StaticText: 1.1k
+        StaticText: Test
+        StaticText: 574
+      link: Cosas del super preview 1 Annotations overlay showing 1 label Cosas del super preview 2 Annotations overlay showing 1 label Cosas del super 
+        image: Cosas del super preview 1
+        image: Annotations overlay showing 1 label
+        image: Cosas del super preview 2
+        image: Annotations overlay showing 1 label
+        image: Cosas del super preview 3
+        image: Annotations overlay showing 1 label
+        image: Cosas del super preview 4
+        image: Annotations overlay showing 1 label
+        StaticText: 88
+        StaticText: Cosas del super
+        button: victoria-iasillo
+          StaticText: victoria-iasillo
+        StaticText: Detect
+        StaticText: 10 classes
+        StaticText: 101.3 MB
+        StaticText: Nov 17, 2026
+        StaticText: Rex
+        StaticText: Hilo Dental
+        StaticText: Lincon
+        StaticText: Tita
+        StaticText: +
+        StaticText: 6
+        StaticText: Train
+        StaticText: 70
+        StaticText: Val
+        StaticText: 18
+      link: overwatch.yolov8 preview 1 Annotations overlay showing 3 labels overwatch.yolov8 preview 2 Annotations overlay showing 2 labels overwatch.yo
+        image: overwatch.yolov8 preview 1
+        image: Annotations overlay showing 3 labels
+        image: overwatch.yolov8 preview 2
+        image: Annotations overlay showing 2 labels
+        image: overwatch.yolov8 preview 3
+        image: Annotations overlay showing 1 label
+        image: overwatch.yolov8 preview 4
+        image: Annotations overlay showing 4 labels
+        StaticText: 16,239
+        StaticText: overwatch.yolov8
+        button: E erf-eeve
+          StaticText: E
+          StaticText: erf-eeve
+        StaticText: Detect
+        StaticText: First-person perspective gameplay footage from a competitive hero shooter, featuring object detection annotations for enemy players across v
+        StaticText: 1 class
+        StaticText: 3.1 GB
+        StaticText: Nov 17, 2026
+        StaticText: Enemy
+        StaticText: Train
+        StaticText: 13.0k
+        StaticText: Val
+        StaticText: 3.2k
+      link: Cigarette preview 1 Annotations overlay showing 4 labels Cigarette preview 2 Annotations overlay showing 3 labels Cigarette preview 3 Annota
+        image: Cigarette preview 1
+        image: Annotations overlay showing 4 labels
+        image: Cigarette preview 2
+        image: Annotations overlay showing 3 labels
+        image: Cigarette preview 3
+        image: Annotations overlay showing 2 labels
+        image: Cigarette preview 4
+        image: Annotations overlay showing 3 labels
+        StaticText: 2,863
+        StaticText: Cigarette
+        button: jana-hany
+          StaticText: jana-hany
+        StaticText: Detect
+        StaticText: Object detection dataset featuring street-level and indoor scenes of individuals, focusing on identifying faces and cigarettes to monitor sm
+        StaticText: 3 classes
+        StaticText: 323.7 MB
+        StaticText: Nov 17, 2026
+        StaticText: cigarette
+        StaticText: face
+        StaticText: smoking
+        StaticText: Train
+        StaticText: 2.0k
+        StaticText: Val
+        StaticText: 533
+        StaticText: Test
+        StaticText: 296
+      link: Cigarette preview 1 Annotations overlay showing 3 labels Cigarette preview 2 Annotations overlay showing 4 labels Cigarette preview 3 Annota
+        image: Cigarette preview 1
+        image: Annotations overlay showing 3 labels
+        image: Cigarette preview 2
+        image: Annotations overlay showing 4 labels
+        image: Cigarette preview 3
+        image: Annotations overlay showing 3 labels
+        image: Cigarette preview 4
+        image: Annotations overlay showing 3 labels
+        StaticText: 2,863
+        StaticText: Cigarette
+        button: khaled-hany
+          StaticText: khaled-hany
+        StaticText: Detect
+        StaticText: Object detection dataset featuring street-level and indoor scenes of individuals, focusing on identifying faces and cigarettes to monitor sm
+        StaticText: 3 classes
+        StaticText: 323.7 MB
+        StaticText: Nov 17, 2026
+        StaticText: cigarette
+        StaticText: face
+        StaticText: smoking
+        StaticText: Train
+        StaticText: 2.0k
+        StaticText: Val
+        StaticText: 533
+        StaticText: Test
+        StaticText: 296
+      link: Ice Factory.v1i.yolov8 preview 1 Annotations overlay showing 2 labels Ice Factory.v1i.yolov8 preview 2 Annotations overlay showing 4 labels 
+        image: Ice Factory.v1i.yolov8 preview 1
+        image: Annotations overlay showing 2 labels
+        image: Ice Factory.v1i.yolov8 preview 2
+        image: Annotations overlay showing 4 labels
+        image: Ice Factory.v1i.yolov8 preview 3
+        image: Annotations overlay showing 3 labels
+        image: Ice Factory.v1i.yolov8 preview 4
+        image: Annotations overlay showing 4 labels
+        StaticText: 414
+        StaticText: Ice Factory.v1i.yolov8
+        button: sabuymedev
+          StaticText: sabuymedev
+        StaticText: Detect
+        StaticText: 2 classes
+        StaticText: 19.5 MB
+        StaticText: Nov 17, 2026
+        StaticText: Nocarrier
+        StaticText: carrier
+        StaticText: Train
+        StaticText: 383
+        StaticText: Val
+        StaticText: 15
+        StaticText: Test
+        StaticText: 16
+      link: negative sample 2 preview 1 Annotations overlay showing 6 labels negative sample 2 preview 2 Annotations overlay showing 1 label negative sa
+        image: negative sample 2 preview 1
+        image: Annotations overlay showing 6 labels
+        image: negative sample 2 preview 2
+        image: Annotations overlay showing 1 label
+        image: negative sample 2 preview 3
+        image: Annotations overlay showing 3 labels
+        image: negative sample 2 preview 4
+        image: Annotations overlay showing 2 labels
+        StaticText: 255
+        StaticText: negative sample 2
+        button: kanadesekai
+          StaticText: kanadesekai
+        StaticText: Segment
+        StaticText: Underwater coral reef imagery from an overhead viewpoint, with sea cucumbers including Halodeima atra and Stichopus chloronotus labeled for 
+        StaticText: 4 classes
+        StaticText: 715 MB
+        StaticText: Nov 17, 2026
+        StaticText: Halodeima atra
+        StaticText: Stichopus chloronotus
+        StaticText: Holothuria leucospilota
+        StaticText: Holothuria edulis
+        StaticText: Train
+        StaticText: 210
+        StaticText: Val
+        StaticText: 45
+      link: CHIPS1 preview 1 Annotations overlay showing 5 labels CHIPS1 preview 2 Annotations overlay showing 5 labels CHIPS1 preview 3 Annotations ove
+        image: CHIPS1 preview 1
+        image: Annotations overlay showing 5 labels
+        image: CHIPS1 preview 2
+        image: Annotations overlay showing 5 labels
+        image: CHIPS1 preview 3
+        image: Annotations overlay showing 2 labels
+        image: CHIPS1 preview 4
+        image: Annotations overlay showing 5 labels
+        StaticText: 17
+        StaticText: CHIPS1
+        button: andyqin267
+          StaticText: andyqin267
+        StaticText: Segment
+        StaticText: Indoor top-down view images of various snack food bags, including potato chips and corn snacks, annotated with instance segmentation for ret
+        StaticText: 6 classes
+        StaticText: 3.6 MB
+        StaticText: Nov 17, 2026
+        StaticText: Class 0
+        StaticText: HAPPY 10DA
+        StaticText: FRT 1
+        StaticText: M20DA
+        StaticText: +
+        StaticText: 2
+        StaticText: Train
+        StaticText: 15
+        StaticText: Val
+        StaticText: 2
+      link: raogu-all-hands preview 1 1 raogu-all-hands muzhen-zha Pose 1 class 1.3 MB Nov 17, 2026 Class 0 Val1
+        image: raogu-all-hands preview 1
+        StaticText: 1
+        StaticText: raogu-all-hands
+        button: muzhen-zha
+          StaticText: muzhen-zha
+        StaticText: Pose
+        StaticText: 1 class
+        StaticText: 1.3 MB
+        StaticText: Nov 17, 2026
+        StaticText: Class 0
+        StaticText: Val
+        StaticText: 1
+      link: Panel Detection preview 1 Annotations overlay showing 1 label Panel Detection preview 2 Annotations overlay showing 1 label Panel Detection 
+        image: Panel Detection preview 1
+        image: Annotations overlay showing 1 label
+        image: Panel Detection preview 2
+        image: Annotations overlay showing 1 label
+        image: Panel Detection preview 3
+        image: Annotations overlay showing 1 label
+        image: Panel Detection preview 4
+        image: Annotations overlay showing 1 label
+        StaticText: 89
+        StaticText: Panel Detection
+        button: andyqin267
+          StaticText: andyqin267
+        StaticText: Detect
+        StaticText: Indoor product photography images featuring object detection annotations for the front panel of Nestle Milk Pak cartons to facilitate automa
+        StaticText: 1 class
+        StaticText: 2.7 MB
+        StaticText: Nov 17, 2026
+        StaticText: front_panel
+        StaticText: Train
+        StaticText: 76
+        StaticText: Val
+        StaticText: 13
+      link: sea cucumber7 preview 1 sea cucumber7 preview 2 Annotations overlay showing 1 label sea cucumber7 preview 3 Annotations overlay showing 1 la
+        image: sea cucumber7 preview 1
+        image: sea cucumber7 preview 2
+        image: Annotations overlay showing 1 label
+        image: sea cucumber7 preview 3
+        image: Annotations overlay showing 1 label
+        image: sea cucumber7 preview 4
+        StaticText: 250
+        StaticText: sea cucumber7
+        button: kanadesekai
+          StaticText: kanadesekai
+        StaticText: Segment
+        StaticText: Underwater reef and seabed photographs show Holothuria sea cucumbers, including black, sandfish, red-belly, and white-foot species, for inst
+        StaticText: 4 classes
+        StaticText: 163.1 MB
+        StaticText: Nov 17, 2026
+        StaticText: Stichopus chloronotus
+        StaticText: Holothuria edulis
+        StaticText: Holothuria leucospilota
+        StaticText: Halodeima atra
+        StaticText: Train
+        StaticText: 200
+        StaticText: Val
+        StaticText: 50
+      link: kunkun preview 1 Annotations overlay showing 1 label kunkun preview 2 Annotations overlay showing 1 label kunkun preview 3 Annotations overl
+        image: kunkun preview 1
+        image: Annotations overlay showing 1 label
+        image: kunkun preview 2
+        image: Annotations overlay showing 1 label
+        image: kunkun preview 3
+        image: Annotations overlay showing 1 label
+        image: kunkun preview 4
+        image: Annotations overlay showing 1 label
+        StaticText: 75
+        StaticText: kunkun
+        button: P p-wj
+          StaticText: P
+          StaticText: p-wj
+        StaticText: Detect
+        StaticText: Indoor close-up scenes showing hands holding a small action figure toy from various angles and orientations, annotated with bounding boxes f
+        StaticText: 1 class
+        StaticText: 4.7 MB
+        StaticText: Nov 17, 2026
+        StaticText: kunkun
+        StaticText: Train
+        StaticText: 60
+        StaticText: Val
+        StaticText: 15
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

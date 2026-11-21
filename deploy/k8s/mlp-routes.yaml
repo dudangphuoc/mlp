@@ -1,0 +1,48 @@
+# MLPlatform domains over the overlay: mlp.hexbox.vn + *.mlp.hexbox.vn → web control plane (10.88.255.1:8080, nginx → api);
+# agent.mlp.hexbox.vn:443 → TLS agent channel (passthrough, the agent pins its own certificate). Traefik on the hub node reaches 10.88/16 via mlp0.
+apiVersion: v1
+kind: Service
+metadata: { name: mlp-web, namespace: mlp }
+spec: { ports: [{ name: http, port: 8080, targetPort: 8080 }] }
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata: { name: mlp-web-cp, namespace: mlp, labels: { kubernetes.io/service-name: mlp-web } }
+addressType: IPv4
+ports: [{ name: http, port: 8080, protocol: TCP }]
+endpoints: [{ addresses: ["10.88.255.1"], conditions: { ready: true } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: mlp-agent, namespace: mlp }
+spec: { ports: [{ name: tls, port: 7443, targetPort: 7443 }] }
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata: { name: mlp-agent-cp, namespace: mlp, labels: { kubernetes.io/service-name: mlp-agent } }
+addressType: IPv4
+ports: [{ name: tls, port: 7443, protocol: TCP }]
+endpoints: [{ addresses: ["10.88.255.1"], conditions: { ready: true } }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlp-web
+  namespace: mlp
+  annotations: { traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure" }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: ["mlp.hexbox.vn", "*.mlp.hexbox.vn"], secretName: mlp-wildcard-tls }]
+  rules:
+    - host: mlp.hexbox.vn
+      http: { paths: [{ path: /, pathType: Prefix, backend: { service: { name: mlp-web, port: { number: 8080 } } } }] }
+    - host: "*.mlp.hexbox.vn"
+      http: { paths: [{ path: /, pathType: Prefix, backend: { service: { name: mlp-web, port: { number: 8080 } } } }] }
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata: { name: mlp-agent, namespace: mlp }
+spec:
+  entryPoints: [websecure]
+  routes: [{ match: "HostSNI(`agent.mlp.hexbox.vn`)", services: [{ name: mlp-agent, port: 7443 }] }]
+  tls: { passthrough: true }

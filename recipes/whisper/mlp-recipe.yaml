@@ -1,0 +1,127 @@
+apiVersion: mlplatform/v1
+kind: Recipe
+metadata:
+  name: whisper
+  displayName: Whisper (fine-tune with Hugging Face)
+  family: speech-recognition
+  description: >
+    Fine-tune OpenAI Whisper with the transformers seq2seq script. The script was removed from the main branch
+    on 2026-10-13 (PR #49357), so the recipe pins tag v5.19.0 — the last tag that still has it.
+  homepage: https://github.com/openai/whisper
+  verification:
+    sourcesCheckedAt: "2026-11-17"
+    built: false
+    smokeTested: false
+    notes: Parameters, script paths, AudioFolder format and metric keys were read from the source (see NOTES.md).
+source:
+  pip:
+    - transformers==5.19.0
+    - evaluate==0.4.6
+    - jiwer==4.0.0
+    - librosa
+    - accelerate
+    - tensorboard
+  # the script is fetched from tag v5.19.0 at build time (Dockerfile)
+license:
+  code: MIT (openai/whisper) · Apache-2.0 (transformers example)
+  weights: MIT
+  notes: ""
+tasks: [asr]
+environment:
+  dockerfile: Dockerfile
+  gpu: required
+  minVramGb: 6
+  python: "3.11"
+data:
+  input: hf-audiofolder            # {split}/metadata.jsonl (file_name, text) + audio; split train/val/test
+  splitNames: {val: validation}    # HF datasets maps val/valid/dev directories to the `validation` split
+variants:   # inference VRAM per the openai/whisper README; training needs more
+  - {name: whisper-tiny,     weights: hf://openai/whisper-tiny,           minVramGb: 4}
+  - {name: whisper-base,     weights: hf://openai/whisper-base,           minVramGb: 4}
+  - {name: whisper-small,    weights: hf://openai/whisper-small,          minVramGb: 8}
+  - {name: whisper-medium,   weights: hf://openai/whisper-medium,         minVramGb: 16}
+  - {name: whisper-large-v3, weights: hf://openai/whisper-large-v3,       minVramGb: 24}
+  - {name: whisper-large-v3-turbo, weights: hf://openai/whisper-large-v3-turbo, minVramGb: 16}
+params:
+  language: {type: [string, "null"], default: null, description: "Set for multilingual models (e.g. vietnamese); leave empty for English"}
+  max_steps: {type: integer, default: 5000, minimum: 1}
+  per_device_train_batch_size: {type: integer, default: 16}
+  gradient_accumulation_steps: {type: integer, default: 2}
+  learning_rate: {type: number, default: 1.0e-5}
+  warmup_steps: {type: integer, default: 500}
+  eval_steps: {type: integer, default: 1000}
+  max_duration_in_seconds: {type: number, default: 30}
+  freeze_feature_encoder: {type: boolean, default: false}
+  gradient_checkpointing: {type: boolean, default: true}
+entrypoints:
+  train:
+    distributed: torchrun
+    workdir: /opt/recipe
+    command: >
+      torchrun --nnodes={nnodes} --node_rank={node_rank} --nproc_per_node={gpus_per_node}
+      --master_addr={master_addr} --master_port={master_port}
+      run_speech_recognition_seq2seq.py
+      --model_name_or_path={weights} --dataset_name={data}
+      --train_split_name=train --eval_split_name=validation
+      --audio_column_name=audio --text_column_name=text
+      {params.language?--language={params.language}} --task=transcribe
+      --max_steps={params.max_steps} --output_dir={output}
+      --per_device_train_batch_size={params.per_device_train_batch_size}
+      --gradient_accumulation_steps={params.gradient_accumulation_steps}
+      --per_device_eval_batch_size={params.per_device_train_batch_size}
+      --learning_rate={params.learning_rate} --warmup_steps={params.warmup_steps}
+      --eval_strategy=steps --eval_steps={params.eval_steps}
+      --save_strategy=steps --save_steps={params.eval_steps} --save_total_limit=2
+      --logging_steps=25 --generation_max_length=225
+      --max_duration_in_seconds={params.max_duration_in_seconds}
+      --freeze_feature_encoder={params.freeze_feature_encoder}
+      {params.gradient_checkpointing?--gradient_checkpointing}
+      {gpu.supports_bf16|true=--bf16|false=--fp16} --do_train --do_eval --predict_with_generate
+      --report_to=tensorboard
+      --load_best_model_at_end --metric_for_best_model=wer --greater_is_better=false
+    env:
+      TENSORBOARD_LOGGING_DIR: "{output}/runs"   # transformers ≥5.15 dropped --logging_dir
+    resume: {mode: append, args: "--resume_from_checkpoint={checkpoint}"}
+    checkpoints: "{output}/checkpoint-*"
+  eval:
+    workdir: /opt/recipe
+    command: >
+      python run_speech_recognition_seq2seq.py --model_name_or_path={model.weights} --dataset_name={data}
+      --eval_split_name=test --audio_column_name=audio --text_column_name=text
+      {params.language?--language={params.language}} --task=transcribe
+      --output_dir={output} --do_eval --predict_with_generate --report_to=none
+    metrics:
+      sources:
+        - json: "{output}/eval_results.json"
+      primary: test/wer
+      map:
+        eval_wer: test/wer
+        eval_loss: test/loss
+  serve:
+    handler: handler:Handler
+    batching: true
+  assist:
+    kinds: [transcribe]           # draft transcription for M05
+    handler: handler:Handler
+metrics:
+  sources:
+    - tensorboard: "{output}/runs"
+    - json: "{output}/trainer_state.json#log_history"
+  primary: val/wer
+  map:
+    eval/wer: val/wer
+    eval/loss: val/loss
+    train/loss: train/loss
+    train/learning_rate: lr/pg0
+    eval_wer: val/wer
+    eval_loss: val/loss
+    loss: train/loss
+    learning_rate: lr/pg0
+artifacts:
+  best: {from: ["."], as: hf}       # HF directory (save_model) + processor → weights/hf/; skips checkpoint-*
+  files:
+    - {from: trainer_state.json, to: config/trainer_state.json}
+    - {from: eval_results.json, to: config/eval_results.json}
+openItems:
+  - Whether the v5.19.0 script works with newer datasets (audio decoding via torchcodec) — a compatible datasets version must be pinned at build time.
+  - Training VRAM per variant not measured yet.

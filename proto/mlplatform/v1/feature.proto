@@ -1,0 +1,70 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// M07 — FeatureService (first slice): entities, versioned feature views (source = CSV dataset version, event time, TTL),
+// offline/online store, point-in-time joins for training, online lookup, feature binding to deployments so the gateway fetches them at inference time.
+service FeatureService {
+  rpc CreateEntity(CreateEntityRequest) returns (FeatureEntity);
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+  rpc CreateView(CreateFeatureViewRequest) returns (FeatureView);
+  rpc ListViews(ListFeatureViewsRequest) returns (ListFeatureViewsResponse);
+  rpc Materialize(FeatureViewRef) returns (FeatureView);
+  rpc GetHistoricalFeatures(GetHistoricalFeaturesRequest) returns (FeatureTableResponse);
+  rpc GetOnlineFeatures(GetOnlineFeaturesRequest) returns (FeatureTableResponse);
+  rpc SampleOnline(SampleOnlineRequest) returns (FeatureTableResponse);
+  rpc BindDeployment(BindDeploymentRequest) returns (DeploymentFeatures);
+  rpc GetDeploymentFeatures(DeploymentFeaturesRef) returns (DeploymentFeatures);
+}
+
+message FeatureEntity { string id = 1; string name = 2; string join_key = 3; string description = 4; google.protobuf.Timestamp created_at = 5; }
+message CreateEntityRequest { string workspace_id = 1; string name = 2; string join_key = 3; string description = 4; }
+message ListEntitiesRequest { string workspace_id = 1; }
+message ListEntitiesResponse { repeated FeatureEntity entities = 1; }
+
+message FeatureDef { string name = 1; string type = 2; }   // number | string
+message FeatureView {
+  string id = 1;
+  string name = 2;
+  int32 version = 3;
+  string entity = 4;
+  string join_key = 5;
+  string source_version_id = 6;
+  string timestamp_column = 7;
+  repeated FeatureDef features = 8;
+  int32 ttl_hours = 9;
+  bool online = 10;
+  int32 materialize_every_min = 11;   // 0 = manual runs only
+  string state = 12;                  // pending | ready | failed
+  string state_reason = 13;
+  int64 rows = 14;
+  int64 entities = 15;
+  google.protobuf.Timestamp last_materialized_at = 16;
+  google.protobuf.Timestamp max_event_ts = 17;   // freshness: newest data in the source
+  google.protobuf.Timestamp created_at = 18;
+}
+message CreateFeatureViewRequest {
+  string workspace_id = 1; string name = 2; string entity = 3; string source_version_id = 4; string timestamp_column = 5;
+  repeated string features = 6;       // empty = all columns except keys + time
+  int32 ttl_hours = 7; bool online = 8; int32 materialize_every_min = 9;
+}
+message ListFeatureViewsRequest { string workspace_id = 1; }
+message ListFeatureViewsResponse { repeated FeatureView views = 1; }
+message FeatureViewRef { string workspace_id = 1; string view_id = 2; }
+
+message SpineRow { string entity_key = 1; google.protobuf.Timestamp at = 2; }
+message GetHistoricalFeaturesRequest { string workspace_id = 1; repeated SpineRow spine = 2; repeated string features = 3; }   // "view:feature" | "view@2:feature"
+message GetOnlineFeaturesRequest { string workspace_id = 1; repeated string entity_keys = 2; repeated string features = 3; }
+message SampleOnlineRequest { string workspace_id = 1; string view_id = 2; int32 limit = 3; }
+message FeatureTableResponse {
+  repeated string columns = 1;
+  repeated google.protobuf.ListValue rows = 2;
+  repeated string missing = 3;        // online: "entity/feature" missing or past TTL
+}
+
+message BindDeploymentRequest { string workspace_id = 1; string deployment_id = 2; string entity = 3; repeated string features = 4; }
+message DeploymentFeaturesRef { string workspace_id = 1; string deployment_id = 2; }
+message DeploymentFeatures { bool bound = 1; string entity = 2; string join_key = 3; repeated string features = 4; google.protobuf.Timestamp updated_at = 5; }

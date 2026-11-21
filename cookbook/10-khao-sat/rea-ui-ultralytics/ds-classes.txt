@@ -1,0 +1,1201 @@
+RootWebArea: Example Dataset Dataset by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: Datasets
+          StaticText: Datasets
+        link: Example Dataset
+          StaticText: Example Dataset
+        button: Private
+          StaticText: Private
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Customize Example Dataset icon
+      image: Example Dataset
+    button: Example Dataset
+      heading: Example Dataset
+        StaticText: Example Dataset
+    button: Detect
+      StaticText: Detect
+    button: CC BY 4.0
+      StaticText: CC BY 4.0
+    StaticText: Ready
+    button: New Model
+      StaticText: New Model
+    button: Upload images
+    button: Download dataset
+    button: Star
+    button: More dataset actions
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: 8 labeled
+    StaticText: ·
+    StaticText: 30 annotations
+    StaticText: ·
+    StaticText: 837.5 KB
+    StaticText: Updated 9 hours ago
+    button: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+      StaticText: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+    tablist: 
+      tab: Images
+        StaticText: Images
+      tab: Classes80 [selected]
+        StaticText: Classes
+        superscript: 
+          StaticText: 80
+      tab: Charts
+        StaticText: Charts
+      tab: Models
+        StaticText: Models
+      tab: Versions
+        StaticText: Versions
+    StaticText: Class Distribution
+    StaticText: 80 classes · 30 total annotations
+    button: Switch to log scale
+    button: Fullscreen
+    button: More options
+    StaticText: Classes
+    StaticText: 80 classes · 30 annotations
+    textbox: Search classes...
+    button: Merge into one [disabled]
+      StaticText: Merge into one
+    button: Delete [disabled]
+      StaticText: Delete
+    table: 
+      rowgroup: 
+        row: 
+          columnheader: Select all visible rows
+            checkbox: Select all visible rows
+          columnheader: Index
+            button: Index
+              StaticText: Index
+          columnheader: Name
+            button: Name
+              StaticText: Name
+          columnheader: Annotations
+            button: Annotations
+              StaticText: Annotations
+          columnheader: Images
+            button: Images
+              StaticText: Images
+      row: 
+        cell: Select row 0
+          checkbox: Select row 0
+        cell: Change person color 0
+          button: Change person color
+          StaticText: 0
+        cell: person
+          button: person
+            StaticText: person
+        cell: 10
+          StaticText: 10
+        cell: 3
+          StaticText: 3
+      row: 
+        cell: Select row 49
+          checkbox: Select row 49
+        cell: Change orange color 49
+          button: Change orange color
+          StaticText: 49
+        cell: orange
+          button: orange
+            StaticText: orange
+        cell: 4
+          StaticText: 4
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 45
+          checkbox: Select row 45
+        cell: Change bowl color 45
+          button: Change bowl color
+          StaticText: 45
+        cell: bowl
+          button: bowl
+            StaticText: bowl
+        cell: 3
+          StaticText: 3
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 17
+          checkbox: Select row 17
+        cell: Change horse color 17
+          button: Change horse color
+          StaticText: 17
+        cell: horse
+          button: horse
+            StaticText: horse
+        cell: 2
+          StaticText: 2
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 20
+          checkbox: Select row 20
+        cell: Change elephant color 20
+          button: Change elephant color
+          StaticText: 20
+        cell: elephant
+          button: elephant
+            StaticText: elephant
+        cell: 2
+          StaticText: 2
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 23
+          checkbox: Select row 23
+        cell: Change giraffe color 23
+          button: Change giraffe color
+          StaticText: 23
+        cell: giraffe
+          button: giraffe
+            StaticText: giraffe
+        cell: 2
+          StaticText: 2
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 58
+          checkbox: Select row 58
+        cell: Change potted plant color 58
+          button: Change potted plant color
+          StaticText: 58
+        cell: potted plant
+          button: potted plant
+            StaticText: potted plant
+        cell: 2
+          StaticText: 2
+        cell: 2
+          StaticText: 2
+      row: 
+        cell: Select row 16
+          checkbox: Select row 16
+        cell: Change dog color 16
+          button: Change dog color
+          StaticText: 16
+        cell: dog
+          button: dog
+            StaticText: dog
+        cell: 1
+          StaticText: 1
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 22
+          checkbox: Select row 22
+        cell: Change zebra color 22
+          button: Change zebra color
+          StaticText: 22
+        cell: zebra
+          button: zebra
+            StaticText: zebra
+        cell: 1
+          StaticText: 1
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 25
+          checkbox: Select row 25
+        cell: Change umbrella color 25
+          button: Change umbrella color
+          StaticText: 25
+        cell: umbrella
+          button: umbrella
+            StaticText: umbrella
+        cell: 1
+          StaticText: 1
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 50
+          checkbox: Select row 50
+        cell: Change broccoli color 50
+          button: Change broccoli color
+          StaticText: 50
+        cell: broccoli
+          button: broccoli
+            StaticText: broccoli
+        cell: 1
+          StaticText: 1
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 75
+          checkbox: Select row 75
+        cell: Change vase color 75
+          button: Change vase color
+          StaticText: 75
+        cell: vase
+          button: vase
+            StaticText: vase
+        cell: 1
+          StaticText: 1
+        cell: 1
+          StaticText: 1
+      row: 
+        cell: Select row 1
+          checkbox: Select row 1
+        cell: Change bicycle color 1
+          button: Change bicycle color
+          StaticText: 1
+        cell: bicycle
+          button: bicycle
+            StaticText: bicycle
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 2
+          checkbox: Select row 2
+        cell: Change car color 2
+          button: Change car color
+          StaticText: 2
+        cell: car
+          button: car
+            StaticText: car
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 3
+          checkbox: Select row 3
+        cell: Change motorcycle color 3
+          button: Change motorcycle color
+          StaticText: 3
+        cell: motorcycle
+          button: motorcycle
+            StaticText: motorcycle
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 4
+          checkbox: Select row 4
+        cell: Change airplane color 4
+          button: Change airplane color
+          StaticText: 4
+        cell: airplane
+          button: airplane
+            StaticText: airplane
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 5
+          checkbox: Select row 5
+        cell: Change bus color 5
+          button: Change bus color
+          StaticText: 5
+        cell: bus
+          button: bus
+            StaticText: bus
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 6
+          checkbox: Select row 6
+        cell: Change train color 6
+          button: Change train color
+          StaticText: 6
+        cell: train
+          button: train
+            StaticText: train
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 7
+          checkbox: Select row 7
+        cell: Change truck color 7
+          button: Change truck color
+          StaticText: 7
+        cell: truck
+          button: truck
+            StaticText: truck
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 8
+          checkbox: Select row 8
+        cell: Change boat color 8
+          button: Change boat color
+          StaticText: 8
+        cell: boat
+          button: boat
+            StaticText: boat
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 9
+          checkbox: Select row 9
+        cell: Change traffic light color 9
+          button: Change traffic light color
+          StaticText: 9
+        cell: traffic light
+          button: traffic light
+            StaticText: traffic light
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 10
+          checkbox: Select row 10
+        cell: Change fire hydrant color 10
+          button: Change fire hydrant color
+          StaticText: 10
+        cell: fire hydrant
+          button: fire hydrant
+            StaticText: fire hydrant
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 11
+          checkbox: Select row 11
+        cell: Change stop sign color 11
+          button: Change stop sign color
+          StaticText: 11
+        cell: stop sign
+          button: stop sign
+            StaticText: stop sign
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 12
+          checkbox: Select row 12
+        cell: Change parking meter color 12
+          button: Change parking meter color
+          StaticText: 12
+        cell: parking meter
+          button: parking meter
+            StaticText: parking meter
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 13
+          checkbox: Select row 13
+        cell: Change bench color 13
+          button: Change bench color
+          StaticText: 13
+        cell: bench
+          button: bench
+            StaticText: bench
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 14
+          checkbox: Select row 14
+        cell: Change bird color 14
+          button: Change bird color
+          StaticText: 14
+        cell: bird
+          button: bird
+            StaticText: bird
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 15
+          checkbox: Select row 15
+        cell: Change cat color 15
+          button: Change cat color
+          StaticText: 15
+        cell: cat
+          button: cat
+            StaticText: cat
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 18
+          checkbox: Select row 18
+        cell: Change sheep color 18
+          button: Change sheep color
+          StaticText: 18
+        cell: sheep
+          button: sheep
+            StaticText: sheep
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 19
+          checkbox: Select row 19
+        cell: Change cow color 19
+          button: Change cow color
+          StaticText: 19
+        cell: cow
+          button: cow
+            StaticText: cow
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 21
+          checkbox: Select row 21
+        cell: Change bear color 21
+          button: Change bear color
+          StaticText: 21
+        cell: bear
+          button: bear
+            StaticText: bear
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 24
+          checkbox: Select row 24
+        cell: Change backpack color 24
+          button: Change backpack color
+          StaticText: 24
+        cell: backpack
+          button: backpack
+            StaticText: backpack
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 26
+          checkbox: Select row 26
+        cell: Change handbag color 26
+          button: Change handbag color
+          StaticText: 26
+        cell: handbag
+          button: handbag
+            StaticText: handbag
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 27
+          checkbox: Select row 27
+        cell: Change tie color 27
+          button: Change tie color
+          StaticText: 27
+        cell: tie
+          button: tie
+            StaticText: tie
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 28
+          checkbox: Select row 28
+        cell: Change suitcase color 28
+          button: Change suitcase color
+          StaticText: 28
+        cell: suitcase
+          button: suitcase
+            StaticText: suitcase
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 29
+          checkbox: Select row 29
+        cell: Change frisbee color 29
+          button: Change frisbee color
+          StaticText: 29
+        cell: frisbee
+          button: frisbee
+            StaticText: frisbee
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 30
+          checkbox: Select row 30
+        cell: Change skis color 30
+          button: Change skis color
+          StaticText: 30
+        cell: skis
+          button: skis
+            StaticText: skis
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 31
+          checkbox: Select row 31
+        cell: Change snowboard color 31
+          button: Change snowboard color
+          StaticText: 31
+        cell: snowboard
+          button: snowboard
+            StaticText: snowboard
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 32
+          checkbox: Select row 32
+        cell: Change sports ball color 32
+          button: Change sports ball color
+          StaticText: 32
+        cell: sports ball
+          button: sports ball
+            StaticText: sports ball
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 33
+          checkbox: Select row 33
+        cell: Change kite color 33
+          button: Change kite color
+          StaticText: 33
+        cell: kite
+          button: kite
+            StaticText: kite
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 34
+          checkbox: Select row 34
+        cell: Change baseball bat color 34
+          button: Change baseball bat color
+          StaticText: 34
+        cell: baseball bat
+          button: baseball bat
+            StaticText: baseball bat
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 35
+          checkbox: Select row 35
+        cell: Change baseball glove color 35
+          button: Change baseball glove color
+          StaticText: 35
+        cell: baseball glove
+          button: baseball glove
+            StaticText: baseball glove
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 36
+          checkbox: Select row 36
+        cell: Change skateboard color 36
+          button: Change skateboard color
+          StaticText: 36
+        cell: skateboard
+          button: skateboard
+            StaticText: skateboard
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 37
+          checkbox: Select row 37
+        cell: Change surfboard color 37
+          button: Change surfboard color
+          StaticText: 37
+        cell: surfboard
+          button: surfboard
+            StaticText: surfboard
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 38
+          checkbox: Select row 38
+        cell: Change tennis racket color 38
+          button: Change tennis racket color
+          StaticText: 38
+        cell: tennis racket
+          button: tennis racket
+            StaticText: tennis racket
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 39
+          checkbox: Select row 39
+        cell: Change bottle color 39
+          button: Change bottle color
+          StaticText: 39
+        cell: bottle
+          button: bottle
+            StaticText: bottle
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 40
+          checkbox: Select row 40
+        cell: Change wine glass color 40
+          button: Change wine glass color
+          StaticText: 40
+        cell: wine glass
+          button: wine glass
+            StaticText: wine glass
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 41
+          checkbox: Select row 41
+        cell: Change cup color 41
+          button: Change cup color
+          StaticText: 41
+        cell: cup
+          button: cup
+            StaticText: cup
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 42
+          checkbox: Select row 42
+        cell: Change fork color 42
+          button: Change fork color
+          StaticText: 42
+        cell: fork
+          button: fork
+            StaticText: fork
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 43
+          checkbox: Select row 43
+        cell: Change knife color 43
+          button: Change knife color
+          StaticText: 43
+        cell: knife
+          button: knife
+            StaticText: knife
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 44
+          checkbox: Select row 44
+        cell: Change spoon color 44
+          button: Change spoon color
+          StaticText: 44
+        cell: spoon
+          button: spoon
+            StaticText: spoon
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 46
+          checkbox: Select row 46
+        cell: Change banana color 46
+          button: Change banana color
+          StaticText: 46
+        cell: banana
+          button: banana
+            StaticText: banana
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 47
+          checkbox: Select row 47
+        cell: Change apple color 47
+          button: Change apple color
+          StaticText: 47
+        cell: apple
+          button: apple
+            StaticText: apple
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 48
+          checkbox: Select row 48
+        cell: Change sandwich color 48
+          button: Change sandwich color
+          StaticText: 48
+        cell: sandwich
+          button: sandwich
+            StaticText: sandwich
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 51
+          checkbox: Select row 51
+        cell: Change carrot color 51
+          button: Change carrot color
+          StaticText: 51
+        cell: carrot
+          button: carrot
+            StaticText: carrot
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 52
+          checkbox: Select row 52
+        cell: Change hot dog color 52
+          button: Change hot dog color
+          StaticText: 52
+        cell: hot dog
+          button: hot dog
+            StaticText: hot dog
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 53
+          checkbox: Select row 53
+        cell: Change pizza color 53
+          button: Change pizza color
+          StaticText: 53
+        cell: pizza
+          button: pizza
+            StaticText: pizza
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 54
+          checkbox: Select row 54
+        cell: Change donut color 54
+          button: Change donut color
+          StaticText: 54
+        cell: donut
+          button: donut
+            StaticText: donut
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 55
+          checkbox: Select row 55
+        cell: Change cake color 55
+          button: Change cake color
+          StaticText: 55
+        cell: cake
+          button: cake
+            StaticText: cake
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 56
+          checkbox: Select row 56
+        cell: Change chair color 56
+          button: Change chair color
+          StaticText: 56
+        cell: chair
+          button: chair
+            StaticText: chair
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 57
+          checkbox: Select row 57
+        cell: Change couch color 57
+          button: Change couch color
+          StaticText: 57
+        cell: couch
+          button: couch
+            StaticText: couch
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 59
+          checkbox: Select row 59
+        cell: Change bed color 59
+          button: Change bed color
+          StaticText: 59
+        cell: bed
+          button: bed
+            StaticText: bed
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 60
+          checkbox: Select row 60
+        cell: Change dining table color 60
+          button: Change dining table color
+          StaticText: 60
+        cell: dining table
+          button: dining table
+            StaticText: dining table
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 61
+          checkbox: Select row 61
+        cell: Change toilet color 61
+          button: Change toilet color
+          StaticText: 61
+        cell: toilet
+          button: toilet
+            StaticText: toilet
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 62
+          checkbox: Select row 62
+        cell: Change tv color 62
+          button: Change tv color
+          StaticText: 62
+        cell: tv
+          button: tv
+            StaticText: tv
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 63
+          checkbox: Select row 63
+        cell: Change laptop color 63
+          button: Change laptop color
+          StaticText: 63
+        cell: laptop
+          button: laptop
+            StaticText: laptop
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 64
+          checkbox: Select row 64
+        cell: Change mouse color 64
+          button: Change mouse color
+          StaticText: 64
+        cell: mouse
+          button: mouse
+            StaticText: mouse
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 65
+          checkbox: Select row 65
+        cell: Change remote color 65
+          button: Change remote color
+          StaticText: 65
+        cell: remote
+          button: remote
+            StaticText: remote
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 66
+          checkbox: Select row 66
+        cell: Change keyboard color 66
+          button: Change keyboard color
+          StaticText: 66
+        cell: keyboard
+          button: keyboard
+            StaticText: keyboard
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 67
+          checkbox: Select row 67
+        cell: Change cell phone color 67
+          button: Change cell phone color
+          StaticText: 67
+        cell: cell phone
+          button: cell phone
+            StaticText: cell phone
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 68
+          checkbox: Select row 68
+        cell: Change microwave color 68
+          button: Change microwave color
+          StaticText: 68
+        cell: microwave
+          button: microwave
+            StaticText: microwave
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 69
+          checkbox: Select row 69
+        cell: Change oven color 69
+          button: Change oven color
+          StaticText: 69
+        cell: oven
+          button: oven
+            StaticText: oven
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 70
+          checkbox: Select row 70
+        cell: Change toaster color 70
+          button: Change toaster color
+          StaticText: 70
+        cell: toaster
+          button: toaster
+            StaticText: toaster
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 71
+          checkbox: Select row 71
+        cell: Change sink color 71
+          button: Change sink color
+          StaticText: 71
+        cell: sink
+          button: sink
+            StaticText: sink
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 72
+          checkbox: Select row 72
+        cell: Change refrigerator color 72
+          button: Change refrigerator color
+          StaticText: 72
+        cell: refrigerator
+          button: refrigerator
+            StaticText: refrigerator
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 73
+          checkbox: Select row 73
+        cell: Change book color 73
+          button: Change book color
+          StaticText: 73
+        cell: book
+          button: book
+            StaticText: book
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 74
+          checkbox: Select row 74
+        cell: Change clock color 74
+          button: Change clock color
+          StaticText: 74
+        cell: clock
+          button: clock
+            StaticText: clock
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 76
+          checkbox: Select row 76
+        cell: Change scissors color 76
+          button: Change scissors color
+          StaticText: 76
+        cell: scissors
+          button: scissors
+            StaticText: scissors
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 77
+          checkbox: Select row 77
+        cell: Change teddy bear color 77
+          button: Change teddy bear color
+          StaticText: 77
+        cell: teddy bear
+          button: teddy bear
+            StaticText: teddy bear
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 78
+          checkbox: Select row 78
+        cell: Change hair drier color 78
+          button: Change hair drier color
+          StaticText: 78
+        cell: hair drier
+          button: hair drier
+            StaticText: hair drier
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      row: 
+        cell: Select row 79
+          checkbox: Select row 79
+        cell: Change toothbrush color 79
+          button: Change toothbrush color
+          StaticText: 79
+        cell: toothbrush
+          button: toothbrush
+            StaticText: toothbrush
+        cell: —
+          StaticText: —
+        cell: —
+          StaticText: —
+      rowgroup: 
+        row: 
+          cell: 
+          cell: Total
+            StaticText: Total
+          cell: 30
+            StaticText: 30
+          cell: 8
+            StaticText: 8
+    StaticText: Rows per page
+    combobox: Rows per page
+      StaticText: 100
+    navigation: pagination
+      button: Go to previous page [disabled]
+        StaticText: Previous
+      button: Go to page 1
+        StaticText: 1
+      button: Go to next page [disabled]
+        StaticText: Next
+    textbox: Add new class...
+    button: Add [disabled]
+      StaticText: Add
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

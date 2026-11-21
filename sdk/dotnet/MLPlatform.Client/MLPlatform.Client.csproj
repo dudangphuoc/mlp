@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Stand-alone: not part of MLPlatform.slnx and not bound by the repo's Directory.Build.props (see the empty props files next to it). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PackageId>MLPlatform.Client</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Client for models deployed on MLPlatform</Description>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,114 @@
+RootWebArea: Example Dataset Dataset by <Tên người dùng>
+  navigation: Sidebar
+    link: Ultralytics
+      image: Ultralytics
+    searchbox: Search...
+    StaticText: ⌘K
+    link: Home
+      StaticText: Home
+    link: Explore
+      StaticText: Explore
+    link: Agents
+      StaticText: Agents
+    button: Annotate [expanded]
+      StaticText: Annotate
+    button: Create dataset
+    link: Example Dataset 8
+      StaticText: Example Dataset
+      superscript: 
+        StaticText: 8
+    button: Delete Example Dataset
+    button: Train [expanded]
+      StaticText: Train
+    button: Create project
+    link: E Example Project 1
+      StaticText: E
+      StaticText: Example Project
+      superscript: 
+        StaticText: 1
+    button: Delete Example Project
+    button: Deployments [expanded]
+      StaticText: Deployments
+    button: Create deployment
+    link: No deployments yet
+      StaticText: No deployments yet
+    link: Help
+      StaticText: Help
+    link: Settings
+      StaticText: Settings
+    button: <Tên người dùng> <Tên người dùng> <email>
+      image: <Tên người dùng>
+      StaticText: <Tên người dùng>
+      StaticText: <email>
+  main: 
+    sectionheader: 
+      button: Toggle Sidebar
+        StaticText: Toggle Sidebar
+      separator: 
+      navigation: breadcrumb
+        link: <Tên người dùng>
+          StaticText: <Tên người dùng>
+        link: Datasets
+          StaticText: Datasets
+        link: Example Dataset
+          StaticText: Example Dataset
+        button: Private
+          StaticText: Private
+      link: $5.00
+        StaticText: $5.00
+      button: Select language
+        StaticText: Select language
+      button: Switch apps
+        StaticText: Switch apps
+      button: Activity notifications
+        StaticText: Activity notifications
+      button: Toggle theme
+    button: Customize Example Dataset icon
+      image: Example Dataset
+    button: Example Dataset
+      heading: Example Dataset
+        StaticText: Example Dataset
+    button: Detect
+      StaticText: Detect
+    button: CC BY 4.0
+      StaticText: CC BY 4.0
+    StaticText: Ready
+    button: New Model
+      StaticText: New Model
+    button: Upload images
+    button: Download dataset
+    button: Star
+    button: More dataset actions
+    StaticText: 8 images
+    StaticText: ·
+    StaticText: 8 labeled
+    StaticText: ·
+    StaticText: 30 annotations
+    StaticText: ·
+    StaticText: 837.5 KB
+    StaticText: Updated 9 hours ago
+    button: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+      StaticText: Example dataset with 8 COCO images. Use this to explore Platform features like annotation viewing, statistics, and training.
+    tablist: 
+      tab: Images
+        StaticText: Images
+      tab: Classes80
+        StaticText: Classes
+        superscript: 
+          StaticText: 80
+      tab: Charts
+        StaticText: Charts
+      tab: Models [selected]
+        StaticText: Models
+      tab: Versions
+        StaticText: Versions
+    StaticText: No models trained yet
+    StaticText: Train a model using this dataset to track performance metrics, compare results, and deploy to production.
+    button: New Model
+      StaticText: New Model
+  separator: 
+  button: Ask AI
+    StaticText: Ask AI
+    image: Ultralytics
+  alert: 
+  region: Notifications

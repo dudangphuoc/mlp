@@ -1,0 +1,143 @@
+syntax = "proto3";
+package mlplatform.v1;
+option csharp_namespace = "MLPlatform.Contracts.V1";
+
+import "google/protobuf/timestamp.proto";
+import "mlplatform/v1/common.proto";
+import "mlplatform/v1/agent.proto";
+
+// M02 — FleetService (UI/Admin)
+service FleetService {
+  rpc CreateEnrollment(CreateEnrollmentRequest) returns (Enrollment);
+  rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
+  rpc GetHost(GetHostRequest) returns (Host);
+  rpc BrowseHostPath(BrowseHostPathRequest) returns (BrowsePathResult);
+  // What the control plane asked this machine to do (recent commands and their outcome) + the tail of the agent's own log.
+  rpc GetHostActivity(GetHostRequest) returns (HostActivity);
+  rpc DisconnectHost(GetHostRequest) returns (Empty);
+  // D-38 OTA: the control plane builds the agent for the machine's platform and generates an upgrade script that the agent runs detached from itself; tracked until the new version connects stably.
+  rpc UpgradeAgents(UpgradeAgentsRequest) returns (ListAgentUpgradesResponse);
+  rpc ListAgentUpgrades(ListAgentUpgradesRequest) returns (ListAgentUpgradesResponse);
+  // Host dataset cache: per machine and dataset, the files kept between runs; jobs download only what is missing.
+  rpc ListDataCaches(ListDataCachesRequest) returns (ListDataCachesResponse);
+  rpc DeleteDataCache(DeleteDataCacheRequest) returns (Empty);
+  rpc ListJobDataSyncs(ListJobDataSyncsRequest) returns (ListJobDataSyncsResponse);
+  // Before a run: how much of a dataset version each machine already holds and how much it would download.
+  rpc EstimateDataTransfer(EstimateDataTransferRequest) returns (DataTransferEstimate);
+}
+
+message EstimateDataTransferRequest { string workspace_id = 1; string dataset_version_id = 2; }
+message HostTransferEstimate {
+  string host_id = 1;
+  int64 cached_files = 2;
+  int64 cached_bytes = 3;
+  int64 free_bytes = 4;
+  bool known = 5;   // false = the machine has a cache of the dataset but no whole version synced yet (only trial samples)
+}
+message DataTransferEstimate { int64 files = 1; int64 bytes = 2; repeated HostTransferEstimate hosts = 3; }
+
+message ListDataCachesRequest { string workspace_id = 1; string host_id = 2; }   // empty host_id = every machine
+message DataCache {
+  string host_id = 1;
+  string dataset_id = 2;
+  int64 cache_files = 3;
+  int64 cache_bytes = 4;
+  int64 free_bytes = 5;
+  google.protobuf.Timestamp last_used_at = 6;
+  string last_job_id = 7;
+  bool in_use = 8;
+}
+message ListDataCachesResponse { repeated DataCache caches = 1; }
+message DeleteDataCacheRequest { string workspace_id = 1; string host_id = 2; string dataset_id = 3; }
+message ListJobDataSyncsRequest { string workspace_id = 1; string job_id = 2; }
+message DataSync {
+  string id = 1;
+  string attempt_id = 2;
+  string host_id = 3;
+  string dataset_id = 4;
+  int32 files = 5;
+  int32 reused_files = 6;
+  int64 reused_bytes = 7;
+  int32 fetched_files = 8;
+  int64 fetched_bytes = 9;
+  int32 uncached_files = 10;
+  int32 retries = 11;
+  double seconds = 12;
+  int64 cache_files = 13;
+  int64 cache_bytes = 14;
+  int64 free_bytes = 15;
+  google.protobuf.Timestamp at = 16;
+}
+message ListJobDataSyncsResponse { repeated DataSync syncs = 1; }
+
+message UpgradeAgentsRequest { string workspace_id = 1; repeated string host_ids = 2; bool force = 3; }   // empty host_ids = every online machine that needs an update
+message ListAgentUpgradesRequest { string workspace_id = 1; string host_id = 2; }
+message ListAgentUpgradesResponse { repeated AgentUpgrade upgrades = 1; }
+message AgentUpgrade {
+  string id = 1;
+  string host_id = 2;
+  string host_name = 3;
+  string from_version = 4;
+  string to_version = 5;
+  string state = 6;       // queued | running | succeeded | failed | skipped
+  string phase = 7;       // building | downloading | checking | stopping | installing | starting | connecting | done | rolled back
+  string message = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp finished_at = 10;
+}
+
+message CreateEnrollmentRequest {
+  string workspace_id = 1;
+  OsFamily os = 2;
+  string data_path = 3;
+  string models_path = 4;
+}
+
+message Enrollment {
+  string id = 1;
+  string token = 2;             // shown once
+  string install_command = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message ListHostsRequest { string workspace_id = 1; }
+message ListHostsResponse { repeated Host hosts = 1; }
+message GetHostRequest { string workspace_id = 1; string host_id = 2; }
+
+message Host {
+  string id = 1;
+  string workspace_id = 2;
+  string name = 3;
+  string state = 4;             // enrolling | online | busy | draining | drained | offline | degraded | failed | disconnected
+  string state_reason = 5;
+  string overlay_ip = 6;
+  string agent_version = 7;
+  HostInfo host_info = 8;
+  google.protobuf.Timestamp last_seen_at = 9;
+  string latest_agent_version = 10;   // agent version available on the control plane (source hash)
+  bool update_available = 11;
+  string vpn_status = 12;             // pending | connected | failed — a node must join the VPN (overlay) before it takes work
+  string vpn_message = 13;
+  google.protobuf.Timestamp vpn_checked_at = 14;
+}
+
+message BrowseHostPathRequest { string workspace_id = 1; string host_id = 2; string relative_path = 3; }
+
+message AgentCommandTrace {
+  string id = 1;
+  string kind = 2;
+  string detail = 3;              // e.g. "build mlp/recipe-hf-auto:0d7c… (9 files)"
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp finished_at = 5;
+  string state = 6;               // running | ok | failed | timeout | lost
+  string message = 7;
+  int32 limit_seconds = 8;        // how long the control plane waits for it
+}
+message HostActivity {
+  bool online = 1;
+  repeated AgentCommandTrace commands = 2;   // newest first
+  string agent_log = 3;                      // tail of agent.log on the machine
+  string log_error = 4;
+  string agent_version = 5;
+  google.protobuf.Timestamp connected_at = 6;
+}
