@@ -5,14 +5,14 @@ using System.Text.Json.Nodes;
 using MLPlatform.ControlPlane.Application.Fleet;
 using MLPlatform.Cqrs;
 
-namespace MLPlatform.Api.Infrastructure;
+namespace MLPlatform.Api.Http.Install;
 
 /// <summary>Plug-and-play install endpoint (script sends doctor → per-host build → signed download).</summary>
 public static class AgentBuildEndpoints
 {
-    public static void MapAgentBuilds(this WebApplication app)
+    public static void MapAgentBuilds(this IEndpointRouteBuilder app)
     {
-        var store = app.Services.GetRequiredService<AgentBuildStore>();
+        var store = app.ServiceProvider.GetRequiredService<AgentBuildStore>();
 
         async Task<bool> Authorized(HttpContext ctx)
         {

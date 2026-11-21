@@ -579,7 +579,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         await data.CreateVersionAsync(new CreateVersionRequest { WorkspaceId = wsId, DatasetId = ds.Id, Note = "to label" }, auth);
         var proj = await lab.CreateProjectAsync(new CreateLabelingProjectRequest { WorkspaceId = wsId, DatasetId = ds.Id, Name = "PCB round 1", ReviewMode = "all" }, auth);
         var pref = new LabelingProjectRef { WorkspaceId = wsId, ProjectId = proj.Id };
-        await ExpectStatus(StatusCode.FailedPrecondition, "LABEL_PROJECT_NOT_ACTIVE", async () => await lab.NextItemAsync(pref, auth));
+        Assert((await lab.GetProjectStatsAsync(pref, auth)).Total == 3, "a new project starts active with its items loaded");
         await lab.AddProjectMemberAsync(new LabelingMemberRequest { WorkspaceId = wsId, ProjectId = proj.Id, UserId = reg.UserId, Role = "annotator" }, auth);
         await lab.SetProjectStateAsync(new SetLabelingProjectStateRequest { WorkspaceId = wsId, ProjectId = proj.Id, State = "active" }, auth);
         var st = await lab.GetProjectStatsAsync(pref, auth);

@@ -10,7 +10,7 @@ using Environment = System.Environment;   // Contracts.V1 also has an Environmen
 using MLPlatform.Cqrs;
 using MLPlatform.Security;
 
-namespace MLPlatform.Api.Infrastructure;
+namespace MLPlatform.Api.Http.Notebooks;
 
 /// <summary>
 /// HTTP `/nb/{id}/…` (M08 §5 step 2, R2): notebook owner only (others → 404); forwards HTTP + WebSocket over the data channel to

@@ -38,7 +38,3 @@ public sealed class AgentOptions
         File.Move(tmp, path, overwrite: true);
     }
 }
-
-[JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-[JsonSerializable(typeof(AgentOptions))]
-internal sealed partial class AgentJson : JsonSerializerContext;

@@ -13,52 +13,6 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Infrastructure;
 
-/// <summary>Reads an item's bytes (dataset storage or the reference source), with a size cap.</summary>
-public sealed class ItemContent(S3Client s3, IHttpClientFactory http)
-{
-    public async Task<(byte[]? Bytes, string? Error)> ReadAsync(HermesSource src, int maxBytes, CancellationToken ct)
-    {
-        try
-        {
-            if (src.ExternalUrl is { } url)
-            {
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(TimeSpan.FromSeconds(15));
-                using var res = await http.CreateClient("import").GetAsync(MLPlatform.ControlPlane.Application.Common.SourceUrls.Resolve(s3, url),
-                    HttpCompletionOption.ResponseHeadersRead, cts.Token);
-                if (!res.IsSuccessStatusCode) return (null, $"HTTP {(int)res.StatusCode} from the source");
-                if (res.Content.Headers.ContentLength > maxBytes) return (null, $"file is larger than {maxBytes / 1024 / 1024} MB");
-                await using var st = await res.Content.ReadAsStreamAsync(cts.Token);
-                var buf = new byte[maxBytes + 1];
-                var read = 0;
-                int n;
-                while (read < buf.Length && (n = await st.ReadAsync(buf.AsMemory(read), cts.Token)) > 0) read += n;
-                return read > maxBytes ? (null, $"file is larger than {maxBytes / 1024 / 1024} MB") : (buf[..read], null);
-            }
-            var head = await s3.HeadAsync(src.Bucket!, src.Key!, ct);
-            if (head is null) return (null, "file not found in storage");
-            if (head.Size > maxBytes) return (null, $"file is {head.Size / 1024 / 1024} MB; the limit is {maxBytes / 1024 / 1024} MB");
-            var bytes = await s3.GetAsync(src.Bucket!, src.Key!, ct);
-            return bytes is null ? (null, "file not found in storage") : (bytes, null);
-        }
-        catch (Exception e) when (e is HttpRequestException or S3Exception or TaskCanceledException && !ct.IsCancellationRequested) { return (null, e.Message); }
-    }
-
-    public async Task<(string? Text, string? Note)> ReadTextAsync(HermesSource src, int maxChars, CancellationToken ct)
-    {
-        var (bytes, err) = await ReadAsync(src, 2 * 1024 * 1024, ct);
-        if (bytes is null) return (null, err);
-        var text = Encoding.UTF8.GetString(bytes);
-        if (maxChars < 500) maxChars = 500;
-        return text.Length <= maxChars ? (text, null) : (text[..maxChars], $"text cut to the first {maxChars:N0} of {text.Length:N0} characters to fit the model");
-    }
-
-    public static string Mime(string path) => Path.GetExtension(path).ToLowerInvariant() switch
-    {
-        ".png" => "image/png", ".webp" => "image/webp", ".gif" => "image/gif", ".bmp" => "image/bmp", _ => "image/jpeg",
-    };
-}
-
 /*
  * AI label proposals (Hermes phase 3). One call = one suggestion set stored for the item, pending until a person applies it.
  * Sources: an AI model from the AI page (labeler/vision role; LLM output parsed from JSON) or one of the workspace's deployments
@@ -393,55 +347,5 @@ public sealed class LabelProposer(AiRuntime ai, ItemContent content, ModelServer
     {
         try { return [.. (JsonNode.Parse(json) as JsonArray ?? []).Select(c => new Cls(c?["id"]?.GetValue<int>() ?? -1, c?["name"]?.ToString() ?? "")).Where(c => c.Id >= 0)]; }
         catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException) { return []; }
-    }
-}
-
-/// <summary>Runs batch pre-label jobs one item at a time (low load), with progress and cancellation visible in the project.</summary>
-public sealed class PrelabelLoop(IServiceScopeFactory scopes, LabelProposer proposer, SystemHealth health, ILogger<PrelabelLoop> log) : BackgroundService
-{
-    protected override async Task ExecuteAsync(CancellationToken ct)
-    {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
-        while (await timer.WaitForNextTickAsync(ct))
-        {
-            health.Beat("prelabel", 3);
-            try
-            {
-                await using var scope = scopes.CreateAsyncScope();
-                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                foreach (var job in await mediator.Query(new ListOpenPrelabelJobsQuery(), ct))
-                    await RunAsync(mediator, job, ct);
-            }
-            catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Pre-label pass failed"); }
-        }
-    }
-
-    private async Task RunAsync(IMediator mediator, OpenPrelabelJobRow job, CancellationToken ct)
-    {
-        int done = job.Done, failed = job.Failed;
-        var settings = await mediator.Query(new GetAssistSettingsInternalQuery(job.WorkspaceId, job.ProjectId), ct);
-        await mediator.Send(new UpdatePrelabelJobCommand(job.Id, done, failed, "running", null), ct);
-        while (done + failed < job.Total)
-        {
-            if (await mediator.Query(new GetPrelabelJobStateQuery(job.Id, job.WorkspaceId), ct) == "cancelled") return;
-            var paths = await mediator.Query(new NextPrelabelPathsQuery(job.ProjectId, job.Id, 1), ct);
-            if (paths.Count == 0) break;
-            try
-            {
-                var ctx = await mediator.Query(new GetLabelContextInternalQuery(job.ProjectId, paths[0], job.CreatedBy), ct);
-                // External sources were confirmed when the job started (StartPrelabel requires the confirmation).
-                var set = await proposer.ProposeAsync(mediator, ctx, settings, job.SourceKind, job.SourceId, true, "auto", job.Id, ct);
-                if (set.State == "failed") failed++; else done++;
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                failed++;
-                await mediator.Send(new UpdatePrelabelJobCommand(job.Id, done, failed, "failed", e.Message), ct);
-                return;
-            }
-            await mediator.Send(new UpdatePrelabelJobCommand(job.Id, done, failed, "running", null), ct);
-        }
-        await mediator.Send(new UpdatePrelabelJobCommand(job.Id, done, failed, failed > 0 && done == 0 ? "failed" : "succeeded",
-            failed > 0 ? $"{failed} item(s) could not be proposed; open them to see why" : null), ct);
     }
 }

@@ -16,7 +16,7 @@ public static class TypeSplitter
             .Select(l => l.Split((char[])[' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
             .Select(p => (Source: Resolve(baseDir, p[0]), Type: p[1], Target: Resolve(baseDir, p[2])))
             .ToList();
-        foreach (var group in moves.GroupBy(m => m.Source))
+        foreach (var group in moves.Where(m => m.Source != m.Target).DistinctBy(m => (m.Source, m.Type)).GroupBy(m => m.Source))
             SplitFile(group.Key, group.Select(m => (m.Type, m.Target)).ToList());
         return 0;
     }

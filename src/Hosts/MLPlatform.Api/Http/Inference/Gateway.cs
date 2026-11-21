@@ -5,7 +5,7 @@ using MLPlatform.ControlPlane.Application.Serving;
 using MLPlatform.Contracts.V1;
 using MLPlatform.Cqrs;
 
-namespace MLPlatform.Api.Infrastructure;
+namespace MLPlatform.Api.Http.Inference;
 
 /// <summary>
 /// Public REST inference gateway (M12 §5 contract; JSON is an allowed exception, 20/03 §1):
@@ -17,7 +17,7 @@ public static class Gateway
     /// <summary>JSON returned to clients keeps non-ASCII text as is (no \uXXXX escaping).</summary>
     private static readonly System.Text.Json.JsonSerializerOptions Out = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    public static void MapGateway(this WebApplication app) =>
+    public static void MapGateway(this IEndpointRouteBuilder app) =>
         app.MapPost("/v1/deployments/{ws:guid}/{slug}/predict", async (Guid ws, string slug, HttpContext http, IMediator mediator, ModelServerClients clients) =>
         {
             var auth = http.Request.Headers.Authorization.ToString();
@@ -102,7 +102,7 @@ public static class Gateway
             PredictResponse res;
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
             try { res = await clients.For(dep.Endpoint!).PredictAsync(req, cancellationToken: http.RequestAborted); }
-            catch (Grpc.Core.RpcException e) { return Error(502, "SERVE_REPLICA_ERROR", e.Status.Detail); }
+            catch (global::Grpc.Core.RpcException e) { return Error(502, "SERVE_REPLICA_ERROR", e.Status.Detail); }
             var latency = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             var preds = new JsonArray();
             foreach (var o in res.Outputs) preds.Add(ToJson(o));
@@ -121,7 +121,7 @@ public static class Gateway
     /// <summary>
     /// POST /v1/deployments/{ws}/{slug}/feedback: late ground-truth labels (M13): {"feedback":[{"prediction_id":"…","label":"1"} | {"prediction_id":"…","value":1.5}]}.
     /// </summary>
-    public static void MapFeedback(this WebApplication app) =>
+    public static void MapFeedback(this IEndpointRouteBuilder app) =>
         app.MapPost("/v1/deployments/{ws:guid}/{slug}/feedback", async (Guid ws, string slug, HttpContext http, IMediator mediator) =>
         {
             var auth = http.Request.Headers.Authorization.ToString();

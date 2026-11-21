@@ -1,3 +1,4 @@
+using MLPlatform.Api.Middleware;
 using MLPlatform.ControlPlane.Infrastructure;
 using System.Text.Json.Nodes;
 using Google.Protobuf;
@@ -7,7 +8,7 @@ using Grpc.Net.Client;
 using MLPlatform.Contracts.V1;
 using ServiceDescriptor = Google.Protobuf.Reflection.ServiceDescriptor;
 
-namespace MLPlatform.Api.Infrastructure;
+namespace MLPlatform.Api.Http.Mcp;
 
 /// <summary>
 /// MCP server (Model Context Protocol, Streamable HTTP transport, JSON responses) at <c>POST /mcp</c>: external AI agents (Claude, Cursor,

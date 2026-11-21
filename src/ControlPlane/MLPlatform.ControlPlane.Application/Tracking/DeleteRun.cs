@@ -1,0 +1,33 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Catalog;
+using MLPlatform.ControlPlane.Application.Common;
+using MLPlatform.ControlPlane.Application.Data;
+using MLPlatform.ControlPlane.Application.Labeling;
+using MLPlatform.ControlPlane.Application.Identity;
+using MLPlatform.ControlPlane.Application.Scheduling;
+using MLPlatform.Cqrs;
+using MLPlatform.Data;
+using MLPlatform.Security;
+
+namespace MLPlatform.ControlPlane.Application.Tracking;
+
+/// <summary>
+/// Delete a finished run with its metrics and file list. Refused while a registered model version still points at it —
+/// that version is the record of where the model came from. Returns the storage prefix so the host removes the files.
+/// </summary>
+public sealed record DeleteRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<string>;
+
+/// <summary>Deletes the run records after the finished / no-registered-model checks.</summary>
+public sealed class DeleteRunCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<DeleteRunCommand, string>
+{
+    public async ValueTask<string> Handle(DeleteRunCommand c, CancellationToken ct)
+    {
+        var r = await RunRules.RequireAsync(db, auth, c.WorkspaceId, c.RunId, "job.submit", ct);
+        if (!RunRules.Finished(r.State)) throw new PreconditionException("TRACK_RUN_ACTIVE", "Stop the run before deleting it");
+        if (await MLPlatform.ControlPlane.Application.Registry.RegistrySql.CountVersionsByRunAsync(db, r.Id, ct) > 0)
+            throw new PreconditionException("TRACK_RUN_HAS_MODEL", "A registered model version was created from this run — delete that version first");
+        await db.DeleteRunAsync(r.Id, r.WorkspaceId, ct);
+        return RunArtifacts.Prefix(r.WorkspaceId, r.Id);
+    }
+}

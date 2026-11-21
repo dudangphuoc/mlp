@@ -1,0 +1,15 @@
+using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Timeline;
+using MLPlatform.ControlPlane.Application.Common;
+using MLPlatform.ControlPlane.Application.Data;
+using MLPlatform.ControlPlane.Application.Scheduling;
+using MLPlatform.Cqrs;
+using MLPlatform.Data;
+using MLPlatform.Security;
+using MLPlatform.Storage;
+
+namespace MLPlatform.ControlPlane.Application.Ops;
+
+// ───────────── Reads for the UI ─────────────
+
+public sealed record JobOpsView(ProgressRow? Progress, IReadOnlyList<AttemptDetailRow> Attempts, IReadOnlyList<CheckpointRow> Checkpoints, IReadOnlyList<EventRow> Events);

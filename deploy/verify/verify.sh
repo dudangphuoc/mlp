@@ -2,6 +2,7 @@
 # Isolated verification stack for refactors: Postgres + S3 + Ray in compose project "mlp-verify", api from source on 5090/5091/7453.
 #   deploy/verify/verify.sh up     — start infrastructure, build api, apply migrations
 #   deploy/verify/verify.sh test   — reset identity data, start the api, run every integration scenario
+#   deploy/verify/verify.sh toy    — rebuild the test recipe image mlp-test/toy-recipe:dev from the current shim and fixtures
 #   deploy/verify/verify.sh down   — stop the api/agent started here and remove the mlp-verify project (volumes kept unless DOWN_ALL=1)
 # Never touches the dev stack: different project, network, container names, ports and state folder.
 set -euo pipefail
@@ -73,6 +74,36 @@ test_all() {
   return $rc
 }
 
+toy() {
+  local out="$STATE/toyimg"; rm -rf "$out"; mkdir -p "$out"
+  local arch; arch=$(docker info --format '{{.Architecture}}'); local rid=linux-x64; [ "$arch" = aarch64 ] && rid=linux-arm64
+  (cd "$ROOT" && nice -n 19 dotnet publish src/Hosts/MLPlatform.Shim -c Release -r $rid --self-contained -p:PublishAot=false \
+    -p:PublishSingleFile=true -m:1 -o "$out/shim" >/dev/null)
+  cp "$out/shim/mlp-shim" "$out/"; cp -r "$ROOT/tools/MLPlatform.Scenarios/fixtures/toy-recipe" "$out/src"
+  cp -r "$ROOT/python/mlp_serve" "$out/mlp_serve"; cp -r "$ROOT/proto" "$out/proto"
+  cp "$ROOT/tools/MLPlatform.Scenarios/fixtures/fake-jupyter/jupyter" "$out/jupyter"   # M08: fake Jupyter (HTTP + WebSocket)
+  # Final layer of every recipe image (20/08 §6): mlp-shim + mlp-serve (gRPC stubs generated at build time, matching the image's grpcio version)
+  cat > "$out/Dockerfile" <<'DOCKER'
+FROM rayproject/ray:2.60.0-py312-cpu
+USER root
+COPY mlp-shim /usr/local/bin/mlp-shim
+COPY jupyter /usr/local/bin/jupyter
+COPY src /opt/recipe/src
+COPY mlp_serve /opt/mlp-py/mlp_serve
+COPY proto /opt/mlp-py/proto
+RUN chmod +x /usr/local/bin/mlp-shim /usr/local/bin/jupyter && mkdir -p /mnt/output /mnt/data /mnt/model && chmod 777 /mnt/output /mnt/data /mnt/model \
+ && pip install --no-cache-dir "grpcio-tools==$(python -c 'import grpc;print(grpc.__version__)')" \
+ && mkdir -p /opt/mlp-py/mlp_serve/gen && cd /opt/mlp-py \
+ && python -m grpc_tools.protoc -Iproto --python_out=mlp_serve/gen --grpc_python_out=mlp_serve/gen proto/mlplatform/v1/model_server.proto \
+ && sed -i 's/^from mlplatform.v1 import/from mlp_serve.gen.mlplatform.v1 import/' mlp_serve/gen/mlplatform/v1/model_server_pb2_grpc.py \
+ && touch mlp_serve/gen/__init__.py mlp_serve/gen/mlplatform/__init__.py mlp_serve/gen/mlplatform/v1/__init__.py \
+ && printf '#!/bin/sh\nexec python -m mlp_serve.server "$@"\n' > /usr/local/bin/mlp-serve && chmod +x /usr/local/bin/mlp-serve \
+ && cp /opt/recipe/src/handler.py /opt/recipe/handler.py
+ENV PYTHONPATH=/opt/mlp-py
+DOCKER
+  nice -n 19 docker build -q -t mlp-test/toy-recipe:dev "$out"
+}
+
 down() {
   stop_api
   docker ps -aq --filter network=mlp-verify --filter label=mlp.managed=1 | xargs -r docker rm -f >/dev/null 2>&1 || true
@@ -80,6 +111,6 @@ down() {
 }
 
 case "${1:-}" in
-  up) up ;; test) test_all ;; down) down ;;
+  up) up ;; test) test_all ;; toy) toy ;; down) down ;;
   *) echo "Usage: $0 up|test|down"; exit 2 ;;
 esac

@@ -59,21 +59,3 @@ public sealed class RayJobsClient(HttpClient http)
         catch (HttpRequestException) { return false; }
     }
 }
-
-public sealed class SubmitJobRequest
-{
-    [JsonPropertyName("entrypoint")] public required string Entrypoint { get; init; }
-    [JsonPropertyName("submission_id")] public required string SubmissionId { get; init; }
-    [JsonPropertyName("entrypoint_num_cpus")] public double EntrypointNumCpus { get; init; }
-    [JsonPropertyName("metadata")] public Dictionary<string, string>? Metadata { get; init; }
-}
-
-public sealed class JobInfo
-{
-    [JsonPropertyName("status")] public string? Status { get; init; }
-    [JsonPropertyName("message")] public string? Message { get; init; }
-}
-
-[JsonSerializable(typeof(SubmitJobRequest))]
-[JsonSerializable(typeof(JobInfo))]
-internal sealed partial class RayJson : JsonSerializerContext;

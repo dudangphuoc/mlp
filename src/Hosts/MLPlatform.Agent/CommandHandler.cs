@@ -4,16 +4,6 @@ using MLPlatform.Contracts.V1;
 
 namespace MLPlatform.Agent;
 
-/// <summary>Agent configuration + state on disk.</summary>
-public sealed class AgentState(string path)
-{
-    public AgentOptions Options { get; } = AgentOptions.Load(path);
-    public bool Disconnected { get; set; }
-    public void Save() => Options.Save(path);
-    public void Forget() { if (File.Exists(path)) File.Delete(path); }
-    public string Dir => Path.GetDirectoryName(Path.GetFullPath(path))!;
-}
-
 /// <summary>
 /// Commands from the control plane (D-38): the agent is a container bridge with generic commands (container, image, file, script) and no notion of
 /// Ray node / workload / network. Each command returns exactly one CommandResult.

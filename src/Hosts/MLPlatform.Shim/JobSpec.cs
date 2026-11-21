@@ -145,9 +145,3 @@ public sealed class JobSpec
         return dir;
     }
 }
-
-public sealed class ShimException(int exitCode, string reason, string message) : Exception(message)
-{
-    public int ExitCode { get; } = exitCode;
-    public string Reason { get; } = reason;
-}

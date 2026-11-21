@@ -1,0 +1,14 @@
+using System.Text.Json.Nodes;
+using MLPlatform.ControlPlane.Application.Timeline;
+using MLPlatform.ControlPlane.Application.Common;
+using MLPlatform.ControlPlane.Application.Data;
+using MLPlatform.ControlPlane.Application.Scheduling;
+using MLPlatform.Cqrs;
+using MLPlatform.Data;
+using MLPlatform.Security;
+using MLPlatform.Storage;
+
+namespace MLPlatform.ControlPlane.Application.Ops;
+
+public sealed record AttemptDetailRow(Guid Id, int Number, Guid[] HostIds, string State, int? ExitCode, string? ExitReason, string? Message, DateTimeOffset StartedAt,
+    DateTimeOffset? FinishedAt, DateTimeOffset? LastHeartbeatAt, DateTimeOffset? SuspectUntil, string? ResumedFrom);
