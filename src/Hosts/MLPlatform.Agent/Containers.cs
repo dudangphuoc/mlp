@@ -29,7 +29,8 @@ public sealed class Containers(LogShipper logs, ILogger<Containers> log)
         var (ic, json, _) = await Docker.RunAsync(["inspect", .. ids.Split('\n', StringSplitOptions.RemoveEmptyEntries)], ct);
         if (ic != 0) return res;
         using var doc = JsonDocument.Parse(json);
-        foreach (var c in doc.RootElement.EnumerateArray()) res.Add(FromInspect(c));
+        foreach (var c in doc.RootElement.EnumerateArray())
+            if (FromInspect(c) is var state && HostOwnership.Owns(state.Labels)) res.Add(state);
         return res;
     }
 
@@ -102,7 +103,7 @@ public sealed class Containers(LogShipper logs, ILogger<Containers> log)
     private async Task OnEventAsync(string name, string action)
     {
         var st = await InspectAsync(name, CancellationToken.None);
-        if (st is null) return;
+        if (st is null || !HostOwnership.Owns(st.Labels)) return;
         if (action == "start" && st.Labels.TryGetValue("mlp.logs", out var attempt)) logs.Follow(name, attempt);
         if (action == "die") await logs.DrainAsync(name, TimeSpan.FromSeconds(3));   // complete logs before reporting the exit
         if (_conn() is not { } conn) return;   // disconnected: the next reconnect sends it in the snapshot

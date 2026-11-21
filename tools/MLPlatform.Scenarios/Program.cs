@@ -109,6 +109,13 @@ if (args.ElementAtOrDefault(2) == "train")
     return 0;
 }
 
+static string LogSummary(JobLogs lg)
+{
+    var resume = lg.Lines.Any(l => l.Text.Contains("resuming from epoch"));
+    var done = lg.Lines.Any(l => l.Text == "done");
+    return $"lines={lg.Lines.Count} attempts={lg.Lines.Select(l => l.AttemptId).Distinct().Count()} resume={resume} done={done} last={lg.Lines.LastOrDefault()?.Text}";
+}
+
 async Task Step(string name, Func<Task> body)
 {
     try { await body(); Console.WriteLine($"OK   {name}"); }
@@ -363,7 +370,7 @@ if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1"
         Assert(o.Events.Select(e => e.Source).Distinct().Count() >= 3, "events must come from multiple sources");
         var lg = await sched.GetJobLogsAsync(new GetJobLogsRequest { WorkspaceId = wsId, JobId = run.JobId, Tail = 2000 }, auth);
         Assert(lg.Lines.Select(l => l.AttemptId).Distinct().Count() == 2 && lg.Lines.Any(l => l.Text.Contains("resuming from epoch")) && lg.Lines.Any(l => l.Text == "done"),
-            "continuous log across 2 attempts (with a resume line): " + lg.Lines.Count);
+            "continuous log across 2 attempts (with a resume line): " + LogSummary(lg));
         Assert(o.Metrics.Count > 0 && o.Metrics.All(x => x.MemoryBytes > 0), "missing per-attempt container metrics");
         var m = await trackR.GetMetricsAsync(new GetMetricsRequest { WorkspaceId = wsId, RunId = run.Id, Keys = { "train/loss" } }, auth);
         var steps = m.Series[0].Points.Select(p => p.Step).ToList();

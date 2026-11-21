@@ -62,8 +62,8 @@ start_api() {
 
 test_all() {
   docker exec mlp-verify-pg psql -U postgres -d mlp -qc "TRUNCATE identity.memberships, identity.workspaces, identity.sessions, identity.users, sched.jobs CASCADE; UPDATE identity.instance_settings SET bootstrapped_at=NULL;"
-  (cd "$ROOT" && nice -n 19 dotnet build src/Hosts/MLPlatform.Api -m:1 -v q >/dev/null \
-    && nice -n 19 dotnet build tools/MLPlatform.Scenarios -m:1 -v q >/dev/null && nice -n 19 dotnet build src/Hosts/MLPlatform.Agent -m:1 -v q >/dev/null)
+  (cd "$ROOT" && nice -n 19 dotnet build src/Hosts/MLPlatform.Api -m:1 -v q -clp:ErrorsOnly \
+    && nice -n 19 dotnet build tools/MLPlatform.Scenarios -m:1 -v q -clp:ErrorsOnly && nice -n 19 dotnet build src/Hosts/MLPlatform.Agent -m:1 -v q -clp:ErrorsOnly)
   MLP__Admin__Email="" start_api
   local token; token="$(cat "$STATE/token")"
   [ -n "$token" ] || { echo "api did not print a bootstrap token; see $STATE/api.log"; tail -20 "$STATE/api.log"; return 1; }

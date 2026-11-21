@@ -70,6 +70,7 @@ public static class Docker
         args.Add(once ? "--rm" : "-d");
         if (!string.IsNullOrEmpty(s.Name)) args.AddRange(["--name", s.Name]);
         args.AddRange(["--label", "mlp.managed=1", "--label", "mlp.spec=" + SpecHash(s)]);
+        if (HostOwnership.HostId is { } owner) args.AddRange(["--label", $"{HostOwnership.Label}={owner}"]);
         foreach (var (k, v) in s.Labels.OrderBy(x => x.Key, StringComparer.Ordinal)) args.AddRange(["--label", $"{k}={v}"]);
         if (!string.IsNullOrEmpty(s.Network)) args.AddRange(["--network", s.Network]);
         if (!string.IsNullOrEmpty(s.Restart) && !once) args.AddRange(["--restart", s.Restart]);

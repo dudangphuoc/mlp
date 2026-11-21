@@ -96,9 +96,10 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
             o.HostId = res.HostId;
             o.OverlayIp = res.OverlayIp;
             state.Save();
-            log.LogInformation("Enroll xong: host {Host}, overlay {Ip}", res.HostId, res.OverlayIp);
+            log.LogInformation("Enrolled: host {Host}, overlay {Ip}", res.HostId, res.OverlayIp);
         }
         else log.LogInformation("Connected: host {Host}", res.HostId);
+        HostOwnership.HostId = res.HostId;
 
         await using var conn = new Connection<ControlToAgent, AgentToControl>(stream, ControlToAgent.Parser,
             () => new AgentToControl { Heartbeat = new Heartbeat { At = Timestamp.FromDateTimeOffset(time.GetUtcNow()) } },
