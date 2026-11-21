@@ -8,7 +8,7 @@ using MLPlatform.Data;
 using MLPlatform.Security;
 using MLPlatform.Storage;
 
-namespace MLPlatform.ControlPlane.Application.Ops;
+namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 /// <summary>Records an operational event row (20/10 §2.1) — in the same transaction as the state change that caused it.</summary>
 /// <summary>

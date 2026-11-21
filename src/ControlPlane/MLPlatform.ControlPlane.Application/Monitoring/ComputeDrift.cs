@@ -17,11 +17,11 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 /// <summary>Computes a drift/quality snapshot over the `last_n` most recent predictions (0 = window_size); records the snapshot; transition to alert → M16.</summary>
 public sealed record ComputeDriftCommand(Guid WorkspaceId, Guid DeploymentId, int LastN) : ICommand<SnapshotRow>;
 
-public sealed class ComputeDriftCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth) : ICommandHandler<ComputeDriftCommand, SnapshotRow>
+public sealed class ComputeDriftCommandHandler(IWriteSession db, IClock clock, WorkspaceAuthorizer auth, IEnumerable<IDriftListener> listeners) : ICommandHandler<ComputeDriftCommand, SnapshotRow>
 {
     public async ValueTask<SnapshotRow> Handle(ComputeDriftCommand c, CancellationToken ct)
     {
         await auth.RequireAsync(c.WorkspaceId, "run.read", ct);
-        return await DriftJob.RunAsync(db, clock, c.DeploymentId, c.LastN, ct);
+        return await DriftJob.RunAsync(db, clock, listeners, c.DeploymentId, c.LastN, ct);
     }
 }

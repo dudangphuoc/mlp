@@ -10,7 +10,7 @@ using MLPlatform.Data;
 using MLPlatform.Security;
 using MLPlatform.Storage;
 
-namespace MLPlatform.ControlPlane.Application.Serving;
+namespace MLPlatform.ControlPlane.Application.Registry;
 
 /// <summary>
 /// Model files of a version as [{path, url}]: a reference version (imported by address) is read from its sources, otherwise from our storage.

@@ -64,4 +64,8 @@ public static partial class SchedSql
     /// <summary>Retry after failure (M03 R4): keep attempt_count so max_attempts is respected.</summary>
     [SqlQuery("Sched/RetryJob.sql")]
     public static partial Task RetryJobAsync(this IWriteSession db, Guid id, string reason, DateTimeOffset now, CancellationToken ct);
+    [SqlQuery("Ops/HostAttemptJobs.sql")]
+    public static partial Task<List<HostAttemptJobRow>> HostAttemptJobsAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Ops/AttemptByWorkloadToken.sql")]
+    public static partial Task<WorkloadAttemptRow?> AttemptByWorkloadTokenAsync(this IReadSession db, string tokenHash, CancellationToken ct);
 }

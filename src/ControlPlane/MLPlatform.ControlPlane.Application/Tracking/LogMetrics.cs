@@ -24,7 +24,7 @@ public sealed class LogMetricsCommandHandler(IWriteSession db, IClock clock, Tok
         var run = await db.GetRunAsync(c.RunId, ct) ?? throw new NotFoundException("TRACK_RUN_NOT_FOUND", "Run not found");
         if (c.WorkloadToken is { Length: > 0 } t)
         {
-            var a = await MLPlatform.ControlPlane.Application.Ops.Workload.ResolveAsync(db, tokens, t, ct);   // fencing (20/10 §4.5)
+            var a = await MLPlatform.ControlPlane.Application.Scheduling.Workload.ResolveAsync(db, tokens, t, ct);   // fencing (20/10 §4.5)
             if (a.JobId != run.JobId) throw new UnauthenticatedException("SCHED_TOKEN_INVALID", "Job token is not valid for this run");
         }
         else await auth.RequireAsync(run.WorkspaceId, "job.submit", ct);

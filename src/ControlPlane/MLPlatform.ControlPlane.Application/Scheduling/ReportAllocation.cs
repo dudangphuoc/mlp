@@ -10,7 +10,7 @@ namespace MLPlatform.ControlPlane.Application.Scheduling;
 public sealed record ReportAllocationCommand(string Token, Guid AttemptId, Guid HostId, string[] GpuUuids, string NodeIp, bool Ok, string Message)
     : ICommand<AllocationComplete?>;
 
-public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock clock, TokenService tokens)
+public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock clock, TokenService tokens, IEnumerable<IJobWaitObserver> waitObservers)
     : ICommandHandler<ReportAllocationCommand, AllocationComplete?>
 {
     public async ValueTask<AllocationComplete?> Handle(ReportAllocationCommand c, CancellationToken ct)
@@ -25,7 +25,7 @@ public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock cloc
             // Say what the job is waiting for and who holds it — a silent retry loop looks like a hang to the user.
             var spec = JobSpecDto.Parse(a.Spec);
             var holders = spec.Gpus > 0
-                ? (await MLPlatform.ControlPlane.Application.Ops.Ops2Sql.HostAttemptJobsAsync(db, a.WorkspaceId, ct))
+                ? (await db.HostAttemptJobsAsync(a.WorkspaceId, ct))
                     .Where(h => h.AttemptId != a.Id && h.GpuUuids.Length > 0 && a.HostIds.Contains(h.HostId)).Select(h => h.JobName).Distinct().ToList()
                 : [];
             var reason = c.Message != "placement_timeout" ? "Waiting for resources: " + c.Message
@@ -34,10 +34,7 @@ public sealed class ReportAllocationCommandHandler(IWriteSession db, IClock cloc
             await db.RequeueJobAsync(a.JobId, reason, ct);
             if (before?.StateReason != reason)
                 await MLPlatform.ControlPlane.Application.Timeline.TimelineEvents.EmitAsync(db, clock, a.WorkspaceId, "scheduler", "attempt", a.Id, "attempt.waiting", "warning", reason, ct: ct);
-            if (await MLPlatform.ControlPlane.Application.Serving.ServingSql.GetDeploymentByJobAsync(db, a.JobId, ct) is { State: not "stopped" } dep)
-                await MLPlatform.ControlPlane.Application.Serving.ServingSql.SetDeploymentStateAsync(db, dep.Id, dep.State, reason, null, ct);
-            if (await MLPlatform.ControlPlane.Application.Notebooks.NbSql.GetServerByJobAsync(db, a.JobId, ct) is { State: "queued" or "starting" } nb)
-                await MLPlatform.ControlPlane.Application.Notebooks.NbSql.SetServerStateAsync(db, nb.Id, nb.State, reason, null, null, clock.UtcNow, ct);
+            foreach (var observer in waitObservers) await observer.OnJobWaitingAsync(a.JobId, reason, ct);
             return null;
         }
         await db.UpsertAllocationAsync(a.Id, c.HostId, c.GpuUuids, c.NodeIp, clock.UtcNow, ct);

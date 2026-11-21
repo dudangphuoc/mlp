@@ -44,8 +44,6 @@ public static partial class Ops2Sql
     public static partial Task<List<EventRow>> EventsAfterAsync(this IReadSession db, Guid jobId, DateTimeOffset after, CancellationToken ct);
     [SqlQuery("Ops/HostMap.sql")]
     public static partial Task<List<HostMapRow>> HostMapAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
-    [SqlQuery("Ops/HostAttemptJobs.sql")]
-    public static partial Task<List<HostAttemptJobRow>> HostAttemptJobsAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
     [SqlQuery("Ops/SystemIncidents.sql")]
     public static partial Task<List<EventRow>> SystemIncidentsAsync(this IReadSession db, DateTimeOffset since, CancellationToken ct);
 }

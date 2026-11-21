@@ -19,14 +19,13 @@ namespace MLPlatform.ControlPlane.Application.Tracking;
 public sealed record DeleteRunCommand(Guid WorkspaceId, Guid RunId) : ICommand<string>;
 
 /// <summary>Deletes the run records after the finished / no-registered-model checks.</summary>
-public sealed class DeleteRunCommandHandler(IWriteSession db, WorkspaceAuthorizer auth) : ICommandHandler<DeleteRunCommand, string>
+public sealed class DeleteRunCommandHandler(IWriteSession db, WorkspaceAuthorizer auth, IEnumerable<IRunDeletionGuard> guards) : ICommandHandler<DeleteRunCommand, string>
 {
     public async ValueTask<string> Handle(DeleteRunCommand c, CancellationToken ct)
     {
         var r = await RunRules.RequireAsync(db, auth, c.WorkspaceId, c.RunId, "job.submit", ct);
         if (!RunRules.Finished(r.State)) throw new PreconditionException("TRACK_RUN_ACTIVE", "Stop the run before deleting it");
-        if (await MLPlatform.ControlPlane.Application.Registry.RegistrySql.CountVersionsByRunAsync(db, r.Id, ct) > 0)
-            throw new PreconditionException("TRACK_RUN_HAS_MODEL", "A registered model version was created from this run — delete that version first");
+        foreach (var guard in guards) await guard.EnsureDeletableAsync(r.Id, ct);
         await db.DeleteRunAsync(r.Id, r.WorkspaceId, ct);
         return RunArtifacts.Prefix(r.WorkspaceId, r.Id);
     }

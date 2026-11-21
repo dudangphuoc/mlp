@@ -12,8 +12,6 @@ namespace MLPlatform.ControlPlane.Application.Ops;
 
 public static partial class OpsSql
 {
-    [SqlQuery("Ops/AttemptByWorkloadToken.sql")]
-    public static partial Task<WorkloadAttemptRow?> AttemptByWorkloadTokenAsync(this IReadSession db, string tokenHash, CancellationToken ct);
     [SqlQuery("Ops/SetProgress.sql")]
     public static partial Task SetProgressAsync(this IWriteSession db, Guid id, string progress, DateTimeOffset now, CancellationToken ct);
     [SqlQuery("Ops/Heartbeat.sql")]

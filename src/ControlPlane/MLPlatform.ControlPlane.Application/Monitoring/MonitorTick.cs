@@ -15,7 +15,7 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 /// <summary>Called by the monitoring loop: runs only when there are enough new predictions since the previous snapshot.</summary>
 public sealed record MonitorTickCommand : ICommand<int>, IInternalCommand;
 
-public sealed class MonitorTickCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<MonitorTickCommand, int>
+public sealed class MonitorTickCommandHandler(IWriteSession db, IClock clock, IEnumerable<IDriftListener> listeners) : ICommandHandler<MonitorTickCommand, int>
 {
     public async ValueTask<int> Handle(MonitorTickCommand c, CancellationToken ct)
     {
@@ -24,7 +24,7 @@ public sealed class MonitorTickCommandHandler(IWriteSession db, IClock clock) : 
         {
             var last = (await db.ListSnapshotsAsync(cfg.DeploymentId, 1, ct)).FirstOrDefault();
             if (await db.CountSinceAsync(cfg.DeploymentId, last?.At ?? DateTimeOffset.MinValue, ct) < cfg.MinSamples) continue;
-            await DriftJob.RunAsync(db, clock, cfg.DeploymentId, 0, ct);
+            await DriftJob.RunAsync(db, clock, listeners, cfg.DeploymentId, 0, ct);
             n++;
         }
         return n;

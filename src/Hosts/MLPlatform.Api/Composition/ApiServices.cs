@@ -52,6 +52,14 @@ public static class ApiServices
         s.AddHostedService<AgentListener>();
         s.AddSingleton<RecipeEnvironments>();
         s.AddSingleton<WorkloadLauncher>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Scheduling.IJobWaitObserver, MLPlatform.ControlPlane.Application.Serving.DeploymentWaitObserver>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Scheduling.IJobWaitObserver, MLPlatform.ControlPlane.Application.Notebooks.NotebookWaitObserver>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Tracking.IRunDeletionGuard, MLPlatform.ControlPlane.Application.Registry.RegisteredRunGuard>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Serving.IDeploymentDataOwner, MLPlatform.ControlPlane.Application.Monitoring.MonitoringDeploymentData>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Serving.IDeploymentDataOwner, MLPlatform.ControlPlane.Application.LlmOps.LlmOpsDeploymentData>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Serving.IDeploymentDataOwner, MLPlatform.ControlPlane.Application.Features.FeatureDeploymentData>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Monitoring.IDriftListener, MLPlatform.ControlPlane.Application.Pipelines.DriftTriggeredPipelines>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Fleet.IHostLossListener, MLPlatform.ControlPlane.Application.Ops.SuspectAttemptsOnHostLoss>();
         s.AddSingleton<MLPlatform.ControlPlane.Application.Scheduling.IWorkloadControl>(sp => sp.GetRequiredService<WorkloadLauncher>());
         s.AddSingleton<ReservationKeeper>();
         s.AddHttpClient<MLPlatform.Ray.RayJobsClient>(c => c.BaseAddress = new Uri(cfg["Ray:DashboardUrl"] ?? "http://127.0.0.1:8265/"));

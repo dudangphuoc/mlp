@@ -4,7 +4,6 @@ using MLPlatform.ControlPlane.Application.Catalog;
 using MLPlatform.ControlPlane.Application.Common;
 using MLPlatform.ControlPlane.Application.Data;
 using MLPlatform.ControlPlane.Application.Scheduling;
-using MLPlatform.ControlPlane.Application.Serving;
 using MLPlatform.Cqrs;
 using MLPlatform.Data;
 using MLPlatform.Security;

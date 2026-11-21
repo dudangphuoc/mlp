@@ -8,6 +8,6 @@ using MLPlatform.Data;
 using MLPlatform.Security;
 using MLPlatform.Storage;
 
-namespace MLPlatform.ControlPlane.Application.Ops;
+namespace MLPlatform.ControlPlane.Application.Scheduling;
 
 public sealed record WorkloadAttemptRow(Guid Id, Guid JobId, string State, Guid WorkspaceId, Guid[] HostIds);

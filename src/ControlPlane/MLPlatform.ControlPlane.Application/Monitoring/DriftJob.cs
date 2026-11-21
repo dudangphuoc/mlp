@@ -14,7 +14,7 @@ namespace MLPlatform.ControlPlane.Application.Monitoring;
 
 internal static class DriftJob
 {
-    public static async Task<SnapshotRow> RunAsync(IWriteSession db, IClock clock, Guid deploymentId, int lastN, CancellationToken ct)
+    public static async Task<SnapshotRow> RunAsync(IWriteSession db, IClock clock, IEnumerable<IDriftListener> listeners, Guid deploymentId, int lastN, CancellationToken ct)
     {
         var cfg = await db.GetConfigAsync(deploymentId, ct);
         if (cfg?.Baseline is null) throw new PreconditionException("MONITOR_NO_BASELINE", "No baseline set for the deployment");
@@ -43,9 +43,8 @@ internal static class DriftJob
             var worst = drift.OfType<JsonObject>().Where(r => r["psi"] is not null).OrderByDescending(r => r["psi"]!.GetValue<double>()).First();
             await Notifier.SendAsync(db, clock, d.WorkspaceId, (await Notifier.AdminsAsync(db, d.WorkspaceId, ct)).Append(d.CreatedBy), "deployment.drift",
                 $"Deployment {d.Slug} data drift: {worst["feature"]} PSI {worst["psi"]}", "#/deployments/" + d.Id, $"deployment/{d.Id}", "warning", ct);
-            // Continuous training (M14): pipelines in the workspace with a deployment.drift event trigger run with the deployment as a parameter.
-            await MLPlatform.ControlPlane.Application.Pipelines.PipelineTriggers.FireAsync(db, clock, "deployment.drift", d.WorkspaceId,
-                new JsonObject { ["deployment_id"] = d.Id.ToString(), ["deployment"] = d.Slug }, ct);
+            foreach (var listener in listeners)
+                await listener.OnDriftAlertAsync(d.WorkspaceId, new JsonObject { ["deployment_id"] = d.Id.ToString(), ["deployment"] = d.Slug }, ct);
         }
         return new SnapshotRow(id, now, preds.Count, status, drift.ToJsonString(), quality.ToJsonString());
     }

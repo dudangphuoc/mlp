@@ -10,6 +10,7 @@ public sealed class ModuleManifest
     private readonly Dictionary<string, int> _layerOf = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> _uses = new(StringComparer.Ordinal);
     private readonly HashSet<string> _publicSql = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, HashSet<string>> _api = new(StringComparer.Ordinal);
 
     public IReadOnlyCollection<string> Modules => _layerOf.Keys;
 
@@ -27,11 +28,14 @@ public sealed class ModuleManifest
                 ? [.. uses.EnumerateArray().Select(u => u.GetString()!)]
                 : [];
             if (module.Value.TryGetProperty("publicSql", out var shared) && shared.GetBoolean()) manifest._publicSql.Add(module.Name);
+            manifest._api[module.Name] = module.Value.TryGetProperty("api", out var api) ? [.. api.EnumerateArray().Select(a => a.GetString()!)] : [];
         }
         return manifest;
     }
 
     public bool SharesSql(string module) => _publicSql.Contains(module);
+
+    public bool Exposes(string module, string method) => SharesSql(module) || (_api.TryGetValue(module, out var api) && api.Contains(method));
 
     public bool Knows(string module) => _layerOf.ContainsKey(module);
 
