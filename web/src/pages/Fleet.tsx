@@ -11,9 +11,11 @@ import { ClusterMapView } from "./Ops";
 import { DataCacheList } from "../components/DataSync";
 import { RayHealthView } from "../components/RayHealth";
 import { translate as t } from "../i18n";
-import { Activity, CheckCircle2, CircleX, Clock, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
+import { HostConsole, type ConsoleTab } from "../components/hostops/HostConsole";
+import { FleetGpuView } from "../components/hostops/FleetGpuView";
+import { Activity, CheckCircle2, CircleX, Clock, Loader2, RefreshCw, SquareTerminal, TriangleAlert } from "lucide-react";
 
-type Tab = "list" | "map" | "ray" | "data" | "agents";
+type Tab = "list" | "gpu" | "map" | "ray" | "data" | "agents";
 const search = () => new URLSearchParams(window.location.search);
 
 /** S-02-1 Machine list, S-02-2 Add machine, S-02-5 Cluster map + OTA agent updates (D-38). */
@@ -22,6 +24,7 @@ export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
   const tab = (search().get("tab") as Tab) || "list";
   const open = search().get("new") === "1";
   const [activity, setActivity] = useState<Host | null>(null);
+  const [hostConsole, setConsole] = useState<{ h: Host; tab: ConsoleTab } | null>(null);
   const hosts = useQuery({ queryKey: ["hosts", ws], queryFn: () => api.fleet.listHosts({ workspaceId: ws }), refetchInterval: 5000 });
   const upgrades = useQuery({ queryKey: ["agent-upgrades", ws], queryFn: () => api.fleet.listAgentUpgrades({ workspaceId: ws }), refetchInterval: 3000 });
   const upgrade = useMutation({
@@ -44,12 +47,14 @@ export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
       <ErrorBox error={hosts.error ? errorText(hosts.error) : upgrade.error ? errorText(upgrade.error) : null} onRetry={() => void hosts.refetch()} />
       <Tabs<Tab> value={tab} onChange={(t) => go(`fleet?tab=${t}`)} tabs={[
         { key: "list", label: t("List"), count: list.length },
+        { key: "gpu", label: "GPU" },
         { key: "map", label: t("Cluster map") },
         { key: "ray", label: "Ray" },
         { key: "data", label: t("Data on machines") },
         { key: "agents", label: t("Update agent"), count: running.size || undefined },
       ]} />
-      {tab === "map" ? <ClusterMapView ws={ws} go={go} />
+      {tab === "gpu" ? <FleetGpuView ws={ws} hosts={list} onOpen={(h) => setConsole({ h, tab: "gpu" })} />
+        : tab === "map" ? <ClusterMapView ws={ws} go={go} />
         : tab === "data" ? <DataCacheList ws={ws} go={go} />
         : tab === "ray" ? <RayHealthView ws={ws} />
         : tab === "agents" ? <UpgradeHistory items={upgrades.data?.upgrades ?? []} latest={list[0]?.latestAgentVersion} loading={upgrades.isLoading} />
@@ -58,16 +63,19 @@ export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
           <EmptyState title={t("No machines yet")} action={<button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("Add your first machine")}</button>} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
-            {list.map((h) => <HostCard key={h.id} h={h} busy={running.has(h.id)} onUpgrade={(force) => upgrade.mutate({ hostIds: [h.id], force })} onActivity={() => setActivity(h)} />)}
+            {list.map((h) => <HostCard key={h.id} h={h} busy={running.has(h.id)} onUpgrade={(force) => upgrade.mutate({ hostIds: [h.id], force })} onActivity={() => setActivity(h)}
+              onConsole={(tab) => setConsole({ h, tab })} />)}
           </div>
         )}
       {open && <EnrollDialog ws={ws} onClose={() => go("fleet")} />}
       {activity && <HostActivitySheet ws={ws} h={activity} onClose={() => setActivity(null)} />}
+      {hostConsole && <HostConsole ws={ws} h={hostConsole.h} initial={hostConsole.tab} onClose={() => setConsole(null)} />}
     </>
   );
 }
 
-function HostCard({ h, busy, onUpgrade, onActivity }: { h: Host; busy: boolean; onUpgrade: (force: boolean) => void; onActivity: () => void }) {
+function HostCard({ h, busy, onUpgrade, onActivity, onConsole }:
+  { h: Host; busy: boolean; onUpgrade: (force: boolean) => void; onActivity: () => void; onConsole: (tab: ConsoleTab) => void }) {
   const i = h.hostInfo;
   return (
     <div className="card space-y-3">
@@ -83,7 +91,8 @@ function HostCard({ h, busy, onUpgrade, onActivity }: { h: Host; busy: boolean; 
           <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="line-clamp-3 break-words">{t(h.stateReason)}</span>
         </div>)}
       <div className="flex flex-wrap gap-1.5">
-        {i?.gpus.length ? i.gpus.map((g) => <HardwareChip key={g.uuid}>▮ {g.name} · {bytes(g.memoryBytes)}</HardwareChip>) : <HardwareChip>{t("no GPU")}</HardwareChip>}
+        {i?.gpus.length ? i.gpus.map((g) => <button key={g.uuid} onClick={() => onConsole("gpu")}><HardwareChip>▮ {g.name} · {bytes(g.memoryBytes)}</HardwareChip></button>) : <HardwareChip>{t("no GPU")}</HardwareChip>}
+        {i?.instance && <HardwareChip>{i.instance} · {i.gpuPriority}</HardwareChip>}
         <HardwareChip>{i?.logicalCpus ?? "—"} CPU</HardwareChip>
         <HardwareChip>{i ? bytes(i.memoryBytes) : "—"} RAM</HardwareChip>
       </div>
@@ -95,7 +104,10 @@ function HostCard({ h, busy, onUpgrade, onActivity }: { h: Host; busy: boolean; 
         <span>{t("heartbeat")} <RelTime at={h.lastSeenAt} /></span>
       </div>
       <div className="flex items-center justify-between gap-2 text-xs">
-        <button className="btn-ghost h-7 px-2 text-xs" onClick={onActivity}><Activity className="h-3.5 w-3.5" />{t("Activity")}</button>
+        <span className="inline-flex gap-1">
+          <button className="btn-ghost h-7 px-2 text-xs" onClick={onActivity}><Activity className="h-3.5 w-3.5" />{t("Activity")}</button>
+          <button className="btn-ghost h-7 px-2 text-xs" disabled={h.state === "offline"} onClick={() => onConsole("terminal")}><SquareTerminal className="h-3.5 w-3.5" />{t("Manage")}</button>
+        </span>
         <Tip text={`Agent ${h.agentVersion} · ${i?.agentRid ?? ""} · ${i?.serviceManager ?? ""}`}>
           <span className="mono text-fg-muted">agent {h.agentVersion.slice(0, 10) || "—"}</span>
         </Tip>
