@@ -56,6 +56,7 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
 
         var info = await HostProbe.CollectAsync(o, stop);
         info.AgentStateDir = state.Dir;
+        info.FsRoots.AddRange(Ops.PathGuard.Roots(o, state.Dir));
         var hello = BuildHello(o, info);
         await Framing.WriteAsync(stream, hello, stop);
         var first = await Framing.ReadAsync(stream, ControlToAgent.Parser, stop);
@@ -142,7 +143,7 @@ public sealed class AgentService(AgentState state, CommandHandler commands, Time
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15), time);
             do
             {
-                try { await conn.SendAsync(new AgentToControl { HostMetrics = await MetricsSampler.SampleAsync(metricsCts.Token) }, metricsCts.Token); }
+                try { await conn.SendAsync(new AgentToControl { HostMetrics = await MetricsSampler.SampleAsync(state.Options, metricsCts.Token) }, metricsCts.Token); }
                 catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException or OperationCanceledException) { return; }
             } while (await timer.WaitForNextTickAsync(metricsCts.Token).AsTask().ContinueWith(t => !t.IsCanceled && t.Result, TaskScheduler.Default));
         }, CancellationToken.None);

@@ -75,7 +75,8 @@ public static class Docker
         if (s.Cpus > 0) args.AddRange(["--cpus", I(s.Cpus)]);
         if (s.MemoryBytes > 0) args.AddRange(["--memory", s.MemoryBytes.ToString(CultureInfo.InvariantCulture)]);
         if (s.ShmBytes > 0) args.AddRange(["--shm-size", s.ShmBytes.ToString(CultureInfo.InvariantCulture)]);
-        if (s.Gpus.Count == 1 && s.Gpus[0] == "all") args.AddRange(["--gpus", "all"]);
+        if (s.Gpus.Count > 0 && Gpu.NvidiaSmi.FakeGpus) args.AddRange(["--label", "mlp.gpus=" + string.Join(',', s.Gpus)]);
+        else if (s.Gpus.Count == 1 && s.Gpus[0] == "all") args.AddRange(["--gpus", "all"]);
         else if (s.Gpus.Count > 0) args.AddRange(["--gpus", "\"device=" + string.Join(',', s.Gpus) + "\""]);
         foreach (var c in s.CapAdd) args.AddRange(["--cap-add", c]);
         foreach (var (k, v) in s.Sysctls) args.AddRange(["--sysctl", $"{k}={v}"]);

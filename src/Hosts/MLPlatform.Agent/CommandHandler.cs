@@ -6,7 +6,7 @@ namespace MLPlatform.Agent;
 
 /// <summary>Commands from the control plane (D-38): the agent is a container bridge with generic commands (container,
 /// image, file, script) and no notion of Ray node / workload / network.</summary>
-public sealed class CommandHandler(AgentState state, Containers containers, ILogger<CommandHandler> log)
+public sealed class CommandHandler(AgentState state, Containers containers, Ops.RemoteOps ops, ILogger<CommandHandler> log)
 {
     private Connection<ControlToAgent, AgentToControl>? _conn;
 
@@ -15,7 +15,7 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
         if (msg.BodyCase == ControlToAgent.BodyOneofCase.OpenDataChannel)
         {
             var open = msg.OpenDataChannel;
-            _ = Task.Run(() => DataChannel.RunAsync(state.Options, open, log, ct), ct);
+            _ = Task.Run(() => DataChannel.RunAsync(state, open, log, ct), ct);
             return ValueTask.CompletedTask;
         }
         if (msg.BodyCase != ControlToAgent.BodyOneofCase.Command) return ValueTask.CompletedTask;
@@ -29,7 +29,7 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
     {
         CommandResult result;
         var started = System.Diagnostics.Stopwatch.StartNew();
-        var quiet = cmd.KindCase is AgentCommand.KindOneofCase.FileRead or AgentCommand.KindOneofCase.BrowsePath;
+        var quiet = cmd.KindCase is AgentCommand.KindOneofCase.FileRead or AgentCommand.KindOneofCase.BrowsePath || Ops.RemoteOps.IsQuiet(cmd.KindCase);
         if (!quiet) log.LogInformation("Command {Kind} started: {Detail}", cmd.KindCase, Describe(cmd));
         try { result = await ExecuteAsync(cmd, ct); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -70,14 +70,14 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
         _ => "",
     };
 
-    private Task<CommandResult> ExecuteAsync(AgentCommand cmd, CancellationToken ct) => cmd.KindCase switch
+    private Task<CommandResult> ExecuteAsync(AgentCommand cmd, CancellationToken ct) => Ops.RemoteOps.Handles(cmd.KindCase) ? ops.ExecuteAsync(cmd, ct) : cmd.KindCase switch
     {
         AgentCommand.KindOneofCase.BrowsePath => Task.FromResult(Browse(cmd.BrowsePath)),
         AgentCommand.KindOneofCase.Disconnect => Task.FromResult(new CommandResult { Ok = true }),
-        AgentCommand.KindOneofCase.ContainerApply => ApplyAsync(cmd.ContainerApply, ct),
+        AgentCommand.KindOneofCase.ContainerApply => GatedAsync(cmd.ContainerApply.Spec, () => ApplyAsync(cmd.ContainerApply, ct), ct),
         AgentCommand.KindOneofCase.ContainerStop => StopAsync(cmd.ContainerStop, ct),
         AgentCommand.KindOneofCase.ContainerRemove => RemoveAsync(cmd.ContainerRemove, ct),
-        AgentCommand.KindOneofCase.ContainerRunOnce => RunOnceAsync(cmd.ContainerRunOnce, ct),
+        AgentCommand.KindOneofCase.ContainerRunOnce => GatedAsync(cmd.ContainerRunOnce.Spec, () => RunOnceAsync(cmd.ContainerRunOnce, ct), ct),
         AgentCommand.KindOneofCase.ImageBuild => BuildAsync(cmd.ImageBuild, ct),
         AgentCommand.KindOneofCase.PrepullImages => PullAsync(cmd.PrepullImages, ct),
         AgentCommand.KindOneofCase.FileRead => HostFiles.ReadAsync(state.Dir, cmd.FileRead, ct),
@@ -87,6 +87,17 @@ public sealed class CommandHandler(AgentState state, Containers containers, ILog
         _ => Task.FromResult(new CommandResult
             { Ok = false, ErrorReason = "FLEET_COMMAND_UNSUPPORTED", Message = $"Agent {AgentService.Version} does not support {cmd.KindCase} yet" }),
     };
+
+    /// <summary>gpu_priority=yield: refuses GPU containers while another agent's GPU container runs on this
+    /// daemon.</summary>
+    private async Task<CommandResult> GatedAsync(ContainerSpec spec, Func<Task<CommandResult>> run, CancellationToken ct)
+    {
+        if (spec.Gpus.Count == 0 || !state.Options.YieldsGpu) return await run();
+        var yield = Gpu.GpuSampler.YieldOf(state.Options, await Gpu.GpuContainers.ListAsync(ct));
+        if (!yield.Active) return await run();
+        log.LogInformation("Yielding GPU for {Name}: {Foreign} hold it", spec.Name, string.Join(", ", yield.ForeignContainers));
+        return new CommandResult { Ok = false, ErrorReason = "FLEET_GPU_YIELDED", Message = string.Join(", ", yield.ForeignContainers) };
+    }
 
     private static CommandResult Fail(string err) => new() { Ok = false, ErrorReason = Docker.Reason(err), Message = err };
 

@@ -12,11 +12,11 @@ namespace MLPlatform.Agent;
 /// `nvidia-smi` when a GPU is present.</summary>
 public static class MetricsSampler
 {
-    public static async Task<HostMetrics> SampleAsync(CancellationToken ct)
+    public static async Task<HostMetrics> SampleAsync(AgentOptions o, CancellationToken ct)
     {
         var m = new HostMetrics { At = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(TimeProvider.System.GetUtcNow()) };
-        var (code, outp, _) = await Docker.RunAsync(["ps", "-q", "--filter", "label=mlp.managed=1"], ct);
-        var ids = code == 0 ? outp.Split('\n', StringSplitOptions.RemoveEmptyEntries) : [];
+        var (code, outp, _) = await Docker.RunAsync(["ps", "--filter", "label=mlp.managed=1", "--format", "{{.ID}}|{{.Label \"mlp.agent\"}}"], ct);
+        var ids = code == 0 ? OwnedIds(outp) : [];
         if (code != 0)
         {
             var (_, _, err) = await Docker.RunAsync(["info", "--format", "{{.ServerVersion}}"], ct, TimeSpan.FromSeconds(10));
@@ -29,14 +29,21 @@ public static class MetricsSampler
             var (sc, stats, _) = await Docker.RunAsync(["stats", "--no-stream", "--format", "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}", .. ids], ct, TimeSpan.FromSeconds(20));
             if (sc == 0) AddContainers(m, stats);
         }
-        try
-        {
-            var (gc, gout, _) = await RunAsync("nvidia-smi", ["--query-gpu=uuid,utilization.gpu,memory.used,temperature.gpu,power.draw", "--format=csv,noheader,nounits"], ct);
-            if (gc == 0) AddGpus(m, gout);
-        }
-        catch (System.ComponentModel.Win32Exception) { }
+        var gpu = await Gpu.GpuSampler.SampleAsync(o, ct);
+        m.GpuState = gpu.State;
+        m.GpuError = gpu.Error;
+        m.Gpus.AddRange(gpu.Gpus);
+        m.GpuProcesses.AddRange(gpu.Processes);
+        m.GpuYield = gpu.Yield;
         return m;
     }
+
+    /// <summary>Ids of the listed containers this agent owns ("id|owner" lines).</summary>
+    public static string[] OwnedIds(string psOutput) =>
+        [.. psOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(l => l.Split('|'))
+            .Where(p => HostOwnership.Owns(p.Length > 1 && p[1].Length > 0 ? new Dictionary<string, string> { [HostOwnership.Label] = p[1] } : []))
+            .Select(p => p[0])];
 
     private static void AddContainers(HostMetrics m, string stats)
     {
@@ -53,17 +60,6 @@ public static class MetricsSampler
         }
     }
 
-    private static void AddGpus(HostMetrics m, string gout)
-    {
-        foreach (var line in gout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var p = line.Split(',').Select(x => x.Trim()).ToArray();
-            if (p.Length < 5) continue;
-            double D(string x) => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : 0;
-            m.Gpus.Add(new GpuSample { Uuid = p[0], UtilPercent = D(p[1]), MemoryUsedBytes = (ulong)(D(p[2]) * 1024 * 1024), TemperatureC = D(p[3]), PowerW = D(p[4]) });
-        }
-    }
-
     /// <summary>"12.3MiB" / "1.2GiB" / "512kB" → byte.</summary>
     public static ulong Bytes(string s)
     {
@@ -75,16 +71,5 @@ public static class MetricsSampler
             "KIB" or "KB" => 1024d, "MIB" or "MB" => 1024d * 1024, "GIB" or "GB" => 1024d * 1024 * 1024, "TIB" or "TB" => 1024d * 1024 * 1024 * 1024, _ => 1d,
         };
         return (ulong)(v * mul);
-    }
-
-    private static async Task<(int, string, string)> RunAsync(string exe, string[] args, CancellationToken ct)
-    {
-        var psi = new ProcessStartInfo(exe) { RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = System.Text.Encoding.UTF8, StandardErrorEncoding = System.Text.Encoding.UTF8 };
-        foreach (var a in args) psi.ArgumentList.Add(a);
-        using var p = Process.Start(psi)!;
-        var o = await p.StandardOutput.ReadToEndAsync(ct);
-        var e = await p.StandardError.ReadToEndAsync(ct);
-        await p.WaitForExitAsync(ct);
-        return (p.ExitCode, o, e);
     }
 }

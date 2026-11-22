@@ -26,6 +26,8 @@ public static class HostProbe
             AgentRid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier,
             AgentExe = Environment.ProcessPath ?? "",
             ServiceManager = o.ServiceManager,
+            Instance = o.Instance,
+            GpuPriority = o.GpuPriority,
             Runtime = OperatingSystem.IsLinux() ? ContainerRuntime.Native
                 : OperatingSystem.IsWindows() ? ContainerRuntime.Wsl2 : ContainerRuntime.DockerDesktop,
         };
@@ -35,7 +37,7 @@ public static class HostProbe
             info.Disks.Add(new DiskInfo { Mount = path, TotalBytes = (ulong)d.TotalSize, FreeBytes = (ulong)d.AvailableFreeSpace });
         }
         info.DockerVersion = (await RunAsync("docker", ["version", "--format", "{{.Server.Version}}"], ct))?.Trim() ?? "";
-        var smi = await RunAsync("nvidia-smi", ["--query-gpu=index,uuid,name,memory.total,compute_cap,driver_version",
+        var smi = await RunAsync(Gpu.NvidiaSmi.Exe, ["--query-gpu=index,uuid,name,memory.total,compute_cap,driver_version",
             "--format=csv,noheader,nounits"], ct);
         if (smi is not null) AddGpus(info, smi);
         return info;
