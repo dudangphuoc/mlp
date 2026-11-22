@@ -4,7 +4,7 @@ namespace MLPlatform.Agent.Gpu;
 /// MLP_FAKE_GPU).</summary>
 public sealed record GpuContainer(string Id, string Name, string Owner, string Attempt, string Role, IReadOnlyList<string> Gpus)
 {
-    /// <summary>Platform infrastructure (Ray node, network spoke) reserves GPUs for workloads but does not use them.</summary>
+    /// <summary>Ray node and network spoke containers reserve GPUs for workloads but do not use them.</summary>
     public bool IsInfrastructure => Role is "ray-node" or "net";
 
     public IReadOnlyDictionary<string, string> OwnerLabels =>

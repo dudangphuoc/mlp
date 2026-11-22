@@ -100,8 +100,14 @@ public sealed class UnixPty : IPty
     public void Kill()
     {
         if (Volatile.Read(ref _exited) == 1) return;
+        UnixNative.Kill(-_pid, SigHup);
         UnixNative.Kill(_pid, SigHup);
-        _ = Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ => { if (Volatile.Read(ref _exited) == 0) UnixNative.Kill(_pid, SigKill); }, TaskScheduler.Default);
+        _ = Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ =>
+        {
+            if (Volatile.Read(ref _exited) == 1) return;
+            UnixNative.Kill(-_pid, SigKill);
+            UnixNative.Kill(_pid, SigKill);
+        }, TaskScheduler.Default);
     }
 
     public void Dispose()

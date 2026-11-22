@@ -112,7 +112,7 @@ public static class RemoteOpsScenarios
         Assert(refused, "a terminal without a reason must be refused");
     }
 
-    /// <summary>Waits for the shell's first output (prompt) so typed input is not flushed while the terminal starts.</summary>
+    /// <summary>Waits for the shell's first output (prompt) so input is not sent before the shell reads.</summary>
     private static async Task WaitForOutputAsync(ClientWebSocket s, TimeSpan limit)
     {
         using var cts = new CancellationTokenSource(limit);

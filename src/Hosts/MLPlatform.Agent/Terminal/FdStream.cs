@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace MLPlatform.Agent.Terminal;
 
-/// <summary>Unbuffered, non-seekable stream over a pseudo terminal descriptor (plain read/write, no file offsets).</summary>
+/// <summary>Unbuffered stream over a pseudo terminal descriptor: plain read/write, no file offsets.</summary>
 internal sealed class FdStream(int fd) : Stream
 {
     private const int Eintr = 4;
