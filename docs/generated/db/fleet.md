@@ -69,8 +69,9 @@ Read by: `Fleet/EnrollTokenValid`, `Fleet/GetEnrollmentByToken`
 | vpn_checked_at | timestamptz | yes |  |
 | docker_ok | boolean |  | true |
 | docker_error | text | yes |  |
+| gpu_yield | boolean |  | false |
 
-Written by: `Fleet/DisconnectHost`, `Fleet/InsertHost`, `Fleet/MarkHostsWaiting`, `Fleet/ReEnrollHost`, `Fleet/SetHostDocker`, `Fleet/SetHostOnline`, `Fleet/SetHostState`, `Fleet/SetHostVpn`, `Fleet/SetHostWgKey`, `Ops/SetHostMetrics`
+Written by: `Fleet/DisconnectHost`, `Fleet/InsertHost`, `Fleet/MarkHostsWaiting`, `Fleet/ReEnrollHost`, `Fleet/SetHostDocker`, `Fleet/SetHostGpuYield`, `Fleet/SetHostOnline`, `Fleet/SetHostState`, `Fleet/SetHostVpn`, `Fleet/SetHostWgKey`, `Ops/SetHostMetrics`
 
-Read by: `Fleet/GetHost`, `Fleet/GetHostByCredential`, `Fleet/ListAgentUpgrades`, `Fleet/ListHostVpn`, `Fleet/ListHosts`, `Fleet/ListOnlineHosts`, `Fleet/ListOverlayPeers`, `Fleet/SetHostDocker`, `Notify/HostInfoForNotify`, `Ops/HostMap`, `Ops/SignalLost`
+Read by: `Fleet/GetHost`, `Fleet/GetHostByCredential`, `Fleet/GpuYieldingHosts`, `Fleet/HostAlertTarget`, `Fleet/HostLastMetrics`, `Fleet/ListAgentUpgrades`, `Fleet/ListHostVpn`, `Fleet/ListHosts`, `Fleet/ListOnlineHosts`, `Fleet/ListOverlayPeers`, `Fleet/SetHostDocker`, `Notify/HostInfoForNotify`, `Ops/HostMap`, `Ops/SignalLost`
 

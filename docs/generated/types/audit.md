@@ -18,6 +18,7 @@
 | action | 4 | string |
 | outcome | 5 | string |
 | reason | 6 | string |
+| details | 7 | string |
 
 ## ListAuditEventsResponse
 

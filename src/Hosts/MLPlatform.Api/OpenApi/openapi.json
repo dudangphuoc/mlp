@@ -3,9 +3,64 @@
   "info": {
     "title": "MLPlatform API",
     "version": "v1",
-    "x-proto-hash": "e086a946744ad039"
+    "x-proto-hash": "2569d8518cab7850"
   },
   "paths": {
+    "/api/hosts/{id}/files": {
+      "get": {
+        "operationId": "HostOps.GET_api_hosts_id_files",
+        "tags": [
+          "rest:HostOps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      },
+      "put": {
+        "operationId": "HostOps.PUT_api_hosts_id_files",
+        "tags": [
+          "rest:HostOps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
+    "/api/hosts/{id}/terminal": {
+      "get": {
+        "operationId": "HostOps.ANY_api_hosts_id_terminal",
+        "tags": [
+          "rest:HostOps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
     "/health/live": {
       "get": {
         "operationId": "Health.GET_health_live",
@@ -2964,6 +3019,630 @@
           "editor",
           "viewer"
         ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ListHostFiles": {
+      "post": {
+        "operationId": "FleetService.ListHostFiles",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "HostPathRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HostPathRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FsListing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FsListing"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ListHostFiles",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ReadHostFile": {
+      "post": {
+        "operationId": "FleetService.ReadHostFile",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "ReadHostFileRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadHostFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HostFileContent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostFileContent"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ReadHostFile",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/WriteHostFile": {
+      "post": {
+        "operationId": "FleetService.WriteHostFile",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "WriteHostFileRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteHostFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FsStat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FsStat"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "WriteHostFile",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/MakeHostDir": {
+      "post": {
+        "operationId": "FleetService.MakeHostDir",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "HostPathRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HostPathRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "MakeHostDir",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/MoveHostPath": {
+      "post": {
+        "operationId": "FleetService.MoveHostPath",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "MoveHostPathRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveHostPathRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "MoveHostPath",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/DeleteHostPath": {
+      "post": {
+        "operationId": "FleetService.DeleteHostPath",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "DeleteHostPathRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteHostPathRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "DeleteHostPath",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "delete",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ListHostProcesses": {
+      "post": {
+        "operationId": "FleetService.ListHostProcesses",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "ListHostProcessesRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListHostProcessesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ProcessListing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessListing"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ListHostProcesses",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/KillHostProcess": {
+      "post": {
+        "operationId": "FleetService.KillHostProcess",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "KillHostProcessRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KillHostProcessRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "KillHostProcess",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ListHostServices": {
+      "post": {
+        "operationId": "FleetService.ListHostServices",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "GetHostRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ServiceListing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceListing"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ListHostServices",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ControlHostService": {
+      "post": {
+        "operationId": "FleetService.ControlHostService",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "ControlHostServiceRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlHostServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ControlHostService",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/ReadHostSystemLog": {
+      "post": {
+        "operationId": "FleetService.ReadHostSystemLog",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "ReadHostSystemLogRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadHostSystemLogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HostSystemLog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostSystemLog"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "ReadHostSystemLog",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/GetHostGpus": {
+      "post": {
+        "operationId": "FleetService.GetHostGpus",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "GetHostRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HostGpuView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostGpuView"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "GetHostGpus",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "host_id": {
+            "entity": "Host",
+            "list": "FleetService.ListHosts"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.FleetService/GetGpuHistory": {
+      "post": {
+        "operationId": "FleetService.GetGpuHistory",
+        "tags": [
+          "FleetService"
+        ],
+        "requestBody": {
+          "description": "GetGpuHistoryRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGpuHistoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GpuHistory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GpuHistory"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.FleetService",
+          "method": "GetGpuHistory",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": "",
         "x-scope-field": "workspace_id",
         "x-ref": {
           "host_id": {
@@ -14387,6 +15066,9 @@
           },
           "reason": {
             "type": "string"
+          },
+          "details": {
+            "type": "string"
           }
         },
         "x-proto": "mlplatform.v1.AuditEvent"
@@ -16242,6 +16924,401 @@
           }
         },
         "x-proto": "mlplatform.v1.HostActivity"
+      },
+      "HostPathRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.HostPathRequest"
+      },
+      "ReadHostFileRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "string",
+            "format": "int64"
+          },
+          "length": {
+            "type": "integer"
+          }
+        },
+        "x-proto": "mlplatform.v1.ReadHostFileRequest"
+      },
+      "HostFileContent": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "stat": {
+            "$ref": "#/components/schemas/FsStat"
+          }
+        },
+        "x-proto": "mlplatform.v1.HostFileContent"
+      },
+      "WriteHostFileRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "string",
+            "format": "int64"
+          },
+          "data": {
+            "type": "string",
+            "contentEncoding": "base64"
+          },
+          "truncate": {
+            "type": "boolean"
+          }
+        },
+        "x-proto": "mlplatform.v1.WriteHostFileRequest"
+      },
+      "MoveHostPathRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.MoveHostPathRequest"
+      },
+      "DeleteHostPathRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "recursive": {
+            "type": "boolean"
+          }
+        },
+        "x-proto": "mlplatform.v1.DeleteHostPathRequest"
+      },
+      "ListHostProcessesRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ListHostProcessesRequest"
+      },
+      "KillHostProcessRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "pid": {
+            "type": "integer"
+          },
+          "force": {
+            "type": "boolean"
+          },
+          "tree": {
+            "type": "boolean"
+          }
+        },
+        "x-proto": "mlplatform.v1.KillHostProcessRequest"
+      },
+      "ControlHostServiceRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ControlHostServiceRequest"
+      },
+      "ReadHostSystemLogRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "integer"
+          }
+        },
+        "x-proto": "mlplatform.v1.ReadHostSystemLogRequest"
+      },
+      "HostSystemLog": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.HostSystemLog"
+      },
+      "GpuAlert": {
+        "type": "object",
+        "properties": {
+          "gpuUuid": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuAlert"
+      },
+      "GpuUsage": {
+        "type": "object",
+        "properties": {
+          "gpuUuid": {
+            "type": "string"
+          },
+          "container": {
+            "type": "string"
+          },
+          "attemptId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "jobName": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "usedMemoryBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "estimated": {
+            "type": "boolean"
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuUsage"
+      },
+      "GpuCard": {
+        "type": "object",
+        "properties": {
+          "info": {
+            "$ref": "#/components/schemas/GpuInfo"
+          },
+          "sample": {
+            "$ref": "#/components/schemas/GpuSample"
+          },
+          "reservedMemoryBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "schedulableMemoryBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GpuAlert"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuCard"
+      },
+      "HostGpuView": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/GpuState"
+          },
+          "error": {
+            "type": "string"
+          },
+          "sampledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "gpus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GpuCard"
+            }
+          },
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GpuUsage"
+            }
+          },
+          "yield": {
+            "$ref": "#/components/schemas/GpuYield"
+          },
+          "gpuPriority": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.HostGpuView"
+      },
+      "GetGpuHistoryRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "gpuUuid": {
+            "type": "string"
+          },
+          "range": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.GetGpuHistoryRequest"
+      },
+      "GpuPoint": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utilPercent": {
+            "type": "number"
+          },
+          "memoryUsedBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "temperatureC": {
+            "type": "number"
+          },
+          "powerW": {
+            "type": "number"
+          },
+          "smClockMhz": {
+            "type": "number"
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuPoint"
+      },
+      "GpuJobMark": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "jobName": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuJobMark"
+      },
+      "GpuHistory": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GpuPoint"
+            }
+          },
+          "memoryTotalBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GpuJobMark"
+            }
+          },
+          "stepSeconds": {
+            "type": "integer"
+          }
+        },
+        "x-proto": "mlplatform.v1.GpuHistory"
       },
       "SearchHubRequest": {
         "type": "object",

@@ -67,3 +67,58 @@ Written by: `Ops/InsertEvent`
 
 Read by: `Ops/EventsAfter`, `Ops/ListEvents`, `Ops/SystemIncidents`
 
+## ops.gpu_alerts
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| host_id | uuid |  |  |
+| gpu_uuid | text |  |  |
+| kind | text |  |  |
+| level | text |  |  |
+| since | timestamptz |  |  |
+| notified_at | timestamptz | yes |  |
+
+Written by: `Ops/DeleteGpuAlert`, `Ops/MarkGpuAlertNotified`, `Ops/UpsertGpuAlert`
+
+Read by: `Ops/DeleteGpuAlert`, `Ops/ListGpuAlerts`
+
+## ops.gpu_samples
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| host_id | uuid |  |  |
+| gpu_uuid | text |  |  |
+| at | timestamptz |  |  |
+| util | real |  |  |
+| mem_util | real | yes |  |
+| vram_used | bigint |  |  |
+| vram_total | bigint |  |  |
+| temp | real |  |  |
+| power | real |  |  |
+| power_limit | real | yes |  |
+| sm_clock | real | yes |  |
+| throttle | text[] |  | '{}' |
+| ecc | bigint | yes |  |
+
+Written by: `Ops/InsertGpuSample`, `Ops/PruneGpuSamples`
+
+Read by: `Ops/GpuHistoryRaw`, `Ops/PruneGpuSamples`, `Ops/RollupGpuSamples`
+
+## ops.gpu_samples_1m
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| host_id | uuid |  |  |
+| gpu_uuid | text |  |  |
+| at | timestamptz |  |  |
+| util | real |  |  |
+| vram_used | bigint |  |  |
+| vram_total | bigint |  |  |
+| temp | real |  |  |
+| power | real |  |  |
+| sm_clock | real | yes |  |
+
+Written by: `Ops/PruneGpuSamples`, `Ops/RollupGpuSamples`
+
+Read by: `Ops/GpuHistoryRollup`, `Ops/PruneGpuSamples`
+

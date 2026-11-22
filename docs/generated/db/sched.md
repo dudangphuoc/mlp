@@ -14,7 +14,7 @@
 
 Written by: `Sched/UpsertAllocation`
 
-Read by: `Ops/AttemptsByContainerHost`, `Ops/HostAttemptJobs`, `Sched/ListAllocations`
+Read by: `Ops/AttemptsByContainerHost`, `Ops/HostAttemptJobs`, `Sched/GpuJobMarks`, `Sched/HostGpuAllocations`, `Sched/ListAllocations`
 
 ## sched.checkpoints
 
@@ -60,7 +60,7 @@ Read by: `Ops/DeleteCheckpoint`, `Ops/ListCheckpoints`
 
 Written by: `Ops/ClearSignalLost`, `Ops/Heartbeat`, `Ops/MarkSignalLost`, `Ops/MarkSuspect`, `Ops/RearmAttempts`, `Ops/ReviveAttempt`, `Ops/SetResumedFrom`, `Ops/SetSuspectUntil`, `Sched/CancelPendingAttempts`, `Sched/InsertAttempt`, `Sched/SetAttemptState`, `Sched/SetWorkloadToken`
 
-Read by: `Ops/ActiveJobsForUser`, `Ops/AttemptByWorkloadToken`, `Ops/AttemptsByContainerHost`, `Ops/EventsAfter`, `Ops/ExpiredSuspects`, `Ops/HostAttemptJobs`, `Ops/HostAttempts`, `Ops/HostMap`, `Ops/InsertAttemptMetric`, `Ops/JobAttempts`, `Ops/JobMetrics`, `Ops/ListEvents`, `Ops/SignalLost`, `Ops/SuspectOfJob`, `Sched/ActiveAttempts`, `Sched/GetAttempt`, `Sched/GetAttemptByToken`, `Sched/GetJob`, `Sched/GetJobByWorkloadToken`, `Sched/ListJobs`, `Sched/StaleReservations`
+Read by: `Ops/ActiveJobsForUser`, `Ops/AttemptByWorkloadToken`, `Ops/AttemptsByContainerHost`, `Ops/EventsAfter`, `Ops/ExpiredSuspects`, `Ops/HostAttemptJobs`, `Ops/HostAttempts`, `Ops/HostMap`, `Ops/InsertAttemptMetric`, `Ops/JobAttempts`, `Ops/JobMetrics`, `Ops/ListEvents`, `Ops/SignalLost`, `Ops/SuspectOfJob`, `Sched/ActiveAttempts`, `Sched/GetAttempt`, `Sched/GetAttemptByToken`, `Sched/GetJob`, `Sched/GetJobByWorkloadToken`, `Sched/GpuJobMarks`, `Sched/HostGpuAllocations`, `Sched/ListJobs`, `Sched/StaleReservations`
 
 ## sched.jobs
 
@@ -89,5 +89,5 @@ Read by: `Ops/ActiveJobsForUser`, `Ops/AttemptByWorkloadToken`, `Ops/AttemptsByC
 
 Written by: `Ops/MarkStalled`, `Ops/ProgressChanged`, `Ops/RearmAttempts`, `Ops/ResumeJob`, `Ops/SetProgress`, `Sched/ClaimNextJob`, `Sched/InsertJob`, `Sched/RequeueJob`, `Sched/RetryJob`, `Sched/SetJobStarting`, `Sched/SetJobState`
 
-Read by: `Nb/ListStoppingServers`, `Notify/JobInfo`, `Ops/ActiveJobsForUser`, `Ops/AttemptByWorkloadToken`, `Ops/ExpiredSuspects`, `Ops/HostAttemptJobs`, `Ops/HostAttempts`, `Ops/JobProgress`, `Ops/JobWorkspace`, `Ops/MarkSuspect`, `Ops/SignalLost`, `Ops/Stalled`, `Ops/SuspectOfJob`, `Sched/ActiveAttempts`, `Sched/CancelPendingAttempts`, `Sched/ClaimNextJob`, `Sched/GetAttempt`, `Sched/GetAttemptByToken`, `Sched/GetJob`, `Sched/JobsByIds`, `Sched/ListJobs`, `Serving/ListDeployingWithEndpoint`
+Read by: `Nb/ListStoppingServers`, `Notify/JobInfo`, `Ops/ActiveJobsForUser`, `Ops/AttemptByWorkloadToken`, `Ops/ExpiredSuspects`, `Ops/HostAttemptJobs`, `Ops/HostAttempts`, `Ops/JobProgress`, `Ops/JobWorkspace`, `Ops/MarkSuspect`, `Ops/SignalLost`, `Ops/Stalled`, `Ops/SuspectOfJob`, `Sched/ActiveAttempts`, `Sched/CancelPendingAttempts`, `Sched/ClaimNextJob`, `Sched/GetAttempt`, `Sched/GetAttemptByToken`, `Sched/GetJob`, `Sched/GpuJobMarks`, `Sched/HostGpuAllocations`, `Sched/JobsByIds`, `Sched/ListJobs`, `Serving/ListDeployingWithEndpoint`
 

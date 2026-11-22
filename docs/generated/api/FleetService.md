@@ -10,6 +10,19 @@ Path prefix: `/mlplatform.v1.FleetService/`
 | ListHosts | [ListHostsRequest](../types/fleet.md#listhostsrequest) → [ListHostsResponse](../types/fleet.md#listhostsresponse) | read | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Fleet.ListHostVpnQuery, Fleet.ListHostsQuery |
 | GetHost | [GetHostRequest](../types/fleet.md#gethostrequest) → [Host](../types/fleet.md#host) | read | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Fleet.GetHostQuery |
 | BrowseHostPath | [BrowseHostPathRequest](../types/fleet.md#browsehostpathrequest) → [BrowsePathResult](../types/agent.md#browsepathresult) | write | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Fleet.GetHostQuery |
+| ListHostFiles | [HostPathRequest](../types/fleet.md#hostpathrequest) → [FsListing](../types/agent.md#fslisting) | read |  |  |  |  |
+| ReadHostFile | [ReadHostFileRequest](../types/fleet.md#readhostfilerequest) → [HostFileContent](../types/fleet.md#hostfilecontent) | read |  |  |  |  |
+| WriteHostFile | [WriteHostFileRequest](../types/fleet.md#writehostfilerequest) → [FsStat](../types/agent.md#fsstat) | read |  |  |  |  |
+| MakeHostDir | [HostPathRequest](../types/fleet.md#hostpathrequest) → [Empty](../types/common.md#empty) | read |  |  |  |  |
+| MoveHostPath | [MoveHostPathRequest](../types/fleet.md#movehostpathrequest) → [Empty](../types/common.md#empty) | read |  |  |  |  |
+| DeleteHostPath | [DeleteHostPathRequest](../types/fleet.md#deletehostpathrequest) → [Empty](../types/common.md#empty) | delete |  |  |  |  |
+| ListHostProcesses | [ListHostProcessesRequest](../types/fleet.md#listhostprocessesrequest) → [ProcessListing](../types/agent.md#processlisting) | read |  |  |  |  |
+| KillHostProcess | [KillHostProcessRequest](../types/fleet.md#killhostprocessrequest) → [Empty](../types/common.md#empty) | read |  |  |  |  |
+| ListHostServices | [GetHostRequest](../types/fleet.md#gethostrequest) → [ServiceListing](../types/agent.md#servicelisting) | read |  |  |  |  |
+| ControlHostService | [ControlHostServiceRequest](../types/fleet.md#controlhostservicerequest) → [Empty](../types/common.md#empty) | read |  |  |  |  |
+| ReadHostSystemLog | [ReadHostSystemLogRequest](../types/fleet.md#readhostsystemlogrequest) → [HostSystemLog](../types/fleet.md#hostsystemlog) | read |  |  |  |  |
+| GetHostGpus | [GetHostRequest](../types/fleet.md#gethostrequest) → [HostGpuView](../types/fleet.md#hostgpuview) | read |  |  |  |  |
+| GetGpuHistory | [GetGpuHistoryRequest](../types/fleet.md#getgpuhistoryrequest) → [GpuHistory](../types/fleet.md#gpuhistory) | read |  |  |  |  |
 | GetHostActivity | [GetHostRequest](../types/fleet.md#gethostrequest) → [HostActivity](../types/fleet.md#hostactivity) | read | WorkspacePermission | fleet.read | owner, admin, editor, viewer | Fleet.GetHostQuery |
 | DisconnectHost | [GetHostRequest](../types/fleet.md#gethostrequest) → [Empty](../types/common.md#empty) | write | WorkspacePermission | fleet.manage | owner, admin | Fleet.DisconnectHostCommand |
 | UpgradeAgents | [UpgradeAgentsRequest](../types/fleet.md#upgradeagentsrequest) → [ListAgentUpgradesResponse](../types/fleet.md#listagentupgradesresponse) | read |  |  |  |  |

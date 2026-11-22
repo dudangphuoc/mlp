@@ -4,6 +4,9 @@
 
 | Verb | Path | Area | Public |
 |---|---|---|---|
+| GET | `/api/hosts/{id:guid}/files` | HostOps |  |
+| PUT | `/api/hosts/{id:guid}/files` | HostOps |  |
+| ANY | `/api/hosts/{id:guid}/terminal` | HostOps |  |
 | GET | `/health/live` | Health | yes |
 | GET | `/health/ready` | Health | yes |
 | GET | `/install/agent.ps1` | Install | yes |

@@ -219,3 +219,181 @@
 | agent_version | 5 | string |
 | connected_at | 6 | Timestamp |
 
+## HostPathRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| path | 3 | string |
+
+## ReadHostFileRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| path | 3 | string |
+| offset | 4 | uint64 |
+| length | 5 | uint32 |
+
+## HostFileContent
+
+| Field | # | Type |
+|---|---:|---|
+| data | 1 | bytes |
+| stat | 2 | FsStat |
+
+## WriteHostFileRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| path | 3 | string |
+| offset | 4 | uint64 |
+| data | 5 | bytes |
+| truncate | 6 | bool |
+
+## MoveHostPathRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| from | 3 | string |
+| to | 4 | string |
+
+## DeleteHostPathRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| path | 3 | string |
+| recursive | 4 | bool |
+
+## ListHostProcessesRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| sort | 3 | string |
+
+## KillHostProcessRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| pid | 3 | int32 |
+| force | 4 | bool |
+| tree | 5 | bool |
+
+## ControlHostServiceRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| name | 3 | string |
+| action | 4 | string |
+
+## ReadHostSystemLogRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| unit | 3 | string |
+| lines | 4 | int32 |
+
+## HostSystemLog
+
+| Field | # | Type |
+|---|---:|---|
+| lines | 1 | repeated string |
+
+## GpuAlert
+
+| Field | # | Type |
+|---|---:|---|
+| gpu_uuid | 1 | string |
+| kind | 2 | string |
+| level | 3 | string |
+| since | 4 | Timestamp |
+
+## GpuUsage
+
+| Field | # | Type |
+|---|---:|---|
+| gpu_uuid | 1 | string |
+| container | 2 | string |
+| attempt_id | 3 | string |
+| job_id | 4 | string |
+| job_name | 5 | string |
+| environment | 6 | string |
+| used_memory_bytes | 7 | uint64 |
+| estimated | 8 | bool |
+
+## GpuCard
+
+| Field | # | Type |
+|---|---:|---|
+| info | 1 | GpuInfo |
+| sample | 2 | GpuSample |
+| reserved_memory_bytes | 3 | uint64 |
+| schedulable_memory_bytes | 4 | uint64 |
+| alerts | 5 | repeated GpuAlert |
+
+## HostGpuView
+
+| Field | # | Type |
+|---|---:|---|
+| state | 1 | GpuState |
+| error | 2 | string |
+| sampled_at | 3 | Timestamp |
+| gpus | 4 | repeated GpuCard |
+| usage | 5 | repeated GpuUsage |
+| yield | 6 | GpuYield |
+| gpu_priority | 7 | string |
+
+## GetGpuHistoryRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| host_id | 2 | string |
+| gpu_uuid | 3 | string |
+| range | 4 | string |
+
+## GpuPoint
+
+| Field | # | Type |
+|---|---:|---|
+| at | 1 | Timestamp |
+| util_percent | 2 | double |
+| memory_used_bytes | 3 | uint64 |
+| temperature_c | 4 | double |
+| power_w | 5 | double |
+| sm_clock_mhz | 6 | double |
+
+## GpuJobMark
+
+| Field | # | Type |
+|---|---:|---|
+| job_id | 1 | string |
+| job_name | 2 | string |
+| started_at | 3 | Timestamp |
+| finished_at | 4 | Timestamp |
+
+## GpuHistory
+
+| Field | # | Type |
+|---|---:|---|
+| points | 1 | repeated GpuPoint |
+| memory_total_bytes | 2 | uint64 |
+| jobs | 3 | repeated GpuJobMark |
+| step_seconds | 4 | int32 |
+

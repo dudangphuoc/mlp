@@ -16,6 +16,7 @@
 | reason | text | yes |  |
 | prev_hash | text |  |  |
 | hash | text |  |  |
+| details | text | yes |  |
 
 Written by: `Audit/InsertEvent`
 
