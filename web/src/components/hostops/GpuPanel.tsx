@@ -51,7 +51,7 @@ function Card({ c, selected, onSelect }: { c: GpuCard; selected: boolean; onSele
       <Row label={t("Temperature")} value={`${s.temperatureC.toFixed(0)} °C${s.temperatureLimitC !== undefined ? ` / ${s.temperatureLimitC.toFixed(0)}` : ""}`}>
         <Bar value={s.temperatureC} max={s.temperatureLimitC ?? 100} tone={tempTone(s)} /></Row>
       <Row label={t("Power")} value={`${s.powerW.toFixed(0)} W${s.powerLimitW !== undefined ? ` / ${s.powerLimitW.toFixed(0)}` : ""}`}>
-        <Bar value={s.powerW} max={s.powerLimitW ?? Math.max(s.powerW, 1)} tone="bg-amber-400" /></Row>
+        {s.powerLimitW !== undefined && <Bar value={s.powerW} max={s.powerLimitW} tone="bg-amber-400" />}</Row>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-line pt-2 text-xs">
         <span className="text-fg-muted">SM</span><span className="text-right tabular-nums">{s.smClockMhz !== undefined ? `${s.smClockMhz.toFixed(0)} / ${s.smClockMaxMhz?.toFixed(0) ?? "—"} MHz` : "—"}</span>
         <span className="text-fg-muted">{t("Fan")}</span><span className="text-right tabular-nums">{s.fanPercent !== undefined ? `${s.fanPercent.toFixed(0)}%` : "—"}</span>

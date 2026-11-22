@@ -30,8 +30,9 @@ export function GpuHistoryChart({ h, height = 240 }: { h: GpuHistory; height?: n
     const at = (p: GpuHistory["points"][number]) => ts(p.at)?.getTime() ?? 0;
     const line = (name: string, color: string, data: [number, number][], yAxisIndex = 0) =>
       ({ type: "line" as const, name, data, yAxisIndex, showSymbol: false, sampling: "lttb" as const, lineStyle: { width: 1.5, color }, itemStyle: { color } });
+    const from = h.points.length ? at(h.points[0]) : 0;
     const bands = h.jobs.map((j) => [
-      { name: j.jobName, xAxis: ts(j.startedAt)?.getTime() ?? 0 },
+      { name: j.jobName, xAxis: Math.max(from, ts(j.startedAt)?.getTime() ?? 0) },
       { xAxis: ts(j.finishedAt)?.getTime() ?? Date.now() },
     ]);
     c.setOption({
@@ -45,7 +46,7 @@ export function GpuHistoryChart({ h, height = 240 }: { h: GpuHistory; height?: n
         { type: "value", min: 0, axisLabel: { color: k.subtle, fontSize: 10 }, splitLine: { show: false } },
       ],
       series: [
-        { ...line(t("Utilisation"), COLORS.util, h.points.map((p) => [at(p), p.utilPercent])), markArea: { silent: true, itemStyle: { color: "rgba(79,140,255,0.07)" }, label: { color: k.subtle, fontSize: 10 }, data: bands } },
+        { ...line(t("Utilisation"), COLORS.util, h.points.map((p) => [at(p), p.utilPercent])), markArea: { silent: true, itemStyle: { color: "rgba(79,140,255,0.06)" }, label: { show: false }, data: bands } },
         line("VRAM", COLORS.vram, h.points.map((p) => [at(p), (Number(p.memoryUsedBytes) / total) * 100])),
         line("°C", COLORS.temp, h.points.map((p) => [at(p), p.temperatureC]), 1),
         line("W", COLORS.power, h.points.map((p) => [at(p), p.powerW]), 1),
