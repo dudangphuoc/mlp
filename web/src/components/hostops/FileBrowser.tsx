@@ -29,7 +29,7 @@ function TreeNode({ ws, hostId, path, label, depth, current, onOpen }:
   const active = current === path;
   return (
     <div>
-      <div className={`flex h-7 items-center gap-1 whitespace-nowrap pr-2 ${active ? "bg-surface-2 text-fg" : "text-fg-muted hover:text-fg"}`} style={{ paddingLeft: 8 + depth * 12 }}>
+      <div className={`flex h-8 items-center gap-1 whitespace-nowrap pr-2 ${active ? "bg-surface-2 text-fg" : "text-fg-muted hover:text-fg"}`} style={{ paddingLeft: 8 + depth * 12 }}>
         <button className="inline-flex h-5 w-5 flex-none items-center justify-center" aria-label={open ? t("Collapse") : t("Expand")} onClick={() => setOpen(!open)}>
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </button>
