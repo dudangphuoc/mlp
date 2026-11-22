@@ -1,4 +1,5 @@
 using MLPlatform.Api.Http.Health;
+using MLPlatform.Api.Http.HostOps;
 using MLPlatform.Api.Http.Install;
 using MLPlatform.Api.Http.Mcp;
 using MLPlatform.Api.Http.Notebooks;
@@ -15,6 +16,7 @@ public static class HttpApi
     public static void MapHttpApi(this IEndpointRouteBuilder app, IConfiguration cfg)
     {
         app.MapNotebookProxy();
+        app.MapHostOps();
         app.MapGateway();
         app.MapFeedback();
         app.MapMcp();

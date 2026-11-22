@@ -18,20 +18,23 @@ public sealed class DataChannelBroker(AgentRegistry agents, ILogger<DataChannelB
     private sealed record Pending(string Token, TaskCompletionSource<Stream> Ready);
     private readonly ConcurrentDictionary<string, Pending> _pending = new();
 
-    public async Task<Stream> OpenAsync(Guid hostId, int port, CancellationToken ct)
+    public Task<Stream> OpenAsync(Guid hostId, int port, CancellationToken ct) =>
+        OpenAsync(hostId, new OpenDataChannel { Notebook = new NotebookTarget { Port = port } }, "NB_HOST_LOST: the host running the notebook is offline", ct);
+
+    /// <summary>Opens a data channel to any target (terminal, file transfer, local port); session id and token are
+    /// filled here.</summary>
+    public async Task<Stream> OpenAsync(Guid hostId, OpenDataChannel target, string offlineMessage, CancellationToken ct)
     {
-        if (!agents.TryGet(hostId, out var session)) throw new IOException("NB_HOST_LOST: the host running the notebook is offline");
+        if (!agents.TryGet(hostId, out var session)) throw new IOException(offlineMessage);
         var id = Guid.NewGuid().ToString("N");
         var token = TokenService.New("mlpd_");
         var p = new Pending(token, new TaskCompletionSource<Stream>(TaskCreationOptions.RunContinuationsAsynchronously));
         _pending[id] = p;
+        target.SessionId = id;
+        target.Token = token;
         try
         {
-            await session.Conn.SendAsync(new ControlToAgent
-            {
-                StreamId = session.Conn.NewStreamId(),
-                OpenDataChannel = new OpenDataChannel { SessionId = id, Token = token, Notebook = new NotebookTarget { Port = port } },
-            }, ct);
+            await session.Conn.SendAsync(new ControlToAgent { StreamId = session.Conn.NewStreamId(), OpenDataChannel = target }, ct);
             return await p.Ready.Task.WaitAsync(TimeSpan.FromSeconds(30), ct);
         }
         finally { _pending.TryRemove(id, out _); }
