@@ -3,7 +3,10 @@
 set -uo pipefail
 AGENTS="${MLP_AGENTS_DIR:-/agents}"
 SRC=/src
+# Group-writable: the api (non-root, same group) drops build requests into queue/.
+umask 002
 mkdir -p "$AGENTS/queue" "$AGENTS/cache"
+chmod g+ws "$AGENTS/queue" "$AGENTS/cache" 2>/dev/null || true
 # Version = SHA-256 of the agent source contents (code changed → new build; same code → reuse the cache).
 VER=$(cd $SRC && find proto src Directory.Build.props Directory.Packages.props -type f \( -name '*.cs' -o -name '*.csproj' -o -name '*.proto' -o -name '*.props' -o -name '*.sh' -o -name 'Dockerfile' \) \
   -not -path '*/obj/*' -not -path '*/bin/*' | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -c1-16)
