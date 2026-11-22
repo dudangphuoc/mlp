@@ -209,7 +209,9 @@ public sealed class AgentListener(IServiceScopeFactory scopes, AgentRegistry reg
             await ms.ServiceProvider.GetRequiredService<IMediator>().Send(new MLPlatform.ControlPlane.Application.Ops.RecordHostMetricsCommand(s.HostId,
                 Google.Protobuf.JsonFormatter.Default.Format(hm),
                 hm.Containers.Select(c => (c.Name, c.CpuPercent, (long)c.MemoryBytes)).ToList(),
-                hm.Gpus.Select(g => (g.Uuid, g.UtilPercent, (long)g.MemoryUsedBytes)).ToList()), ct);
+                hm.Gpus.Select(g => (g.Uuid, g.UtilPercent, (long)g.MemoryUsedBytes)).ToList(), GpuMetricsMapper.AttemptVram(hm, s.HostId)), ct);
+        await using (var gs = scopes.CreateAsyncScope())
+            await gs.ServiceProvider.GetRequiredService<IMediator>().Send(GpuMetricsMapper.Command(s.HostId, hm), ct);
     }
 
     /// <summary>An agent that just (re)connected reports running/exited containers (20/10 §4.3, §4.7): finalize exited

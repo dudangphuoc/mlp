@@ -67,7 +67,8 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         var res = await session.SendCommandAsync(new AgentCommand { ContainerApply = new ContainerApply { Spec = sw } }, TimeSpan.FromMinutes(30), ct);
         if (!res.Ok)
         {
-            await FailAsync(a.Id, res.ErrorReason, res.Message, ct);
+            if (res.ErrorReason == "FLEET_GPU_YIELDED") await YieldAsync(done, nodeRank, res.Message, ct);
+            else await FailAsync(a.Id, res.ErrorReason, res.Message, ct);
             return false;
         }
         await ReportStartedAsync(a, alloc, res.Endpoint, isNotebook, isServe, servePort, ct);
@@ -230,6 +231,25 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         await envs.RecordAsync(a.WorkspaceId, image, rbuild.Tag, hostId, br.Ok, $"{br.ErrorReason} {br.Message}".Trim());
         if (!br.Ok) { await FailAsync(a.Id, br.ErrorReason, "Recipe image build failed: " + br.Message, ct); return null; }
         return rbuild.Tag;
+    }
+
+    /// <summary>The agent yielded its GPU to another environment: remove the ranks already started, release the
+    /// placement group and put the job back in the queue without counting the attempt.</summary>
+    private async Task YieldAsync(AllocationComplete done, int failedRank, string holders, CancellationToken ct)
+    {
+        var a = done.Attempt;
+        foreach (var alloc in done.Allocations.Take(failedRank))
+            if (agents.TryGet(alloc.HostId, out var s))
+                await s.SendCommandAsync(new AgentCommand { ContainerRemove = new ContainerRemove { Label = "mlp.attempt=" + a.Id, Force = true } }, TimeSpan.FromMinutes(2), ct);
+        await ray.StopAsync(a.Id.ToString(), ct);
+        await using var scope = scopes.CreateAsyncScope();
+        var m = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var jobId = await m.Send(new MLPlatform.ControlPlane.Application.Scheduling.YieldAttemptCommand(a.Id, holders), ct);
+        await m.Send(new MLPlatform.ControlPlane.Application.Notebooks.SetNotebookStateByJobCommand(jobId, "starting",
+            MLPlatform.ControlPlane.Application.Scheduling.YieldAttemptCommandHandler.Reason, null, null), ct);
+        await m.Send(new MLPlatform.ControlPlane.Application.Serving.SetDeploymentStateByJobCommand(jobId, "deploying",
+            MLPlatform.ControlPlane.Application.Scheduling.YieldAttemptCommandHandler.Reason, null), ct);
+        log.LogInformation("Attempt {Attempt}: GPU yielded to {Holders}; job {Job} waits", a.Id, holders, jobId);
     }
 
     public async Task FailAsync(Guid attemptId, string reason, string message, CancellationToken ct)

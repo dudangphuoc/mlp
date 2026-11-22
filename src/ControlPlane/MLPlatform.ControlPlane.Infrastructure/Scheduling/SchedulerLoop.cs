@@ -73,14 +73,17 @@ public sealed class SchedulerLoop(IServiceScopeFactory scopes, RayJobsClient ray
     private static async Task<List<Guid>?> PickHostsAsync(IMediator m, ClaimedJobRow job, JobSpecDto spec, IReadOnlyList<HostRow> online, CancellationToken ct)
     {
         if (spec.Hosts.Count > 0) return spec.Hosts;
-        IReadOnlyList<Guid> candidates = online.Where(h => Fits(h, spec)).Select(h => h.Id).ToList();
+        var yielding = spec.Gpus > 0 ? await m.Query(new MLPlatform.ControlPlane.Application.Fleet.Gpu.GpuYieldingHostsQuery(job.WorkspaceId), ct) : null;
+        IReadOnlyList<Guid> candidates = online.Where(h => Fits(h, spec) && yielding?.Contains(h.Id) != true).Select(h => h.Id).ToList();
         if (candidates.Count > spec.Nnodes && spec.Env.TryGetValue("MLP_JOB_SPEC", out var js)
             && System.Text.Json.Nodes.JsonNode.Parse(js)?["datasetId"]?.ToString() is { } dsText && Guid.TryParse(dsText, out var dsId))
             candidates = await m.Send(new MLPlatform.ControlPlane.Application.Ops.PreferDataHostsCommand(job.WorkspaceId, job.Id, dsId, candidates), ct);
         var fit = candidates.Take(spec.Nnodes).ToList();
         if (fit.Count < spec.Nnodes)
         {
-            await m.Send(new RequeueJobCommand(job.Id, $"Waiting for hosts: need {spec.Nnodes} host(s) with {spec.Cpus} CPU, {spec.Gpus} GPU"), ct);
+            var yieldedOnly = yielding is { Count: > 0 } && online.Count(h => Fits(h, spec)) >= spec.Nnodes;
+            await m.Send(new RequeueJobCommand(job.Id, yieldedOnly ? MLPlatform.ControlPlane.Application.Scheduling.YieldAttemptCommandHandler.Reason
+                : $"Waiting for hosts: need {spec.Nnodes} host(s) with {spec.Cpus} CPU, {spec.Gpus} GPU"), ct);
             return null;
         }
         return fit;

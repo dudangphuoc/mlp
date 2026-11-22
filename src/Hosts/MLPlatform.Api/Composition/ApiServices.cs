@@ -56,6 +56,7 @@ public static class ApiServices
         s.AddScoped<AfterCommitQueue>();
         s.AddScoped<MLPlatform.Cqrs.IAfterCommit>(sp => sp.GetRequiredService<AfterCommitQueue>());
         s.AddScoped<IRequestBehavior, UnitOfWorkBehavior>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Audit.AuditDetails>();
         s.AddScoped<IRequestBehavior, MLPlatform.ControlPlane.Application.Audit.AuditBehavior>();
         s.AddScoped<IRequestBehavior, AuthorizationBehavior>();
         s.AddGeneratedHandlers();
@@ -107,9 +108,15 @@ public static class ApiServices
         s.AddSingleton<MLPlatform.ControlPlane.Application.LlmOps.ILlmInvoker, ModelServerLlmInvoker>();
         s.AddHostedService<DeploymentProber>();
         s.AddSingleton<DataChannelBroker>();
+        s.AddSingleton<MLPlatform.ControlPlane.Application.Fleet.Ops.IHostOps, AgentHostOps>();
+        s.AddSingleton<MLPlatform.Api.Http.HostOps.TerminalSessions>();
+        s.AddSingleton<MLPlatform.Api.Http.HostOps.HostTerminal>();
+        s.AddSingleton<MLPlatform.Api.Http.HostOps.HostFilesHttp>();
         s.AddSingleton<NotebookProxy>();
         s.AddHostedService<NotebookReaper>();
         s.AddHostedService<DataCacheJanitor>();
+        s.AddHostedService<GpuHistoryJanitor>();
+        s.AddHostedService<MLPlatform.Api.Http.HostOps.TerminalRecordingJanitor>();
     }
 
     private static void AddWorkflowLoops(this IServiceCollection s, IConfiguration cfg)

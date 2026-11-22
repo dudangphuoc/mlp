@@ -10,11 +10,11 @@ using MLPlatform.Storage;
 
 namespace MLPlatform.ControlPlane.Application.Ops;
 
-/// <summary>Latest machine metrics + per-attempt metrics (container `mlp-w-{attempt}-{rank}`; GPUs by the attempt's
-/// `gpu_uuids`) — 20/10 §2.5.</summary>
+/// <summary>Latest machine metrics + per-attempt metrics (container `mlp-w-{attempt}-{rank}`; VRAM from the attempt's
+/// GPU processes when the agent reports them, else from its `gpu_uuids`) — 20/10 §2.5.</summary>
 [Access(AccessKind.Internal)]
 public sealed record RecordHostMetricsCommand(Guid HostId, string MetricsJson, IReadOnlyList<(string Container, double Cpu, long Memory)> Containers,
-    IReadOnlyList<(string Uuid, double Util, long Vram)> Gpus) : ICommand<int>, IInternalCommand;
+    IReadOnlyList<(string Uuid, double Util, long Vram)> Gpus, IReadOnlyDictionary<Guid, long> AttemptVram) : ICommand<int>, IInternalCommand;
 
 public sealed class RecordHostMetricsCommandHandler(IWriteSession db, IClock clock) : ICommandHandler<RecordHostMetricsCommand, int>
 {
@@ -33,6 +33,7 @@ public sealed class RecordHostMetricsCommandHandler(IWriteSession db, IClock clo
                 var mine = c.Gpus.Where(g => uuids.Contains(g.Uuid)).ToList();
                 if (mine.Count > 0) { util = mine.Average(g => g.Util); vram = mine.Sum(g => g.Vram); }
             }
+            if (c.AttemptVram.TryGetValue(attempt, out var used)) vram = used;
             await db.InsertAttemptMetricAsync(attempt, now, cpu, mem, util, vram, ct);
             n++;
         }

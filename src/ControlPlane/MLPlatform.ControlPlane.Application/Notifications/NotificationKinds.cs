@@ -33,6 +33,12 @@ public static class NotificationKinds
         new("deployment.failed", "Model", "Deployment failed"),
         new("deployment.drift", "Model", "Deployment data drift"),
         new("fleet.host_offline", "Machines", "Machine offline"),
+        new("gpu.hot", "Machines", "GPU temperature high"),
+        new("gpu.vram_full", "Machines", "GPU memory full"),
+        new("gpu.throttle", "Machines", "GPU slowed down"),
+        new("gpu.ecc", "Machines", "GPU memory errors", Mandatory: true),
+        new("gpu.lost", "Machines", "GPU lost", Mandatory: true),
+        new("gpu.idle_allocated", "Machines", "Allocated GPU idle"),
         new("audit.integrity_broken", "System", "Audit chain broken", Mandatory: true),
     ];
 
