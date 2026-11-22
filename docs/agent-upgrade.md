@@ -295,3 +295,23 @@ Review gồm hai phần: chuyên gia (bảo mật/hệ thống, GPU, UX) và đ�
   - `C:\ProgramData\MLPlatform\docker`;
   - `AgentOptions.DefaultStateDir`;
   - tên unit/task trong resource OTA của `AgentUpgrader`.
+
+## 8. Ghi chú khi làm (2026-11-22)
+
+Các chỗ làm khác bản đã duyệt:
+
+- **Editor file**: dùng `textarea` mono thay cho CodeMirror 6, để không thêm 5–6 gói vào web. Giới hạn 20 MB và cách đọc/ghi theo khối vẫn giữ như thiết kế.
+- **`nvidia-smi`**: gọi mỗi 15 s, mỗi lần giới hạn 10 s. Không dùng `-lms`: lệnh treo thì sau 10 s bị kill và đọc ra lỗi, nên không cần watchdog riêng.
+- **Phần GPU nằm trong module Ops** (`Application/Ops/Gpu`), bảng lưu ở schema `ops`. Lý do: CodeGate cấm Fleet (lớp Foundation) gọi lên Scheduling (lớp Core). Riêng cờ `gpu_yield` vẫn nằm trên `fleet.hosts`.
+- **"Container GPU lạ"** không tính container hạ tầng (`mlp.role=ray-node|net`). Ray node của prod luôn chạy với `--gpus all`; nếu tính nó thì dev sẽ nhường GPU mãi mãi.
+- **Terminal trên Unix**: đọc/ghi pty bằng `read`/`write` của libc (`FdStream`). `FileStream` của .NET làm hỏng input trên Linux: bash chỉ nhận được phần đuôi lệnh.
+  - Linux: chạy `setsid -c`, đã thử trong container Linux: có prompt, resize, `tty`.
+  - macOS (chỉ để dev): shell chạy trong session mới, không có controlling terminal.
+  - Khi đóng phiên, gửi SIGHUP cho cả process group.
+- **Terminal trên Windows (ConPTY)**: mới compile, chưa chạy thử trên máy Windows.
+
+Cách kiểm chứng (verify stack chạy trên macOS):
+
+- Scenario `Ops:*` và `GPU:*` nằm ở `tools/MLPlatform.Scenarios/RemoteOpsScenarios.cs` và `GpuScenarios.cs`.
+- Không có GPU thật. Dùng `fixtures/fake-gpu/nvidia-smi` (biến `MLP_NVIDIA_SMI`) và `MLP_FAKE_GPU=1`: container nhận nhãn `mlp.gpus` thay cho `--gpus`.
+- Cột container lấy từ cgroup chỉ chạy được trên Linux, nên verify stack không kiểm thử phần này.
