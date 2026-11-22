@@ -57,18 +57,18 @@ export function TerminalPanel({ ws, hostId }: { ws: string; hostId: string }) {
   }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === 0) return (
-    <form className="max-w-md space-y-3" onSubmit={(e) => { e.preventDefault(); setStatus(""); setSession((s) => s + 1); }}>
+    <form className="max-w-md space-y-3 p-3" onSubmit={(e) => { e.preventDefault(); setStatus(""); setSession((s) => s + 1); }}>
       <Field label={t("Reason")}><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus /></Field>
       <button className="btn-primary" disabled={reason.trim().length < 3}>{t("Open terminal")}</button>
     </form>
   );
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-8 flex-none items-center justify-between px-3 text-xs">
         <span className={phase === "open" ? "text-success" : phase === "failed" ? "text-danger" : "text-fg-muted"}>{t(phase)}{status ? ` · ${status}` : ""}</span>
-        {(phase === "closed" || phase === "failed") && <button className="btn-ghost h-7 px-2 text-xs" onClick={() => setSession(0)}>{t("New session")}</button>}
+        {(phase === "closed" || phase === "failed") && <button className="btn-ghost h-7 flex-none whitespace-nowrap px-2 text-xs" onClick={() => setSession(0)}>{t("New session")}</button>}
       </div>
-      <div ref={box} className="h-[60vh] overflow-hidden rounded-lg border border-line bg-[#0b0e13] p-1" />
+      <div ref={box} className="min-h-[300px] flex-1 overflow-hidden bg-[#0b0e13] p-1" />
     </div>
   );
 }

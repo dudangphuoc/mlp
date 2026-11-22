@@ -13,7 +13,7 @@ import { Braces,
   type LucideIcon,
 } from "lucide-react";
 import { api, isUnauthenticated } from "./lib/api";
-import { SectionIcon } from "./components/ui";
+import { SectionIcon, useActiveTabInView } from "./components/ui";
 import { lastQuery, watchUrl } from "./lib/persist";
 import { LoginPage, SetupPage, SignupPage, signupInvite } from "./pages/Auth";
 import { FleetPage } from "./pages/Fleet";
@@ -130,6 +130,7 @@ function Shell({ me, ws, parts }: { me: Me; ws: WorkspaceMembership; parts: stri
     return () => { gone = true; undo(); };
   }, []);
   const section = parts[0] ?? "";
+  const sectionStrip = useActiveTabInView(section);
   // Remember the query (tab, filters, search) of each section's list page and restore it from the sidebar.
   useEffect(() => {
     if (parts.length > 1) return undefined;
@@ -252,11 +253,11 @@ function Shell({ me, ws, parts }: { me: Me; ws: WorkspaceMembership; parts: stri
           <main className="w-full min-w-0 flex-1 px-3 py-4 sm:px-4 md:px-6 md:py-6 2xl:px-10">
             <IncidentBanner go={go} />
             {currentGroup.subs.length > 1 && parts.length <= 1 && (
-              <div className="-mt-2 mb-5 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
+              <div ref={sectionStrip} className="-mt-2 mb-5 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
                 {currentGroup.subs.map((s) => {
                   const on = s.key === section;
                   return (
-                    <button key={s.key} role="tab" aria-selected={on} onClick={() => openSection(s.key)} ref={on ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
+                    <button key={s.key} role="tab" aria-selected={on} onClick={() => openSection(s.key)}
                       className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm ${on ? "border-primary font-medium text-fg" : "border-transparent text-fg-muted hover:text-fg"}`}>
                       <s.icon className="h-4 w-4" strokeWidth={1.9} />{t(s.label)}
                     </button>);

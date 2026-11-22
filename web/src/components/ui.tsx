@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import * as RDialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
@@ -193,13 +193,26 @@ export function StatCard({ label, value, sub, onClick, tone }:
   );
 }
 
+/** Keeps the selected tab visible by scrolling only its own strip sideways, and only when the selection changes. */
+export function useActiveTabInView(value: unknown) {
+  const strip = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = strip.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    const box = strip.current;
+    if (!el || !box) return;
+    if (el.offsetLeft < box.scrollLeft) box.scrollLeft = el.offsetLeft;
+    else if (el.offsetLeft + el.offsetWidth > box.scrollLeft + box.clientWidth) box.scrollLeft = el.offsetLeft + el.offsetWidth - box.clientWidth;
+  }, [value]);
+  return strip;
+}
+
 /** Tabs with counts; state kept in the URL (?tab=) by the calling page. */
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { key: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void }) {
+  const strip = useActiveTabInView(value);
   return (
-    <div className="mb-5 flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none]" role="tablist">
+    <div ref={strip} className="mb-5 flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none]" role="tablist">
       {tabs.map((t) => (
         <button key={t.key} role="tab" aria-selected={value === t.key} onClick={() => onChange(t.key)}
-          ref={value === t.key ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
           className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm ${value === t.key ? "border-primary font-medium text-fg" : "border-transparent text-fg-muted hover:text-fg"}`}>
           {t.label}{t.count !== undefined && <span className="ml-1.5 rounded-full bg-surface-2 px-1.5 text-xs text-fg-muted">{t.count}</span>}
         </button>))}

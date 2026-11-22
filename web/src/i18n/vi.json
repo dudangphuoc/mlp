@@ -2813,5 +2813,10 @@
   "Agent updates": "Cập nhật agent",
   "update": "cập nhật",
   "Util": "Dùng",
-  "default": "mặc định"
+  "default": "mặc định",
+  "Drive": "Ổ đĩa",
+  "Refresh": "Làm mới",
+  "GPU history": "Lịch sử GPU",
+  "New terminal": "Terminal mới",
+  "Start type": "Kiểu khởi động"
 }

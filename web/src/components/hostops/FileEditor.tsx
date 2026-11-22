@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { api, errorText } from "../../lib/api";
 import { bytes } from "../../lib/format";
-import { Dialog, ErrorBox, Skeleton } from "../ui";
+import { ErrorBox, Skeleton } from "../ui";
 import { translate as t } from "../../i18n";
 
 const READ = 4 * 1024 * 1024, WRITE = 1024 * 1024, MAX = 20 * 1024 * 1024;
 
-/** Text editor sheet: reads in 4 MiB chunks, saves in 1 MiB chunks (first chunk truncates). */
-export function FileEditor({ ws, hostId, path, onClose }: { ws: string; hostId: string; path: string; onClose: () => void }) {
+/** Text editor pane: reads in 4 MiB chunks, saves in 1 MiB chunks (first chunk truncates). */
+export function FileEditor({ ws, hostId, path }: { ws: string; hostId: string; path: string }) {
   const [text, setText] = useState<string | null>(null);
   const [orig, setOrig] = useState("");
   const [state, setState] = useState<{ size: number; binary: boolean; sha: string } | null>(null);
@@ -44,20 +44,16 @@ export function FileEditor({ ws, hostId, path, onClose }: { ws: string; hostId: 
   };
 
   return (
-    <Dialog xwide title={path.split(/[\\/]/).pop() ?? path} onClose={onClose}>
-      <div className="space-y-3">
-        <div className="mono truncate text-xs text-fg-muted">{path}{state ? ` · ${bytes(state.size)}` : ""}{state?.sha ? ` · sha256 ${state.sha.slice(0, 12)}` : ""}</div>
-        <ErrorBox error={err} />
-        {!state ? <Skeleton rows={8} /> : state.binary ? <div className="text-sm text-fg-muted">{t("Binary or larger than 20 MB")}</div> : (
-          <>
-            <textarea className="mono h-[65vh] w-full resize-none rounded-lg border border-line bg-surface p-3 text-xs leading-5" spellCheck={false}
-              value={text ?? ""} onChange={(e) => setText(e.target.value)} />
-            <div className="flex justify-end gap-2">
-              <button className="btn-ghost" onClick={onClose}>{t("Close")}</button>
-              <button className="btn-primary" disabled={saving || text === orig} onClick={() => void save()}>{saving ? t("Saving…") : t("Save")}</button>
-            </div>
-          </>)}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-10 flex-none items-center gap-2 border-b border-line px-3">
+        <span className="mono min-w-0 flex-1 truncate text-xs text-fg-muted">{path}{state ? ` · ${bytes(state.size)}` : ""}{state?.sha ? ` · ${state.sha.slice(0, 12)}` : ""}</span>
+        {state && !state.binary && <button className="inline-flex h-8 flex-none items-center whitespace-nowrap rounded-md bg-primary px-3 text-sm text-white disabled:opacity-50"
+          disabled={saving || text === orig} onClick={() => void save()}>{saving ? t("Saving…") : t("Save")}</button>}
       </div>
-    </Dialog>
+      <ErrorBox error={err} />
+      {!state ? <Skeleton rows={8} /> : state.binary ? <div className="p-3 text-sm text-fg-muted">{t("Binary or larger than 20 MB")}</div> : (
+        <textarea className="mono min-h-0 flex-1 resize-none bg-transparent p-3 text-xs leading-5 outline-none" spellCheck={false}
+          aria-label={path} value={text ?? ""} onChange={(e) => setText(e.target.value)} />)}
+    </div>
   );
 }

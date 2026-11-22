@@ -5,7 +5,7 @@ import { OsFamily } from "../gen/mlplatform/v1/agent_pb";
 import type { AgentUpgrade, Host } from "../gen/mlplatform/v1/fleet_pb";
 import { bytes } from "../lib/format";
 import {
-  CommandBlock, Dialog, EmptyState, ErrorBox, Field, ProgressSteps, RelTime, Skeleton, StateBadge, Tabs,
+  CommandBlock, Dialog, EmptyState, ErrorBox, Field, ProgressSteps, RelTime, Skeleton, StateBadge,
 } from "../components/ui";
 import { ClusterMapView } from "./Ops";
 import { DataCacheList } from "../components/DataSync";
@@ -13,22 +13,25 @@ import { RayHealthView } from "../components/RayHealth";
 import { translate as t } from "../i18n";
 import { GpuPanel } from "../components/hostops/GpuPanel";
 import { TerminalPanel } from "../components/hostops/TerminalPanel";
-import { FilesPanel } from "../components/hostops/FilesPanel";
+import { FileBrowser } from "../components/hostops/FileBrowser";
+import { FileEditor } from "../components/hostops/FileEditor";
 import { ProcessesPanel } from "../components/hostops/ProcessesPanel";
 import { ServicesPanel } from "../components/hostops/ServicesPanel";
-import { CheckCircle2, CircleX, Clock, Loader2, RefreshCw } from "lucide-react";
+import { ChevronLeft, Plus, X, CheckCircle2, CircleX, Clock, Loader2, RefreshCw } from "lucide-react";
 
-type Tab = "machines" | "map" | "ray" | "data" | "agents";
-type HostTab = "overview" | "gpu" | "terminal" | "files" | "processes" | "services" | "activity";
+type View = "map" | "ray" | "data" | "agents";
+type LeftTab = "files" | "processes" | "services" | "gpu" | "activity";
+type MobileTab = "files" | "terminal" | "processes" | "services";
+type PaneTab = { id: number; kind: "terminal" } | { id: number; kind: "file"; path: string };
 const search = () => new URLSearchParams(window.location.search);
 const online = (h: Host) => h.state === "online" || h.state === "busy";
+const seg = (on: boolean) => `inline-flex h-8 flex-none items-center justify-center whitespace-nowrap rounded-md px-3 text-sm ${on ? "bg-surface-2 text-fg" : "text-fg-muted hover:text-fg"}`;
 
-/** Machines workbench: machine list on the left, the selected machine's tools on the right (full page, no sheets). */
+/** Machines (mockup A): machine list, one screen per machine — compact GPU strip, files and tools left, terminals right. */
 export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
   const qc = useQueryClient();
   const q = search();
-  const tab = (q.get("tab") as Tab) || "machines";
-  const open = q.get("new") === "1";
+  const view = q.get("tab") as View | null;
   const hosts = useQuery({ queryKey: ["hosts", ws], queryFn: () => api.fleet.listHosts({ workspaceId: ws }), refetchInterval: 5000 });
   const upgrades = useQuery({ queryKey: ["agent-upgrades", ws], queryFn: () => api.fleet.listAgentUpgrades({ workspaceId: ws }), refetchInterval: 3000 });
   const upgrade = useMutation({
@@ -36,135 +39,187 @@ export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["agent-upgrades", ws] }),
   });
   const list = hosts.data?.hosts ?? [];
-  const selected = list.find((h) => h.id === q.get("host")) ?? list[0];
-  const hostTab = (q.get("view") as HostTab) || "overview";
-  const select = (id: string, view: HostTab = hostTab) => go(`fleet?host=${id}&view=${view}`);
+  const hostParam = q.get("host");
+  const selected = list.find((h) => h.id === hostParam) ?? list[0];
   const running = new Set((upgrades.data?.upgrades ?? []).filter((u) => u.state === "queued" || u.state === "running").map((u) => u.hostId));
+  const nav = <MachineNav ws={ws} hosts={list} selectedId={selected?.id} view={view} go={go} />;
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <Tabs<Tab> value={tab} onChange={(t) => go(`fleet?tab=${t}`)} tabs={[
-          { key: "machines", label: t("Machines"), count: list.length },
-          { key: "map", label: t("Cluster map") },
-          { key: "ray", label: "Ray" },
-          { key: "data", label: t("Data on machines") },
-          { key: "agents", label: t("Agent updates"), count: running.size || undefined },
-        ]} />
-        <button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("+ Add machine")}</button>
-      </div>
+    <>
       <ErrorBox error={hosts.error ? errorText(hosts.error) : upgrade.error ? errorText(upgrade.error) : null} onRetry={() => void hosts.refetch()} />
-      {tab === "map" ? <ClusterMapView ws={ws} go={go} />
-        : tab === "data" ? <DataCacheList ws={ws} go={go} />
-        : tab === "ray" ? <RayHealthView ws={ws} />
-        : tab === "agents" ? <UpgradeHistory items={upgrades.data?.upgrades ?? []} latest={list[0]?.latestAgentVersion} loading={upgrades.isLoading} />
-        : hosts.isLoading ? <Skeleton rows={6} />
-        : list.length === 0 ? <EmptyState title={t("No machines yet")} action={<button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("Add your first machine")}</button>} />
-        : (
-          <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[300px_1fr]">
-            <MachineList ws={ws} hosts={list} selectedId={selected?.id} onSelect={(id) => select(id)} />
-            {selected && <MachineWorkspace ws={ws} h={selected} tab={hostTab} onTab={(v) => select(selected.id, v)} busy={running.has(selected.id)}
-              onUpgrade={(force) => upgrade.mutate({ hostIds: [selected.id], force })} />}
-          </div>)}
-      {open && <EnrollDialog ws={ws} onClose={() => go("fleet")} />}
-    </div>
+      <div className="overflow-hidden rounded-lg border border-line bg-surface lg:grid lg:h-[calc(100dvh-9.5rem)] lg:grid-cols-[208px_minmax(0,1fr)]">
+        <div className={`${hostParam || view ? "hidden lg:block" : ""} min-h-0 border-line lg:border-r`}>{nav}</div>
+        <div className={`${hostParam || view ? "" : "hidden lg:block"} min-h-0 min-w-0`}>
+          {view ? <div className="h-full overflow-auto p-4">
+              {view === "map" ? <ClusterMapView ws={ws} go={go} /> : view === "data" ? <DataCacheList ws={ws} go={go} /> : view === "ray" ? <RayHealthView ws={ws} />
+                : <UpgradeHistory items={upgrades.data?.upgrades ?? []} latest={list[0]?.latestAgentVersion} loading={upgrades.isLoading} />}</div>
+            : hosts.isLoading ? <Skeleton rows={6} />
+            : !selected ? <EmptyState title={t("No machines yet")} action={<button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("Add your first machine")}</button>} />
+            : <MachineScreen key={selected.id} ws={ws} h={selected} busy={running.has(selected.id)} go={go}
+                onUpgrade={(force) => upgrade.mutate({ hostIds: [selected.id], force })} />}
+        </div>
+      </div>
+      {q.get("new") === "1" && <EnrollDialog ws={ws} onClose={() => go("fleet")} />}
+    </>
   );
 }
 
-function MiniBar({ pct, tone }: { pct: number; tone: string }) {
-  return <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2"><div className={`h-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} /></div>;
-}
-
-function MachineList({ ws, hosts, selectedId, onSelect }: { ws: string; hosts: Host[]; selectedId?: string; onSelect: (id: string) => void }) {
+function MachineNav({ ws, hosts, selectedId, view, go }: { ws: string; hosts: Host[]; selectedId?: string; view: View | null; go: (p: string) => void }) {
+  const links: [View, string][] = [["map", "Cluster map"], ["ray", "Ray"], ["data", "Data on machines"], ["agents", "Agent updates"]];
   return (
-    <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
-      {hosts.map((h) => <MachineRow key={h.id} ws={ws} h={h} active={h.id === selectedId} onClick={() => onSelect(h.id)} />)}
-    </div>
+    <nav className="flex h-full min-h-0 flex-col">
+      <div className="flex h-12 flex-none items-center border-b border-line px-4 font-semibold">{t("Machines")}</div>
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+        {hosts.map((h) => <MachineRow key={h.id} ws={ws} h={h} active={!view && h.id === selectedId} onClick={() => go(`fleet?host=${h.id}`)} />)}
+      </div>
+      <div className="flex-none space-y-1 border-t border-line p-2">
+        {links.map(([k, label]) => (
+          <button key={k} className={`flex h-8 w-full items-center whitespace-nowrap rounded-md px-3 text-sm ${view === k ? "bg-surface-2 text-fg" : "text-fg-muted hover:text-fg"}`}
+            onClick={() => go(`fleet?tab=${k}`)}>{t(label)}</button>))}
+        <button className="flex h-9 w-full items-center justify-center whitespace-nowrap rounded-md border border-line text-sm hover:bg-surface-2" onClick={() => go("fleet?new=1")}>{t("+ Add machine")}</button>
+      </div>
+    </nav>
   );
+}
+
+function useGpus(ws: string, h: Host) {
+  return useQuery({ queryKey: ["host-gpus", ws, h.id], queryFn: () => api.fleet.getHostGpus({ workspaceId: ws, hostId: h.id }),
+    refetchInterval: 15000, enabled: (h.hostInfo?.gpus.length ?? 0) > 0 && online(h) });
 }
 
 function MachineRow({ ws, h, active, onClick }: { ws: string; h: Host; active: boolean; onClick: () => void }) {
-  const gpus = useQuery({ queryKey: ["host-gpus", ws, h.id], queryFn: () => api.fleet.getHostGpus({ workspaceId: ws, hostId: h.id }),
-    refetchInterval: 15000, enabled: (h.hostInfo?.gpus.length ?? 0) > 0 && online(h) });
+  const g = useGpus(ws, h).data?.gpus[0]?.sample;
+  const sub = !online(h) ? t(h.state) : g ? `GPU ${g.utilPercent.toFixed(0)}% · ${g.temperatureC.toFixed(0)}°C` : `${h.hostInfo?.logicalCpus ?? "—"} CPU`;
   return (
-    <button onClick={onClick} className={`w-full rounded-lg border p-3 text-left transition ${active ? "border-accent bg-accent/10" : "border-line bg-surface hover:bg-surface-2"}`}>
-      <div className="flex items-center gap-2">
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${online(h) ? "bg-success" : h.state === "degraded" ? "bg-warning" : "bg-fg-subtle"}`} />
-        <span className="min-w-0 flex-1 truncate text-base font-medium">{h.name}</span>
-        {h.updateAvailable && <span className="badge bg-sky-100 text-sky-700">{t("update")}</span>}
-      </div>
-      <div className="mt-1 truncate text-sm text-fg-muted">{h.hostInfo?.logicalCpus ?? "—"} CPU · {h.hostInfo ? bytes(h.hostInfo.memoryBytes) : "—"} RAM{h.hostInfo?.instance ? ` · ${h.hostInfo.instance}` : ""}</div>
-      {(gpus.data?.gpus ?? []).map((g) => {
-        const s = g.sample;
-        const total = Number(s?.memoryTotalBytes || g.info?.memoryBytes || 1n);
-        return (
-          <div key={g.info?.uuid} className="mt-2 space-y-1 text-sm">
-            <div className="flex justify-between text-fg-muted"><span className="truncate">GPU {g.info?.index} · {g.info?.name}</span><span className="tabular-nums">{s?.temperatureC.toFixed(0)}°C</span></div>
-            <div className="flex items-center gap-2"><span className="w-12 text-xs text-fg-subtle">{t("Util")}</span><MiniBar pct={s?.utilPercent ?? 0} tone="bg-accent" /><span className="w-10 text-right text-xs tabular-nums">{s?.utilPercent.toFixed(0)}%</span></div>
-            <div className="flex items-center gap-2"><span className="w-12 text-xs text-fg-subtle">VRAM</span><MiniBar pct={(Number(s?.memoryUsedBytes ?? 0n) / total) * 100} tone="bg-violet-400" /><span className="w-10 text-right text-xs tabular-nums">{((Number(s?.memoryUsedBytes ?? 0n) / total) * 100).toFixed(0)}%</span></div>
-          </div>);
-      })}
+    <button onClick={onClick} className={`grid h-[52px] w-full grid-cols-[8px_minmax(0,1fr)] items-center gap-x-2 rounded-md px-2.5 text-left ${active ? "bg-surface-2" : "hover:bg-surface-2/60"}`}>
+      <span className={`h-2 w-2 rounded-full ${online(h) ? "bg-success" : h.state === "degraded" ? "bg-warning" : "bg-fg-subtle"}`} />
+      <span className="min-w-0"><span className="block truncate text-sm font-medium">{h.name}</span><span className="block truncate text-xs text-fg-muted">{sub}</span></span>
     </button>
   );
 }
 
-function MachineWorkspace({ ws, h, tab, onTab, busy, onUpgrade }:
-  { ws: string; h: Host; tab: HostTab; onTab: (t: HostTab) => void; busy: boolean; onUpgrade: (force: boolean) => void }) {
-  const live = online(h);
+function Meter({ label, pct, value, tone, width }: { label: string; pct: number; value: string; tone: string; width: string }) {
   return (
-    <div className="flex min-h-0 flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-semibold">{h.name}</h2>
-        <StateBadge state={h.state} reason={h.stateReason || undefined} />
-        <span className="text-sm text-fg-muted">{h.hostInfo?.osDescription}</span>
+    <span className="grid flex-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2" style={{ width }}>
+      <span className="whitespace-nowrap text-fg-muted">{label}</span>
+      <span className="h-1.5 rounded-full bg-surface-2"><span className={`block h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} /></span>
+      <span className="whitespace-nowrap text-right tabular-nums">{value}</span>
+    </span>
+  );
+}
+
+function GpuStrip({ ws, h }: { ws: string; h: Host }) {
+  const v = useGpus(ws, h).data;
+  if (!v || v.gpus.length === 0) return null;
+  return (
+    <div className="flex-none border-b border-line">
+      {v.gpus.map((c) => {
+        const s = c.sample!;
+        const total = Number(s.memoryTotalBytes || c.info?.memoryBytes || 1n);
+        const used = Number(s.memoryUsedBytes);
+        return (
+          <div key={c.info?.uuid} className="flex h-10 items-center gap-5 overflow-x-auto px-4 text-xs">
+            <span className="flex-none whitespace-nowrap font-medium">GPU {c.info?.index} · {c.info?.name}</span>
+            <Meter label={t("Util")} pct={s.utilPercent} value={`${s.utilPercent.toFixed(0)}%`} tone="bg-accent" width="180px" />
+            <Meter label="VRAM" pct={(used / total) * 100} value={`${bytes(used)} / ${bytes(total)}`} tone="bg-violet-400" width="240px" />
+            <span className="flex-none whitespace-nowrap"><span className="text-fg-muted">{t("Temperature")} </span>{s.temperatureC.toFixed(0)}°C</span>
+            <span className="flex-none whitespace-nowrap"><span className="text-fg-muted">{t("Power")} </span>{s.powerW.toFixed(0)}{s.powerLimitW !== undefined ? ` / ${s.powerLimitW.toFixed(0)}` : ""} W</span>
+            <span className="flex-none whitespace-nowrap"><span className="text-fg-muted">{t("Free to schedule")} </span>{bytes(c.schedulableMemoryBytes)}</span>
+            {c.alerts.map((a) => <span key={a.kind} className={`badge flex-none ${a.level === "crit" ? "bg-danger/15 text-danger" : "bg-warning/15 text-warning"}`}>{t(a.kind)}</span>)}
+            {v.yield?.active && <span className="badge flex-none bg-warning/15 text-warning">{t("yielded")}</span>}
+          </div>);
+      })}
+    </div>
+  );
+}
+
+function MachineHeader({ h, busy, onUpgrade, back }: { h: Host; busy: boolean; onUpgrade: (force: boolean) => void; back?: () => void }) {
+  const i = h.hostInfo;
+  return (
+    <header className="flex h-12 flex-none items-center gap-3 border-b border-line px-2 lg:px-4">
+      {back && <button className="inline-flex h-10 w-10 flex-none items-center justify-center lg:hidden" aria-label={t("Machines")} onClick={back}><ChevronLeft className="h-5 w-5" /></button>}
+      <span className="min-w-0 truncate text-base font-semibold">{h.name}</span>
+      <StateBadge state={h.state} reason={h.stateReason || undefined} />
+      <span className="hidden min-w-0 truncate text-sm text-fg-muted xl:block">
+        {[i?.osDescription, i ? `${i.logicalCpus} CPU` : "", i ? `${bytes(i.memoryBytes)} RAM` : "", i?.dockerVersion ? `Docker ${i.dockerVersion}` : "", h.overlayIp ? `VPN ${h.overlayIp}` : ""].filter(Boolean).join(" · ")}
+      </span>
+      <span className="ml-auto hidden flex-none whitespace-nowrap text-xs text-fg-muted lg:block">agent {h.agentVersion.slice(0, 7)}</span>
+      {busy ? <span className="badge flex-none bg-sky-100 text-sky-700">{t("updating…")}</span>
+        : h.updateAvailable ? <button className="btn-primary h-8 flex-none whitespace-nowrap px-3" onClick={() => onUpgrade(false)}><RefreshCw className="h-4 w-4" />{t("Update agent")}</button>
+        : null}
+    </header>
+  );
+}
+
+function MachineScreen({ ws, h, busy, go, onUpgrade }: { ws: string; h: Host; busy: boolean; go: (p: string) => void; onUpgrade: (force: boolean) => void }) {
+  const [left, setLeft] = useState<LeftTab>("files");
+  const [mobile, setMobile] = useState<MobileTab>("files");
+  const [tabs, setTabs] = useState<PaneTab[]>([{ id: 1, kind: "terminal" }]);
+  const [active, setActive] = useState(1);
+  const live = online(h);
+  const openFile = (path: string) => {
+    const id = Date.now();
+    setTabs((ts) => [...ts, { id, kind: "file", path }]);
+    setActive(id);
+    setMobile("terminal");
+  };
+  const addTerminal = () => { const id = Date.now(); setTabs((ts) => [...ts, { id, kind: "terminal" }]); setActive(id); };
+  const close = (id: number) => setTabs((ts) => { const rest = ts.filter((x) => x.id !== id); if (active === id && rest.length) setActive(rest[rest.length - 1].id); return rest; });
+  const leftBody = (tab: LeftTab, compact: boolean) =>
+    tab === "activity" ? <div className="p-3"><HostActivityPanel ws={ws} h={h} /></div>
+    : !live ? <EmptyState bare title={t("The machine is offline.")} />
+    : tab === "files" ? <FileBrowser ws={ws} hostId={h.id} onOpenFile={openFile} compact={compact} />
+    : tab === "processes" ? <ProcessesPanel ws={ws} hostId={h.id} />
+    : tab === "services" ? <ServicesPanel ws={ws} hostId={h.id} />
+    : <div className="p-3"><GpuPanel ws={ws} hostId={h.id} /></div>;
+  const pane = <WorkPane ws={ws} hostId={h.id} live={live} tabs={tabs} active={active} setActive={setActive} add={addTerminal} close={close} />;
+  const leftTabs: [LeftTab, string][] = [["files", "Files"], ["processes", "Processes"], ["services", "Services"], ["gpu", "GPU history"], ["activity", "Activity"]];
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <MachineHeader h={h} busy={busy} onUpgrade={onUpgrade} back={() => go("fleet")} />
+      <GpuStrip ws={ws} h={h} />
+      <div className="hidden min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid">
+        <section className="flex min-h-0 flex-col border-r border-line">
+          <div className="flex h-10 flex-none items-center gap-1 overflow-x-auto border-b border-line px-2">
+            {leftTabs.map(([k, label]) => <button key={k} className={seg(left === k)} onClick={() => setLeft(k)}>{t(label)}</button>)}
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto">{leftBody(left, false)}</div>
+        </section>
+        {pane}
       </div>
-      <Tabs<HostTab> value={tab} onChange={onTab} tabs={[
-        { key: "overview", label: t("Overview") },
-        { key: "gpu", label: "GPU", count: h.hostInfo?.gpus.length || undefined },
-        { key: "terminal", label: t("Terminal") },
-        { key: "files", label: t("Files") },
-        { key: "processes", label: t("Processes") },
-        { key: "services", label: t("Services") },
-        { key: "activity", label: t("Activity") },
-      ]} />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {tab === "overview" ? <MachineOverview h={h} busy={busy} onUpgrade={onUpgrade} />
-          : tab === "activity" ? <HostActivityPanel ws={ws} h={h} />
-          : !live ? <EmptyState bare title={t("The machine is offline.")} />
-          : tab === "gpu" ? <GpuPanel ws={ws} hostId={h.id} />
-          : tab === "terminal" ? <TerminalPanel key={h.id} ws={ws} hostId={h.id} />
-          : tab === "files" ? <FilesPanel key={h.id} ws={ws} hostId={h.id} />
-          : tab === "processes" ? <ProcessesPanel ws={ws} hostId={h.id} />
-          : <ServicesPanel ws={ws} hostId={h.id} />}
+      <div className="flex min-h-[calc(100dvh-12rem)] flex-1 flex-col lg:hidden">
+        <div className="grid h-12 flex-none grid-cols-4 items-center gap-1 border-b border-line px-2">
+          {(["files", "terminal", "processes", "services"] as MobileTab[]).map((k) => (
+            <button key={k} className={seg(mobile === k)} onClick={() => setMobile(k)}>{t(k === "files" ? "Files" : k === "terminal" ? "Terminal" : k === "processes" ? "Processes" : "Services")}</button>))}
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col">{mobile === "terminal" ? pane : leftBody(mobile, true)}</div>
       </div>
     </div>
   );
 }
 
-function Fact({ label, value }: { label: string; value: React.ReactNode }) {
-  return <div className="rounded-lg border border-line p-3"><div className="text-xs text-fg-subtle">{label}</div><div className="mt-1 text-base">{value}</div></div>;
-}
-
-function MachineOverview({ h, busy, onUpgrade }: { h: Host; busy: boolean; onUpgrade: (force: boolean) => void }) {
-  const i = h.hostInfo;
+function WorkPane({ ws, hostId, live, tabs, active, setActive, add, close }:
+  { ws: string; hostId: string; live: boolean; tabs: PaneTab[]; active: number; setActive: (id: number) => void; add: () => void; close: (id: number) => void }) {
+  let n = 0;
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Fact label="CPU" value={`${i?.logicalCpus ?? "—"}`} />
-        <Fact label="RAM" value={i ? bytes(i.memoryBytes) : "—"} />
-        <Fact label="GPU" value={i?.gpus.length ? i.gpus.map((g) => `${g.name} · ${bytes(g.memoryBytes)}`).join(", ") : t("no GPU")} />
-        <Fact label="Docker" value={i?.dockerVersion || "—"} />
-        <Fact label="VPN" value={<span className="mono">{h.overlayIp || "—"} · {h.vpnStatus || "—"}</span>} />
-        <Fact label={t("heartbeat")} value={<RelTime at={h.lastSeenAt} />} />
-        <Fact label={t("GPU priority")} value={`${i?.instance || t("default")} · ${t(i?.gpuPriority || "normal")}`} />
-        <Fact label="Agent" value={<span className="mono">{h.agentVersion.slice(0, 10) || "—"}</span>} />
+    <section className="flex min-h-0 flex-1 flex-col bg-[#0b0e13]">
+      <div className="flex h-10 flex-none items-center gap-1 overflow-x-auto border-b border-line px-2">
+        {tabs.map((tb) => {
+          const label = tb.kind === "terminal" ? `${t("Terminal")} ${++n}` : tb.path.split(/[\\/]/).pop() ?? tb.path;
+          return (
+            <span key={tb.id} className={`inline-flex h-8 flex-none items-center rounded-md ${active === tb.id ? "bg-surface-2 text-fg" : "text-fg-muted hover:text-fg"}`}>
+              <button className="h-8 whitespace-nowrap pl-3 pr-1 text-sm" onClick={() => setActive(tb.id)}>{label}</button>
+              <button className="inline-flex h-8 w-7 items-center justify-center" aria-label={t("Close")} onClick={() => close(tb.id)}><X className="h-3.5 w-3.5" /></button>
+            </span>);
+        })}
+        <button className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-md text-fg-muted hover:text-fg" aria-label={t("New terminal")} onClick={add}><Plus className="h-4 w-4" /></button>
       </div>
-      <div className="flex items-center gap-2">
-        {busy ? <span className="badge bg-sky-100 text-sky-700">{t("updating…")}</span>
-          : h.updateAvailable ? <button className="btn-primary" onClick={() => onUpgrade(false)}><RefreshCw className="h-4 w-4" />{t("Update agent")}</button>
-          : <button className="btn-ghost" disabled={!online(h)} onClick={() => onUpgrade(true)}><RefreshCw className="h-4 w-4" />{t("Reinstall")}</button>}
+      <div className="relative min-h-0 flex-1">
+        {!live ? <EmptyState bare title={t("The machine is offline.")} /> : tabs.map((tb) => (
+          <div key={tb.id} className={`absolute inset-0 flex flex-col ${active === tb.id ? "" : "invisible"}`}>
+            {tb.kind === "terminal" ? <TerminalPanel ws={ws} hostId={hostId} /> : <FileEditor ws={ws} hostId={hostId} path={tb.path} />}
+          </div>))}
       </div>
-      {(i?.fsRoots.length ?? 0) > 0 && <Fact label={t("Allowed folders")} value={<span className="mono text-sm">{i!.fsRoots.join("  ·  ")}</span>} />}
-    </div>
+    </section>
   );
 }
 
