@@ -8,7 +8,7 @@ import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { EmptySchema } from "./common_pb";
 import { file_mlplatform_v1_common } from "./common_pb";
-import type { BrowsePathResultSchema, HostInfo, OsFamily } from "./agent_pb";
+import type { BrowsePathResultSchema, FsListingSchema, FsStat, FsStatSchema, GpuInfo, GpuSample, GpuState, GpuYield, HostInfo, OsFamily, ProcessListingSchema, ServiceListingSchema } from "./agent_pb";
 import { file_mlplatform_v1_agent } from "./agent_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mlplatform/v1/fleet.proto.
  */
 export const file_mlplatform_v1_fleet: GenFile = /*@__PURE__*/
-  fileDesc("ChltbHBsYXRmb3JtL3YxL2ZsZWV0LnByb3RvEg1tbHBsYXRmb3JtLnYxIk8KG0VzdGltYXRlRGF0YVRyYW5zZmVyUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSGgoSZGF0YXNldF92ZXJzaW9uX2lkGAIgASgJInYKFEhvc3RUcmFuc2ZlckVzdGltYXRlEg8KB2hvc3RfaWQYASABKAkSFAoMY2FjaGVkX2ZpbGVzGAIgASgDEhQKDGNhY2hlZF9ieXRlcxgDIAEoAxISCgpmcmVlX2J5dGVzGAQgASgDEg0KBWtub3duGAUgASgIImgKFERhdGFUcmFuc2ZlckVzdGltYXRlEg0KBWZpbGVzGAEgASgDEg0KBWJ5dGVzGAIgASgDEjIKBWhvc3RzGAMgAygLMiMubWxwbGF0Zm9ybS52MS5Ib3N0VHJhbnNmZXJFc3RpbWF0ZSI+ChVMaXN0RGF0YUNhY2hlc1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkixQEKCURhdGFDYWNoZRIPCgdob3N0X2lkGAEgASgJEhIKCmRhdGFzZXRfaWQYAiABKAkSEwoLY2FjaGVfZmlsZXMYAyABKAMSEwoLY2FjaGVfYnl0ZXMYBCABKAMSEgoKZnJlZV9ieXRlcxgFIAEoAxIwCgxsYXN0X3VzZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC2xhc3Rfam9iX2lkGAcgASgJEg4KBmluX3VzZRgIIAEoCCJCChZMaXN0RGF0YUNhY2hlc1Jlc3BvbnNlEigKBmNhY2hlcxgBIAMoCzIYLm1scGxhdGZvcm0udjEuRGF0YUNhY2hlIlMKFkRlbGV0ZURhdGFDYWNoZVJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSEgoKZGF0YXNldF9pZBgDIAEoCSI/ChdMaXN0Sm9iRGF0YVN5bmNzUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDgoGam9iX2lkGAIgASgJItgCCghEYXRhU3luYxIKCgJpZBgBIAEoCRISCgphdHRlbXB0X2lkGAIgASgJEg8KB2hvc3RfaWQYAyABKAkSEgoKZGF0YXNldF9pZBgEIAEoCRINCgVmaWxlcxgFIAEoBRIUCgxyZXVzZWRfZmlsZXMYBiABKAUSFAoMcmV1c2VkX2J5dGVzGAcgASgDEhUKDWZldGNoZWRfZmlsZXMYCCABKAUSFQoNZmV0Y2hlZF9ieXRlcxgJIAEoAxIWCg51bmNhY2hlZF9maWxlcxgKIAEoBRIPCgdyZXRyaWVzGAsgASgFEg8KB3NlY29uZHMYDCABKAESEwoLY2FjaGVfZmlsZXMYDSABKAMSEwoLY2FjaGVfYnl0ZXMYDiABKAMSEgoKZnJlZV9ieXRlcxgPIAEoAxImCgJhdBgQIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiQgoYTGlzdEpvYkRhdGFTeW5jc1Jlc3BvbnNlEiYKBXN5bmNzGAEgAygLMhcubWxwbGF0Zm9ybS52MS5EYXRhU3luYyJNChRVcGdyYWRlQWdlbnRzUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSEAoIaG9zdF9pZHMYAiADKAkSDQoFZm9yY2UYAyABKAgiQQoYTGlzdEFnZW50VXBncmFkZXNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJIkoKGUxpc3RBZ2VudFVwZ3JhZGVzUmVzcG9uc2USLQoIdXBncmFkZXMYASADKAsyGy5tbHBsYXRmb3JtLnYxLkFnZW50VXBncmFkZSL4AQoMQWdlbnRVcGdyYWRlEgoKAmlkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSEQoJaG9zdF9uYW1lGAMgASgJEhQKDGZyb21fdmVyc2lvbhgEIAEoCRISCgp0b192ZXJzaW9uGAUgASgJEg0KBXN0YXRlGAYgASgJEg0KBXBoYXNlGAcgASgJEg8KB21lc3NhZ2UYCCABKAkSLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLZmluaXNoZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wInwKF0NyZWF0ZUVucm9sbG1lbnRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIjCgJvcxgCIAEoDjIXLm1scGxhdGZvcm0udjEuT3NGYW1pbHkSEQoJZGF0YV9wYXRoGAMgASgJEhMKC21vZGVsc19wYXRoGAQgASgJInAKCkVucm9sbG1lbnQSCgoCaWQYASABKAkSDQoFdG9rZW4YAiABKAkSFwoPaW5zdGFsbF9jb21tYW5kGAMgASgJEi4KCmV4cGlyZXNfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIigKEExpc3RIb3N0c1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIjcKEUxpc3RIb3N0c1Jlc3BvbnNlEiIKBWhvc3RzGAEgAygLMhMubWxwbGF0Zm9ybS52MS5Ib3N0IjcKDkdldEhvc3RSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJIvkCCgRIb3N0EgoKAmlkGAEgASgJEhQKDHdvcmtzcGFjZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEg0KBXN0YXRlGAQgASgJEhQKDHN0YXRlX3JlYXNvbhgFIAEoCRISCgpvdmVybGF5X2lwGAYgASgJEhUKDWFnZW50X3ZlcnNpb24YByABKAkSKgoJaG9zdF9pbmZvGAggASgLMhcubWxwbGF0Zm9ybS52MS5Ib3N0SW5mbxIwCgxsYXN0X3NlZW5fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhwKFGxhdGVzdF9hZ2VudF92ZXJzaW9uGAogASgJEhgKEHVwZGF0ZV9hdmFpbGFibGUYCyABKAgSEgoKdnBuX3N0YXR1cxgMIAEoCRITCgt2cG5fbWVzc2FnZRgNIAEoCRIyCg52cG5fY2hlY2tlZF9hdBgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiVQoVQnJvd3NlSG9zdFBhdGhSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEhUKDXJlbGF0aXZlX3BhdGgYAyABKAki1QEKEUFnZW50Q29tbWFuZFRyYWNlEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDgoGZGV0YWlsGAMgASgJEi4KCnN0YXJ0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2ZpbmlzaGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgVzdGF0ZRgGIAEoCRIPCgdtZXNzYWdlGAcgASgJEhUKDWxpbWl0X3NlY29uZHMYCCABKAUiwQEKDEhvc3RBY3Rpdml0eRIOCgZvbmxpbmUYASABKAgSMgoIY29tbWFuZHMYAiADKAsyIC5tbHBsYXRmb3JtLnYxLkFnZW50Q29tbWFuZFRyYWNlEhEKCWFnZW50X2xvZxgDIAEoCRIRCglsb2dfZXJyb3IYBCABKAkSFQoNYWdlbnRfdmVyc2lvbhgFIAEoCRIwCgxjb25uZWN0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wMqgICgxGbGVldFNlcnZpY2USVQoQQ3JlYXRlRW5yb2xsbWVudBImLm1scGxhdGZvcm0udjEuQ3JlYXRlRW5yb2xsbWVudFJlcXVlc3QaGS5tbHBsYXRmb3JtLnYxLkVucm9sbG1lbnQSTgoJTGlzdEhvc3RzEh8ubWxwbGF0Zm9ybS52MS5MaXN0SG9zdHNSZXF1ZXN0GiAubWxwbGF0Zm9ybS52MS5MaXN0SG9zdHNSZXNwb25zZRI9CgdHZXRIb3N0Eh0ubWxwbGF0Zm9ybS52MS5HZXRIb3N0UmVxdWVzdBoTLm1scGxhdGZvcm0udjEuSG9zdBJXCg5Ccm93c2VIb3N0UGF0aBIkLm1scGxhdGZvcm0udjEuQnJvd3NlSG9zdFBhdGhSZXF1ZXN0Gh8ubWxwbGF0Zm9ybS52MS5Ccm93c2VQYXRoUmVzdWx0Ek0KD0dldEhvc3RBY3Rpdml0eRIdLm1scGxhdGZvcm0udjEuR2V0SG9zdFJlcXVlc3QaGy5tbHBsYXRmb3JtLnYxLkhvc3RBY3Rpdml0eRJFCg5EaXNjb25uZWN0SG9zdBIdLm1scGxhdGZvcm0udjEuR2V0SG9zdFJlcXVlc3QaFC5tbHBsYXRmb3JtLnYxLkVtcHR5El4KDVVwZ3JhZGVBZ2VudHMSIy5tbHBsYXRmb3JtLnYxLlVwZ3JhZGVBZ2VudHNSZXF1ZXN0GigubWxwbGF0Zm9ybS52MS5MaXN0QWdlbnRVcGdyYWRlc1Jlc3BvbnNlEmYKEUxpc3RBZ2VudFVwZ3JhZGVzEicubWxwbGF0Zm9ybS52MS5MaXN0QWdlbnRVcGdyYWRlc1JlcXVlc3QaKC5tbHBsYXRmb3JtLnYxLkxpc3RBZ2VudFVwZ3JhZGVzUmVzcG9uc2USXQoOTGlzdERhdGFDYWNoZXMSJC5tbHBsYXRmb3JtLnYxLkxpc3REYXRhQ2FjaGVzUmVxdWVzdBolLm1scGxhdGZvcm0udjEuTGlzdERhdGFDYWNoZXNSZXNwb25zZRJOCg9EZWxldGVEYXRhQ2FjaGUSJS5tbHBsYXRmb3JtLnYxLkRlbGV0ZURhdGFDYWNoZVJlcXVlc3QaFC5tbHBsYXRmb3JtLnYxLkVtcHR5EmMKEExpc3RKb2JEYXRhU3luY3MSJi5tbHBsYXRmb3JtLnYxLkxpc3RKb2JEYXRhU3luY3NSZXF1ZXN0GicubWxwbGF0Zm9ybS52MS5MaXN0Sm9iRGF0YVN5bmNzUmVzcG9uc2USZwoURXN0aW1hdGVEYXRhVHJhbnNmZXISKi5tbHBsYXRmb3JtLnYxLkVzdGltYXRlRGF0YVRyYW5zZmVyUmVxdWVzdBojLm1scGxhdGZvcm0udjEuRGF0YVRyYW5zZmVyRXN0aW1hdGVCGqoCF01MUGxhdGZvcm0uQ29udHJhY3RzLlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mlplatform_v1_common, file_mlplatform_v1_agent]);
+  fileDesc("ChltbHBsYXRmb3JtL3YxL2ZsZWV0LnByb3RvEg1tbHBsYXRmb3JtLnYxIk8KG0VzdGltYXRlRGF0YVRyYW5zZmVyUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSGgoSZGF0YXNldF92ZXJzaW9uX2lkGAIgASgJInYKFEhvc3RUcmFuc2ZlckVzdGltYXRlEg8KB2hvc3RfaWQYASABKAkSFAoMY2FjaGVkX2ZpbGVzGAIgASgDEhQKDGNhY2hlZF9ieXRlcxgDIAEoAxISCgpmcmVlX2J5dGVzGAQgASgDEg0KBWtub3duGAUgASgIImgKFERhdGFUcmFuc2ZlckVzdGltYXRlEg0KBWZpbGVzGAEgASgDEg0KBWJ5dGVzGAIgASgDEjIKBWhvc3RzGAMgAygLMiMubWxwbGF0Zm9ybS52MS5Ib3N0VHJhbnNmZXJFc3RpbWF0ZSI+ChVMaXN0RGF0YUNhY2hlc1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkixQEKCURhdGFDYWNoZRIPCgdob3N0X2lkGAEgASgJEhIKCmRhdGFzZXRfaWQYAiABKAkSEwoLY2FjaGVfZmlsZXMYAyABKAMSEwoLY2FjaGVfYnl0ZXMYBCABKAMSEgoKZnJlZV9ieXRlcxgFIAEoAxIwCgxsYXN0X3VzZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC2xhc3Rfam9iX2lkGAcgASgJEg4KBmluX3VzZRgIIAEoCCJCChZMaXN0RGF0YUNhY2hlc1Jlc3BvbnNlEigKBmNhY2hlcxgBIAMoCzIYLm1scGxhdGZvcm0udjEuRGF0YUNhY2hlIlMKFkRlbGV0ZURhdGFDYWNoZVJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSEgoKZGF0YXNldF9pZBgDIAEoCSI/ChdMaXN0Sm9iRGF0YVN5bmNzUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDgoGam9iX2lkGAIgASgJItgCCghEYXRhU3luYxIKCgJpZBgBIAEoCRISCgphdHRlbXB0X2lkGAIgASgJEg8KB2hvc3RfaWQYAyABKAkSEgoKZGF0YXNldF9pZBgEIAEoCRINCgVmaWxlcxgFIAEoBRIUCgxyZXVzZWRfZmlsZXMYBiABKAUSFAoMcmV1c2VkX2J5dGVzGAcgASgDEhUKDWZldGNoZWRfZmlsZXMYCCABKAUSFQoNZmV0Y2hlZF9ieXRlcxgJIAEoAxIWCg51bmNhY2hlZF9maWxlcxgKIAEoBRIPCgdyZXRyaWVzGAsgASgFEg8KB3NlY29uZHMYDCABKAESEwoLY2FjaGVfZmlsZXMYDSABKAMSEwoLY2FjaGVfYnl0ZXMYDiABKAMSEgoKZnJlZV9ieXRlcxgPIAEoAxImCgJhdBgQIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiQgoYTGlzdEpvYkRhdGFTeW5jc1Jlc3BvbnNlEiYKBXN5bmNzGAEgAygLMhcubWxwbGF0Zm9ybS52MS5EYXRhU3luYyJNChRVcGdyYWRlQWdlbnRzUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSEAoIaG9zdF9pZHMYAiADKAkSDQoFZm9yY2UYAyABKAgiQQoYTGlzdEFnZW50VXBncmFkZXNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJIkoKGUxpc3RBZ2VudFVwZ3JhZGVzUmVzcG9uc2USLQoIdXBncmFkZXMYASADKAsyGy5tbHBsYXRmb3JtLnYxLkFnZW50VXBncmFkZSL4AQoMQWdlbnRVcGdyYWRlEgoKAmlkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSEQoJaG9zdF9uYW1lGAMgASgJEhQKDGZyb21fdmVyc2lvbhgEIAEoCRISCgp0b192ZXJzaW9uGAUgASgJEg0KBXN0YXRlGAYgASgJEg0KBXBoYXNlGAcgASgJEg8KB21lc3NhZ2UYCCABKAkSLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLZmluaXNoZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wInwKF0NyZWF0ZUVucm9sbG1lbnRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIjCgJvcxgCIAEoDjIXLm1scGxhdGZvcm0udjEuT3NGYW1pbHkSEQoJZGF0YV9wYXRoGAMgASgJEhMKC21vZGVsc19wYXRoGAQgASgJInAKCkVucm9sbG1lbnQSCgoCaWQYASABKAkSDQoFdG9rZW4YAiABKAkSFwoPaW5zdGFsbF9jb21tYW5kGAMgASgJEi4KCmV4cGlyZXNfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIigKEExpc3RIb3N0c1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIjcKEUxpc3RIb3N0c1Jlc3BvbnNlEiIKBWhvc3RzGAEgAygLMhMubWxwbGF0Zm9ybS52MS5Ib3N0IjcKDkdldEhvc3RSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJIvkCCgRIb3N0EgoKAmlkGAEgASgJEhQKDHdvcmtzcGFjZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEg0KBXN0YXRlGAQgASgJEhQKDHN0YXRlX3JlYXNvbhgFIAEoCRISCgpvdmVybGF5X2lwGAYgASgJEhUKDWFnZW50X3ZlcnNpb24YByABKAkSKgoJaG9zdF9pbmZvGAggASgLMhcubWxwbGF0Zm9ybS52MS5Ib3N0SW5mbxIwCgxsYXN0X3NlZW5fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhwKFGxhdGVzdF9hZ2VudF92ZXJzaW9uGAogASgJEhgKEHVwZGF0ZV9hdmFpbGFibGUYCyABKAgSEgoKdnBuX3N0YXR1cxgMIAEoCRITCgt2cG5fbWVzc2FnZRgNIAEoCRIyCg52cG5fY2hlY2tlZF9hdBgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiVQoVQnJvd3NlSG9zdFBhdGhSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEhUKDXJlbGF0aXZlX3BhdGgYAyABKAki1QEKEUFnZW50Q29tbWFuZFRyYWNlEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDgoGZGV0YWlsGAMgASgJEi4KCnN0YXJ0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2ZpbmlzaGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgVzdGF0ZRgGIAEoCRIPCgdtZXNzYWdlGAcgASgJEhUKDWxpbWl0X3NlY29uZHMYCCABKAUiwQEKDEhvc3RBY3Rpdml0eRIOCgZvbmxpbmUYASABKAgSMgoIY29tbWFuZHMYAiADKAsyIC5tbHBsYXRmb3JtLnYxLkFnZW50Q29tbWFuZFRyYWNlEhEKCWFnZW50X2xvZxgDIAEoCRIRCglsb2dfZXJyb3IYBCABKAkSFQoNYWdlbnRfdmVyc2lvbhgFIAEoCRIwCgxjb25uZWN0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIkYKD0hvc3RQYXRoUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDwoHaG9zdF9pZBgCIAEoCRIMCgRwYXRoGAMgASgJImoKE1JlYWRIb3N0RmlsZVJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSDAoEcGF0aBgDIAEoCRIOCgZvZmZzZXQYBCABKAQSDgoGbGVuZ3RoGAUgASgNIkQKD0hvc3RGaWxlQ29udGVudBIMCgRkYXRhGAEgASgMEiMKBHN0YXQYAiABKAsyFS5tbHBsYXRmb3JtLnYxLkZzU3RhdCJ7ChRXcml0ZUhvc3RGaWxlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDwoHaG9zdF9pZBgCIAEoCRIMCgRwYXRoGAMgASgJEg4KBm9mZnNldBgEIAEoBBIMCgRkYXRhGAUgASgMEhAKCHRydW5jYXRlGAYgASgIIlYKE01vdmVIb3N0UGF0aFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSDAoEZnJvbRgDIAEoCRIKCgJ0bxgEIAEoCSJfChVEZWxldGVIb3N0UGF0aFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2hvc3RfaWQYAiABKAkSDAoEcGF0aBgDIAEoCRIRCglyZWN1cnNpdmUYBCABKAgiTwoYTGlzdEhvc3RQcm9jZXNzZXNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEgwKBHNvcnQYAyABKAkiaQoWS2lsbEhvc3RQcm9jZXNzUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDwoHaG9zdF9pZBgCIAEoCRILCgNwaWQYAyABKAUSDQoFZm9yY2UYBCABKAgSDAoEdHJlZRgFIAEoCCJgChlDb250cm9sSG9zdFNlcnZpY2VSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDgoGYWN0aW9uGAQgASgJIl4KGFJlYWRIb3N0U3lzdGVtTG9nUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDwoHaG9zdF9pZBgCIAEoCRIMCgR1bml0GAMgASgJEg0KBWxpbmVzGAQgASgFIh4KDUhvc3RTeXN0ZW1Mb2cSDQoFbGluZXMYASADKAkiZAoIR3B1QWxlcnQSEAoIZ3B1X3V1aWQYASABKAkSDAoEa2luZBgCIAEoCRINCgVsZXZlbBgDIAEoCRIpCgVzaW5jZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiqAEKCEdwdVVzYWdlEhAKCGdwdV91dWlkGAEgASgJEhEKCWNvbnRhaW5lchgCIAEoCRISCgphdHRlbXB0X2lkGAMgASgJEg4KBmpvYl9pZBgEIAEoCRIQCghqb2JfbmFtZRgFIAEoCRITCgtlbnZpcm9ubWVudBgGIAEoCRIZChF1c2VkX21lbW9yeV9ieXRlcxgHIAEoBBIRCgllc3RpbWF0ZWQYCCABKAgiwwEKB0dwdUNhcmQSJAoEaW5mbxgBIAEoCzIWLm1scGxhdGZvcm0udjEuR3B1SW5mbxIoCgZzYW1wbGUYAiABKAsyGC5tbHBsYXRmb3JtLnYxLkdwdVNhbXBsZRIdChVyZXNlcnZlZF9tZW1vcnlfYnl0ZXMYAyABKAQSIAoYc2NoZWR1bGFibGVfbWVtb3J5X2J5dGVzGAQgASgEEicKBmFsZXJ0cxgFIAMoCzIXLm1scGxhdGZvcm0udjEuR3B1QWxlcnQigAIKC0hvc3RHcHVWaWV3EiYKBXN0YXRlGAEgASgOMhcubWxwbGF0Zm9ybS52MS5HcHVTdGF0ZRINCgVlcnJvchgCIAEoCRIuCgpzYW1wbGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIkCgRncHVzGAQgAygLMhYubWxwbGF0Zm9ybS52MS5HcHVDYXJkEiYKBXVzYWdlGAUgAygLMhcubWxwbGF0Zm9ybS52MS5HcHVVc2FnZRImCgV5aWVsZBgGIAEoCzIXLm1scGxhdGZvcm0udjEuR3B1WWllbGQSFAoMZ3B1X3ByaW9yaXR5GAcgASgJIl4KFEdldEdwdUhpc3RvcnlSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEhAKCGdwdV91dWlkGAMgASgJEg0KBXJhbmdlGAQgASgJIqEBCghHcHVQb2ludBImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMdXRpbF9wZXJjZW50GAIgASgBEhkKEW1lbW9yeV91c2VkX2J5dGVzGAMgASgEEhUKDXRlbXBlcmF0dXJlX2MYBCABKAESDwoHcG93ZXJfdxgFIAEoARIUCgxzbV9jbG9ja19taHoYBiABKAEijwEKCkdwdUpvYk1hcmsSDgoGam9iX2lkGAEgASgJEhAKCGpvYl9uYW1lGAIgASgJEi4KCnN0YXJ0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2ZpbmlzaGVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKQAQoKR3B1SGlzdG9yeRInCgZwb2ludHMYASADKAsyFy5tbHBsYXRmb3JtLnYxLkdwdVBvaW50EhoKEm1lbW9yeV90b3RhbF9ieXRlcxgCIAEoBBInCgRqb2JzGAMgAygLMhkubWxwbGF0Zm9ybS52MS5HcHVKb2JNYXJrEhQKDHN0ZXBfc2Vjb25kcxgEIAEoBTK9EAoMRmxlZXRTZXJ2aWNlElUKEENyZWF0ZUVucm9sbG1lbnQSJi5tbHBsYXRmb3JtLnYxLkNyZWF0ZUVucm9sbG1lbnRSZXF1ZXN0GhkubWxwbGF0Zm9ybS52MS5FbnJvbGxtZW50Ek4KCUxpc3RIb3N0cxIfLm1scGxhdGZvcm0udjEuTGlzdEhvc3RzUmVxdWVzdBogLm1scGxhdGZvcm0udjEuTGlzdEhvc3RzUmVzcG9uc2USPQoHR2V0SG9zdBIdLm1scGxhdGZvcm0udjEuR2V0SG9zdFJlcXVlc3QaEy5tbHBsYXRmb3JtLnYxLkhvc3QSVwoOQnJvd3NlSG9zdFBhdGgSJC5tbHBsYXRmb3JtLnYxLkJyb3dzZUhvc3RQYXRoUmVxdWVzdBofLm1scGxhdGZvcm0udjEuQnJvd3NlUGF0aFJlc3VsdBJJCg1MaXN0SG9zdEZpbGVzEh4ubWxwbGF0Zm9ybS52MS5Ib3N0UGF0aFJlcXVlc3QaGC5tbHBsYXRmb3JtLnYxLkZzTGlzdGluZxJSCgxSZWFkSG9zdEZpbGUSIi5tbHBsYXRmb3JtLnYxLlJlYWRIb3N0RmlsZVJlcXVlc3QaHi5tbHBsYXRmb3JtLnYxLkhvc3RGaWxlQ29udGVudBJLCg1Xcml0ZUhvc3RGaWxlEiMubWxwbGF0Zm9ybS52MS5Xcml0ZUhvc3RGaWxlUmVxdWVzdBoVLm1scGxhdGZvcm0udjEuRnNTdGF0EkMKC01ha2VIb3N0RGlyEh4ubWxwbGF0Zm9ybS52MS5Ib3N0UGF0aFJlcXVlc3QaFC5tbHBsYXRmb3JtLnYxLkVtcHR5EkgKDE1vdmVIb3N0UGF0aBIiLm1scGxhdGZvcm0udjEuTW92ZUhvc3RQYXRoUmVxdWVzdBoULm1scGxhdGZvcm0udjEuRW1wdHkSTAoORGVsZXRlSG9zdFBhdGgSJC5tbHBsYXRmb3JtLnYxLkRlbGV0ZUhvc3RQYXRoUmVxdWVzdBoULm1scGxhdGZvcm0udjEuRW1wdHkSWwoRTGlzdEhvc3RQcm9jZXNzZXMSJy5tbHBsYXRmb3JtLnYxLkxpc3RIb3N0UHJvY2Vzc2VzUmVxdWVzdBodLm1scGxhdGZvcm0udjEuUHJvY2Vzc0xpc3RpbmcSTgoPS2lsbEhvc3RQcm9jZXNzEiUubWxwbGF0Zm9ybS52MS5LaWxsSG9zdFByb2Nlc3NSZXF1ZXN0GhQubWxwbGF0Zm9ybS52MS5FbXB0eRJQChBMaXN0SG9zdFNlcnZpY2VzEh0ubWxwbGF0Zm9ybS52MS5HZXRIb3N0UmVxdWVzdBodLm1scGxhdGZvcm0udjEuU2VydmljZUxpc3RpbmcSVAoSQ29udHJvbEhvc3RTZXJ2aWNlEigubWxwbGF0Zm9ybS52MS5Db250cm9sSG9zdFNlcnZpY2VSZXF1ZXN0GhQubWxwbGF0Zm9ybS52MS5FbXB0eRJaChFSZWFkSG9zdFN5c3RlbUxvZxInLm1scGxhdGZvcm0udjEuUmVhZEhvc3RTeXN0ZW1Mb2dSZXF1ZXN0GhwubWxwbGF0Zm9ybS52MS5Ib3N0U3lzdGVtTG9nEkgKC0dldEhvc3RHcHVzEh0ubWxwbGF0Zm9ybS52MS5HZXRIb3N0UmVxdWVzdBoaLm1scGxhdGZvcm0udjEuSG9zdEdwdVZpZXcSTwoNR2V0R3B1SGlzdG9yeRIjLm1scGxhdGZvcm0udjEuR2V0R3B1SGlzdG9yeVJlcXVlc3QaGS5tbHBsYXRmb3JtLnYxLkdwdUhpc3RvcnkSTQoPR2V0SG9zdEFjdGl2aXR5Eh0ubWxwbGF0Zm9ybS52MS5HZXRIb3N0UmVxdWVzdBobLm1scGxhdGZvcm0udjEuSG9zdEFjdGl2aXR5EkUKDkRpc2Nvbm5lY3RIb3N0Eh0ubWxwbGF0Zm9ybS52MS5HZXRIb3N0UmVxdWVzdBoULm1scGxhdGZvcm0udjEuRW1wdHkSXgoNVXBncmFkZUFnZW50cxIjLm1scGxhdGZvcm0udjEuVXBncmFkZUFnZW50c1JlcXVlc3QaKC5tbHBsYXRmb3JtLnYxLkxpc3RBZ2VudFVwZ3JhZGVzUmVzcG9uc2USZgoRTGlzdEFnZW50VXBncmFkZXMSJy5tbHBsYXRmb3JtLnYxLkxpc3RBZ2VudFVwZ3JhZGVzUmVxdWVzdBooLm1scGxhdGZvcm0udjEuTGlzdEFnZW50VXBncmFkZXNSZXNwb25zZRJdCg5MaXN0RGF0YUNhY2hlcxIkLm1scGxhdGZvcm0udjEuTGlzdERhdGFDYWNoZXNSZXF1ZXN0GiUubWxwbGF0Zm9ybS52MS5MaXN0RGF0YUNhY2hlc1Jlc3BvbnNlEk4KD0RlbGV0ZURhdGFDYWNoZRIlLm1scGxhdGZvcm0udjEuRGVsZXRlRGF0YUNhY2hlUmVxdWVzdBoULm1scGxhdGZvcm0udjEuRW1wdHkSYwoQTGlzdEpvYkRhdGFTeW5jcxImLm1scGxhdGZvcm0udjEuTGlzdEpvYkRhdGFTeW5jc1JlcXVlc3QaJy5tbHBsYXRmb3JtLnYxLkxpc3RKb2JEYXRhU3luY3NSZXNwb25zZRJnChRFc3RpbWF0ZURhdGFUcmFuc2ZlchIqLm1scGxhdGZvcm0udjEuRXN0aW1hdGVEYXRhVHJhbnNmZXJSZXF1ZXN0GiMubWxwbGF0Zm9ybS52MS5EYXRhVHJhbnNmZXJFc3RpbWF0ZUIaqgIXTUxQbGF0Zm9ybS5Db250cmFjdHMuVjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mlplatform_v1_common, file_mlplatform_v1_agent]);
 
 /**
  * @generated from message mlplatform.v1.EstimateDataTransferRequest
@@ -829,6 +829,659 @@ export const HostActivitySchema: GenMessage<HostActivity> = /*@__PURE__*/
   messageDesc(file_mlplatform_v1_fleet, 22);
 
 /**
+ * ── Remote ops ──
+ *
+ * @generated from message mlplatform.v1.HostPathRequest
+ */
+export type HostPathRequest = Message<"mlplatform.v1.HostPathRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string path = 3;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.HostPathRequest.
+ * Use `create(HostPathRequestSchema)` to create a new message.
+ */
+export const HostPathRequestSchema: GenMessage<HostPathRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 23);
+
+/**
+ * @generated from message mlplatform.v1.ReadHostFileRequest
+ */
+export type ReadHostFileRequest = Message<"mlplatform.v1.ReadHostFileRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string path = 3;
+   */
+  path: string;
+
+  /**
+   * @generated from field: uint64 offset = 4;
+   */
+  offset: bigint;
+
+  /**
+   * @generated from field: uint32 length = 5;
+   */
+  length: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.ReadHostFileRequest.
+ * Use `create(ReadHostFileRequestSchema)` to create a new message.
+ */
+export const ReadHostFileRequestSchema: GenMessage<ReadHostFileRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 24);
+
+/**
+ * @generated from message mlplatform.v1.HostFileContent
+ */
+export type HostFileContent = Message<"mlplatform.v1.HostFileContent"> & {
+  /**
+   * @generated from field: bytes data = 1;
+   */
+  data: Uint8Array;
+
+  /**
+   * @generated from field: mlplatform.v1.FsStat stat = 2;
+   */
+  stat?: FsStat | undefined;
+};
+
+/**
+ * Describes the message mlplatform.v1.HostFileContent.
+ * Use `create(HostFileContentSchema)` to create a new message.
+ */
+export const HostFileContentSchema: GenMessage<HostFileContent> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 25);
+
+/**
+ * @generated from message mlplatform.v1.WriteHostFileRequest
+ */
+export type WriteHostFileRequest = Message<"mlplatform.v1.WriteHostFileRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string path = 3;
+   */
+  path: string;
+
+  /**
+   * @generated from field: uint64 offset = 4;
+   */
+  offset: bigint;
+
+  /**
+   * @generated from field: bytes data = 5;
+   */
+  data: Uint8Array;
+
+  /**
+   * @generated from field: bool truncate = 6;
+   */
+  truncate: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.WriteHostFileRequest.
+ * Use `create(WriteHostFileRequestSchema)` to create a new message.
+ */
+export const WriteHostFileRequestSchema: GenMessage<WriteHostFileRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 26);
+
+/**
+ * @generated from message mlplatform.v1.MoveHostPathRequest
+ */
+export type MoveHostPathRequest = Message<"mlplatform.v1.MoveHostPathRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string from = 3;
+   */
+  from: string;
+
+  /**
+   * @generated from field: string to = 4;
+   */
+  to: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.MoveHostPathRequest.
+ * Use `create(MoveHostPathRequestSchema)` to create a new message.
+ */
+export const MoveHostPathRequestSchema: GenMessage<MoveHostPathRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 27);
+
+/**
+ * @generated from message mlplatform.v1.DeleteHostPathRequest
+ */
+export type DeleteHostPathRequest = Message<"mlplatform.v1.DeleteHostPathRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string path = 3;
+   */
+  path: string;
+
+  /**
+   * @generated from field: bool recursive = 4;
+   */
+  recursive: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.DeleteHostPathRequest.
+ * Use `create(DeleteHostPathRequestSchema)` to create a new message.
+ */
+export const DeleteHostPathRequestSchema: GenMessage<DeleteHostPathRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 28);
+
+/**
+ * @generated from message mlplatform.v1.ListHostProcessesRequest
+ */
+export type ListHostProcessesRequest = Message<"mlplatform.v1.ListHostProcessesRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string sort = 3;
+   */
+  sort: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ListHostProcessesRequest.
+ * Use `create(ListHostProcessesRequestSchema)` to create a new message.
+ */
+export const ListHostProcessesRequestSchema: GenMessage<ListHostProcessesRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 29);
+
+/**
+ * @generated from message mlplatform.v1.KillHostProcessRequest
+ */
+export type KillHostProcessRequest = Message<"mlplatform.v1.KillHostProcessRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: int32 pid = 3;
+   */
+  pid: number;
+
+  /**
+   * @generated from field: bool force = 4;
+   */
+  force: boolean;
+
+  /**
+   * @generated from field: bool tree = 5;
+   */
+  tree: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.KillHostProcessRequest.
+ * Use `create(KillHostProcessRequestSchema)` to create a new message.
+ */
+export const KillHostProcessRequestSchema: GenMessage<KillHostProcessRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 30);
+
+/**
+ * @generated from message mlplatform.v1.ControlHostServiceRequest
+ */
+export type ControlHostServiceRequest = Message<"mlplatform.v1.ControlHostServiceRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string action = 4;
+   */
+  action: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ControlHostServiceRequest.
+ * Use `create(ControlHostServiceRequestSchema)` to create a new message.
+ */
+export const ControlHostServiceRequestSchema: GenMessage<ControlHostServiceRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 31);
+
+/**
+ * @generated from message mlplatform.v1.ReadHostSystemLogRequest
+ */
+export type ReadHostSystemLogRequest = Message<"mlplatform.v1.ReadHostSystemLogRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string unit = 3;
+   */
+  unit: string;
+
+  /**
+   * @generated from field: int32 lines = 4;
+   */
+  lines: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.ReadHostSystemLogRequest.
+ * Use `create(ReadHostSystemLogRequestSchema)` to create a new message.
+ */
+export const ReadHostSystemLogRequestSchema: GenMessage<ReadHostSystemLogRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 32);
+
+/**
+ * @generated from message mlplatform.v1.HostSystemLog
+ */
+export type HostSystemLog = Message<"mlplatform.v1.HostSystemLog"> & {
+  /**
+   * @generated from field: repeated string lines = 1;
+   */
+  lines: string[];
+};
+
+/**
+ * Describes the message mlplatform.v1.HostSystemLog.
+ * Use `create(HostSystemLogSchema)` to create a new message.
+ */
+export const HostSystemLogSchema: GenMessage<HostSystemLog> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 33);
+
+/**
+ * ── GPU monitoring ──
+ *
+ * @generated from message mlplatform.v1.GpuAlert
+ */
+export type GpuAlert = Message<"mlplatform.v1.GpuAlert"> & {
+  /**
+   * @generated from field: string gpu_uuid = 1;
+   */
+  gpuUuid: string;
+
+  /**
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string level = 3;
+   */
+  level: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp since = 4;
+   */
+  since?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuAlert.
+ * Use `create(GpuAlertSchema)` to create a new message.
+ */
+export const GpuAlertSchema: GenMessage<GpuAlert> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 34);
+
+/**
+ * @generated from message mlplatform.v1.GpuUsage
+ */
+export type GpuUsage = Message<"mlplatform.v1.GpuUsage"> & {
+  /**
+   * @generated from field: string gpu_uuid = 1;
+   */
+  gpuUuid: string;
+
+  /**
+   * @generated from field: string container = 2;
+   */
+  container: string;
+
+  /**
+   * @generated from field: string attempt_id = 3;
+   */
+  attemptId: string;
+
+  /**
+   * @generated from field: string job_id = 4;
+   */
+  jobId: string;
+
+  /**
+   * @generated from field: string job_name = 5;
+   */
+  jobName: string;
+
+  /**
+   * this | other (container of another agent sharing the daemon)
+   *
+   * @generated from field: string environment = 6;
+   */
+  environment: string;
+
+  /**
+   * @generated from field: uint64 used_memory_bytes = 7;
+   */
+  usedMemoryBytes: bigint;
+
+  /**
+   * @generated from field: bool estimated = 8;
+   */
+  estimated: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuUsage.
+ * Use `create(GpuUsageSchema)` to create a new message.
+ */
+export const GpuUsageSchema: GenMessage<GpuUsage> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 35);
+
+/**
+ * @generated from message mlplatform.v1.GpuCard
+ */
+export type GpuCard = Message<"mlplatform.v1.GpuCard"> & {
+  /**
+   * @generated from field: mlplatform.v1.GpuInfo info = 1;
+   */
+  info?: GpuInfo | undefined;
+
+  /**
+   * @generated from field: mlplatform.v1.GpuSample sample = 2;
+   */
+  sample?: GpuSample | undefined;
+
+  /**
+   * memory reserved by scheduled allocations
+   *
+   * @generated from field: uint64 reserved_memory_bytes = 3;
+   */
+  reservedMemoryBytes: bigint;
+
+  /**
+   * total − max(used, reserved)
+   *
+   * @generated from field: uint64 schedulable_memory_bytes = 4;
+   */
+  schedulableMemoryBytes: bigint;
+
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuAlert alerts = 5;
+   */
+  alerts: GpuAlert[];
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuCard.
+ * Use `create(GpuCardSchema)` to create a new message.
+ */
+export const GpuCardSchema: GenMessage<GpuCard> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 36);
+
+/**
+ * @generated from message mlplatform.v1.HostGpuView
+ */
+export type HostGpuView = Message<"mlplatform.v1.HostGpuView"> & {
+  /**
+   * @generated from field: mlplatform.v1.GpuState state = 1;
+   */
+  state: GpuState;
+
+  /**
+   * @generated from field: string error = 2;
+   */
+  error: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp sampled_at = 3;
+   */
+  sampledAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuCard gpus = 4;
+   */
+  gpus: GpuCard[];
+
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuUsage usage = 5;
+   */
+  usage: GpuUsage[];
+
+  /**
+   * @generated from field: mlplatform.v1.GpuYield yield = 6;
+   */
+  yield?: GpuYield | undefined;
+
+  /**
+   * @generated from field: string gpu_priority = 7;
+   */
+  gpuPriority: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.HostGpuView.
+ * Use `create(HostGpuViewSchema)` to create a new message.
+ */
+export const HostGpuViewSchema: GenMessage<HostGpuView> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 37);
+
+/**
+ * @generated from message mlplatform.v1.GetGpuHistoryRequest
+ */
+export type GetGpuHistoryRequest = Message<"mlplatform.v1.GetGpuHistoryRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string host_id = 2;
+   */
+  hostId: string;
+
+  /**
+   * @generated from field: string gpu_uuid = 3;
+   */
+  gpuUuid: string;
+
+  /**
+   * @generated from field: string range = 4;
+   */
+  range: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.GetGpuHistoryRequest.
+ * Use `create(GetGpuHistoryRequestSchema)` to create a new message.
+ */
+export const GetGpuHistoryRequestSchema: GenMessage<GetGpuHistoryRequest> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 38);
+
+/**
+ * @generated from message mlplatform.v1.GpuPoint
+ */
+export type GpuPoint = Message<"mlplatform.v1.GpuPoint"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 1;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * @generated from field: double util_percent = 2;
+   */
+  utilPercent: number;
+
+  /**
+   * @generated from field: uint64 memory_used_bytes = 3;
+   */
+  memoryUsedBytes: bigint;
+
+  /**
+   * @generated from field: double temperature_c = 4;
+   */
+  temperatureC: number;
+
+  /**
+   * @generated from field: double power_w = 5;
+   */
+  powerW: number;
+
+  /**
+   * @generated from field: double sm_clock_mhz = 6;
+   */
+  smClockMhz: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuPoint.
+ * Use `create(GpuPointSchema)` to create a new message.
+ */
+export const GpuPointSchema: GenMessage<GpuPoint> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 39);
+
+/**
+ * @generated from message mlplatform.v1.GpuJobMark
+ */
+export type GpuJobMark = Message<"mlplatform.v1.GpuJobMark"> & {
+  /**
+   * @generated from field: string job_id = 1;
+   */
+  jobId: string;
+
+  /**
+   * @generated from field: string job_name = 2;
+   */
+  jobName: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started_at = 3;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp finished_at = 4;
+   */
+  finishedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuJobMark.
+ * Use `create(GpuJobMarkSchema)` to create a new message.
+ */
+export const GpuJobMarkSchema: GenMessage<GpuJobMark> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 40);
+
+/**
+ * @generated from message mlplatform.v1.GpuHistory
+ */
+export type GpuHistory = Message<"mlplatform.v1.GpuHistory"> & {
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuPoint points = 1;
+   */
+  points: GpuPoint[];
+
+  /**
+   * @generated from field: uint64 memory_total_bytes = 2;
+   */
+  memoryTotalBytes: bigint;
+
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuJobMark jobs = 3;
+   */
+  jobs: GpuJobMark[];
+
+  /**
+   * @generated from field: int32 step_seconds = 4;
+   */
+  stepSeconds: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuHistory.
+ * Use `create(GpuHistorySchema)` to create a new message.
+ */
+export const GpuHistorySchema: GenMessage<GpuHistory> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_fleet, 41);
+
+/**
  * M02 — FleetService (UI/Admin)
  *
  * @generated from service mlplatform.v1.FleetService
@@ -865,6 +1518,114 @@ export const FleetService: GenService<{
     methodKind: "unary";
     input: typeof BrowseHostPathRequestSchema;
     output: typeof BrowsePathResultSchema;
+  },
+  /**
+   * Remote ops (docs/agent-upgrade.md §1). Terminal and large transfers are HTTP: /api/hosts/{id}/terminal (WS), /api/hosts/{id}/files.
+   *
+   * @generated from rpc mlplatform.v1.FleetService.ListHostFiles
+   */
+  listHostFiles: {
+    methodKind: "unary";
+    input: typeof HostPathRequestSchema;
+    output: typeof FsListingSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.ReadHostFile
+   */
+  readHostFile: {
+    methodKind: "unary";
+    input: typeof ReadHostFileRequestSchema;
+    output: typeof HostFileContentSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.WriteHostFile
+   */
+  writeHostFile: {
+    methodKind: "unary";
+    input: typeof WriteHostFileRequestSchema;
+    output: typeof FsStatSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.MakeHostDir
+   */
+  makeHostDir: {
+    methodKind: "unary";
+    input: typeof HostPathRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.MoveHostPath
+   */
+  moveHostPath: {
+    methodKind: "unary";
+    input: typeof MoveHostPathRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.DeleteHostPath
+   */
+  deleteHostPath: {
+    methodKind: "unary";
+    input: typeof DeleteHostPathRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.ListHostProcesses
+   */
+  listHostProcesses: {
+    methodKind: "unary";
+    input: typeof ListHostProcessesRequestSchema;
+    output: typeof ProcessListingSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.KillHostProcess
+   */
+  killHostProcess: {
+    methodKind: "unary";
+    input: typeof KillHostProcessRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.ListHostServices
+   */
+  listHostServices: {
+    methodKind: "unary";
+    input: typeof GetHostRequestSchema;
+    output: typeof ServiceListingSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.ControlHostService
+   */
+  controlHostService: {
+    methodKind: "unary";
+    input: typeof ControlHostServiceRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.ReadHostSystemLog
+   */
+  readHostSystemLog: {
+    methodKind: "unary";
+    input: typeof ReadHostSystemLogRequestSchema;
+    output: typeof HostSystemLogSchema;
+  },
+  /**
+   * GPU monitoring (§2)
+   *
+   * @generated from rpc mlplatform.v1.FleetService.GetHostGpus
+   */
+  getHostGpus: {
+    methodKind: "unary";
+    input: typeof GetHostRequestSchema;
+    output: typeof HostGpuViewSchema;
+  },
+  /**
+   * @generated from rpc mlplatform.v1.FleetService.GetGpuHistory
+   */
+  getGpuHistory: {
+    methodKind: "unary";
+    input: typeof GetGpuHistoryRequestSchema;
+    output: typeof GpuHistorySchema;
   },
   /**
    * What the control plane asked this machine to do (recent commands and their outcome) + the tail of the agent's own log.

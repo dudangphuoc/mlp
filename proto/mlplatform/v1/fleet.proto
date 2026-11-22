@@ -12,6 +12,21 @@ service FleetService {
   rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
   rpc GetHost(GetHostRequest) returns (Host);
   rpc BrowseHostPath(BrowseHostPathRequest) returns (BrowsePathResult);
+  // Remote ops (docs/agent-upgrade.md §1). Terminal and large transfers are HTTP: /api/hosts/{id}/terminal (WS), /api/hosts/{id}/files.
+  rpc ListHostFiles(HostPathRequest) returns (FsListing);
+  rpc ReadHostFile(ReadHostFileRequest) returns (HostFileContent);
+  rpc WriteHostFile(WriteHostFileRequest) returns (FsStat);
+  rpc MakeHostDir(HostPathRequest) returns (Empty);
+  rpc MoveHostPath(MoveHostPathRequest) returns (Empty);
+  rpc DeleteHostPath(DeleteHostPathRequest) returns (Empty);
+  rpc ListHostProcesses(ListHostProcessesRequest) returns (ProcessListing);
+  rpc KillHostProcess(KillHostProcessRequest) returns (Empty);
+  rpc ListHostServices(GetHostRequest) returns (ServiceListing);
+  rpc ControlHostService(ControlHostServiceRequest) returns (Empty);
+  rpc ReadHostSystemLog(ReadHostSystemLogRequest) returns (HostSystemLog);
+  // GPU monitoring (§2)
+  rpc GetHostGpus(GetHostRequest) returns (HostGpuView);
+  rpc GetGpuHistory(GetGpuHistoryRequest) returns (GpuHistory);
   // What the control plane asked this machine to do (recent commands and their outcome) + the tail of the agent's own log.
   rpc GetHostActivity(GetHostRequest) returns (HostActivity);
   rpc DisconnectHost(GetHostRequest) returns (Empty);
@@ -141,3 +156,56 @@ message HostActivity {
   string agent_version = 5;
   google.protobuf.Timestamp connected_at = 6;
 }
+
+// ── Remote ops ──
+message HostPathRequest { string workspace_id = 1; string host_id = 2; string path = 3; }
+message ReadHostFileRequest { string workspace_id = 1; string host_id = 2; string path = 3; uint64 offset = 4; uint32 length = 5; }
+message HostFileContent { bytes data = 1; FsStat stat = 2; }
+message WriteHostFileRequest { string workspace_id = 1; string host_id = 2; string path = 3; uint64 offset = 4; bytes data = 5; bool truncate = 6; }
+message MoveHostPathRequest { string workspace_id = 1; string host_id = 2; string from = 3; string to = 4; }
+message DeleteHostPathRequest { string workspace_id = 1; string host_id = 2; string path = 3; bool recursive = 4; }
+message ListHostProcessesRequest { string workspace_id = 1; string host_id = 2; string sort = 3; }
+message KillHostProcessRequest { string workspace_id = 1; string host_id = 2; int32 pid = 3; bool force = 4; bool tree = 5; }
+message ControlHostServiceRequest { string workspace_id = 1; string host_id = 2; string name = 3; string action = 4; }
+message ReadHostSystemLogRequest { string workspace_id = 1; string host_id = 2; string unit = 3; int32 lines = 4; }
+message HostSystemLog { repeated string lines = 1; }
+
+// ── GPU monitoring ──
+message GpuAlert { string gpu_uuid = 1; string kind = 2; string level = 3; google.protobuf.Timestamp since = 4; }   // kind: hot | vram_full | throttle | ecc | lost | idle_allocated
+message GpuUsage {
+  string gpu_uuid = 1;
+  string container = 2;
+  string attempt_id = 3;
+  string job_id = 4;
+  string job_name = 5;
+  string environment = 6;          // this | other (container of another agent sharing the daemon)
+  uint64 used_memory_bytes = 7;
+  bool estimated = 8;
+}
+message GpuCard {
+  GpuInfo info = 1;
+  GpuSample sample = 2;
+  uint64 reserved_memory_bytes = 3;   // memory reserved by scheduled allocations
+  uint64 schedulable_memory_bytes = 4; // total − max(used, reserved)
+  repeated GpuAlert alerts = 5;
+}
+message HostGpuView {
+  GpuState state = 1;
+  string error = 2;
+  google.protobuf.Timestamp sampled_at = 3;
+  repeated GpuCard gpus = 4;
+  repeated GpuUsage usage = 5;
+  GpuYield yield = 6;
+  string gpu_priority = 7;
+}
+message GetGpuHistoryRequest { string workspace_id = 1; string host_id = 2; string gpu_uuid = 3; string range = 4; }   // 1h | 24h | 7d | 30d
+message GpuPoint {
+  google.protobuf.Timestamp at = 1;
+  double util_percent = 2;
+  uint64 memory_used_bytes = 3;
+  double temperature_c = 4;
+  double power_w = 5;
+  double sm_clock_mhz = 6;
+}
+message GpuJobMark { string job_id = 1; string job_name = 2; google.protobuf.Timestamp started_at = 3; google.protobuf.Timestamp finished_at = 4; }
+message GpuHistory { repeated GpuPoint points = 1; uint64 memory_total_bytes = 2; repeated GpuJobMark jobs = 3; int32 step_seconds = 4; }

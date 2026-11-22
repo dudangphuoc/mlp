@@ -122,6 +122,9 @@ message HostInfo {
   string agent_exe = 20;
   string service_manager = 21;  // systemd | launchd | schtasks | none
   string agent_state_dir = 22;
+  string instance = 23;           // "" = default install; "dev" = second agent sharing this machine's Docker daemon
+  string gpu_priority = 24;       // normal | yield
+  repeated string fs_roots = 25;  // folders the file browser may open
 }
 
 message GpuInfo {
@@ -145,15 +148,47 @@ message HostMetrics {
   repeated ContainerSample containers = 8;
   bool docker_down = 9;          // docker daemon not responding (Docker Desktop stopped…) → control plane marks the machine "degraded"
   string docker_error = 10;
+  GpuState gpu_state = 11;
+  string gpu_error = 12;
+  repeated GpuProcess gpu_processes = 13;
+  GpuYield gpu_yield = 14;
 }
 
+enum GpuState { GPU_STATE_UNSPECIFIED = 0; GPU_STATE_NONE = 1; GPU_STATE_OK = 2; GPU_STATE_DRIVER_ERROR = 3; }
+
+// Absent readings ([N/A] on consumer cards) are left unset.
 message GpuSample {
   string uuid = 1;
   double util_percent = 2;
   uint64 memory_used_bytes = 3;
   double temperature_c = 4;
   double power_w = 5;
+  int32 index = 6;
+  optional double memory_util_percent = 7;
+  uint64 memory_total_bytes = 8;
+  optional double power_limit_w = 9;
+  optional double sm_clock_mhz = 10;
+  optional double sm_clock_max_mhz = 11;
+  optional double fan_percent = 12;
+  string pstate = 13;
+  repeated string throttle_reasons = 14;   // hw_slowdown | hw_thermal | hw_power_brake | sw_thermal | sw_power_cap
+  optional uint64 ecc_uncorrected = 15;
+  optional double temperature_limit_c = 16;
 }
+
+// A process holding GPU memory; container/attempt resolved from the cgroup (Linux) or estimated from --gpus (Windows/WSL).
+message GpuProcess {
+  string gpu_uuid = 1;
+  int32 pid = 2;
+  string container = 3;
+  string attempt_id = 4;
+  string owner_agent = 5;          // mlp.agent label: host id of the agent that created the container
+  uint64 used_memory_bytes = 6;
+  bool estimated = 7;
+}
+
+// gpu_priority=yield: active while a container of another agent on this Docker daemon holds a GPU.
+message GpuYield { bool active = 1; repeated string foreign_containers = 2; }
 
 message ContainerSample { string name = 1; string state = 2; double cpu_percent = 3; uint64 memory_bytes = 4; }
 
@@ -200,6 +235,17 @@ message AgentCommand {
     FileWrite file_write = 36;
     FileDelete file_delete = 37;
     RunScript run_script = 38;
+    FsList fs_list = 40;
+    FsRead fs_read = 41;
+    FsWrite fs_write = 42;
+    FsMkdir fs_mkdir = 43;
+    FsMove fs_move = 44;
+    FsDelete fs_delete = 45;
+    ProcessList process_list = 46;
+    ProcessKill process_kill = 47;
+    ServiceList service_list = 48;
+    ServiceControl service_control = 49;
+    SystemLogRead system_log_read = 50;
   }
   reserved 10, 11, 12, 13, 14, 15, 17, 19, 21;   // StartRayNode…StartNetwork, Drain, BuildImage, Upgrade (agent v1)
 }
@@ -249,6 +295,38 @@ message BrowsePath { string relative_path = 1; }
 message BrowsePathResult { repeated PathEntry entries = 1; }
 message PathEntry { string name = 1; bool is_dir = 2; uint64 size = 3; }
 
+// ── Remote ops: absolute paths inside HostInfo.fs_roots (FLEET_PATH_OUTSIDE_ROOT otherwise) ──
+message FsList { string path = 1; }           // "" = the list of roots
+message FsRead { string path = 1; uint64 offset = 2; uint32 length = 3; }   // length ≤ 4 MiB
+message FsWrite { string path = 1; uint64 offset = 2; bytes data = 3; bool truncate = 4; }   // data ≤ 1 MiB; truncate: create/overwrite
+message FsMkdir { string path = 1; }
+message FsMove { string from = 1; string to = 2; }   // never overwrites
+message FsDelete { string path = 1; bool recursive = 2; }
+message FsEntry { string name = 1; bool is_dir = 2; uint64 size = 3; google.protobuf.Timestamp modified_at = 4; bool is_link = 5; }
+message FsListing { string path = 1; repeated FsEntry entries = 2; bool truncated = 3; }
+message FsStat { string path = 1; uint64 size = 2; google.protobuf.Timestamp modified_at = 3; string sha256 = 4; bool is_text = 5; }
+
+message ProcessList { string sort = 1; }   // cpu | memory
+message ProcessInfo {
+  int32 pid = 1;
+  int32 ppid = 2;
+  string name = 3;
+  string user = 4;
+  double cpu_percent = 5;
+  uint64 rss_bytes = 6;
+  google.protobuf.Timestamp started_at = 7;
+  string command = 8;
+  string container = 9;
+}
+message ProcessListing { repeated ProcessInfo processes = 1; int32 total = 2; }
+message ProcessKill { int32 pid = 1; bool force = 2; bool tree = 3; }
+
+message ServiceList {}
+message ServiceInfo { string name = 1; string description = 2; string state = 3; string sub_state = 4; string start_type = 5; }
+message ServiceListing { repeated ServiceInfo services = 1; string manager = 2; }   // systemd | windows | launchd
+message ServiceControl { string name = 1; string action = 2; }   // start | stop | restart
+message SystemLogRead { string unit = 1; int32 lines = 2; }        // unit "" = the whole system journal / System event log
+
 message PrepullImages { repeated string images = 1; }
 message CollectLogs { string upload_url = 1; }
 message Uninstall {}
@@ -271,6 +349,10 @@ message CommandResult {
   bool exists = 11;               // FileRead: whether the file exists
   oneof result {
     BrowsePathResult browse_path = 10;
+    FsListing fs_listing = 12;
+    FsStat fs_stat = 13;
+    ProcessListing process_listing = 14;
+    ServiceListing service_listing = 15;
   }
 }
 
@@ -282,7 +364,11 @@ message OpenDataChannel {
   oneof target {
     NotebookTarget notebook = 10;
     HostFileTarget host_file = 11;
+    TerminalTarget terminal = 12;
   }
 }
+// Interactive shell; frames on the channel: [u8 kind][u32 BE length][payload ≤ 64 KiB], kinds 0 data, 1 resize (u16 cols, u16 rows),
+// 2 exit (i32 code), 3 ping.
+message TerminalTarget { string shell = 1; uint32 cols = 2; uint32 rows = 3; string cwd = 4; }
 message NotebookTarget { int32 port = 1; }
-message HostFileTarget { string path = 1; uint64 offset = 2; uint64 length = 3; string token = 4; }
+message HostFileTarget { string path = 1; uint64 offset = 2; uint64 length = 3; string token = 4; bool upload = 5; }   // upload: write the stream to path

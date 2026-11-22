@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mlplatform/v1/audit.proto.
  */
 export const file_mlplatform_v1_audit: GenFile = /*@__PURE__*/
-  fileDesc("ChltbHBsYXRmb3JtL3YxL2F1ZGl0LnByb3RvEg1tbHBsYXRmb3JtLnYxIi4KFkxpc3RBdWRpdEV2ZW50c1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIoQBCgpBdWRpdEV2ZW50EgsKA3NlcRgBIAEoAxImCgJhdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIYWN0b3JfaWQYAyABKAkSDgoGYWN0aW9uGAQgASgJEg8KB291dGNvbWUYBSABKAkSDgoGcmVhc29uGAYgASgJIlkKF0xpc3RBdWRpdEV2ZW50c1Jlc3BvbnNlEikKBmV2ZW50cxgBIAMoCzIZLm1scGxhdGZvcm0udjEuQXVkaXRFdmVudBITCgtjaGFpbl92YWxpZBgCIAEoCDJrCgxBdWRpdFNlcnZpY2USWwoKTGlzdEV2ZW50cxIlLm1scGxhdGZvcm0udjEuTGlzdEF1ZGl0RXZlbnRzUmVxdWVzdBomLm1scGxhdGZvcm0udjEuTGlzdEF1ZGl0RXZlbnRzUmVzcG9uc2VCGqoCF01MUGxhdGZvcm0uQ29udHJhY3RzLlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChltbHBsYXRmb3JtL3YxL2F1ZGl0LnByb3RvEg1tbHBsYXRmb3JtLnYxIi4KFkxpc3RBdWRpdEV2ZW50c1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIpUBCgpBdWRpdEV2ZW50EgsKA3NlcRgBIAEoAxImCgJhdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIYWN0b3JfaWQYAyABKAkSDgoGYWN0aW9uGAQgASgJEg8KB291dGNvbWUYBSABKAkSDgoGcmVhc29uGAYgASgJEg8KB2RldGFpbHMYByABKAkiWQoXTGlzdEF1ZGl0RXZlbnRzUmVzcG9uc2USKQoGZXZlbnRzGAEgAygLMhkubWxwbGF0Zm9ybS52MS5BdWRpdEV2ZW50EhMKC2NoYWluX3ZhbGlkGAIgASgIMmsKDEF1ZGl0U2VydmljZRJbCgpMaXN0RXZlbnRzEiUubWxwbGF0Zm9ybS52MS5MaXN0QXVkaXRFdmVudHNSZXF1ZXN0GiYubWxwbGF0Zm9ybS52MS5MaXN0QXVkaXRFdmVudHNSZXNwb25zZUIaqgIXTUxQbGF0Zm9ybS5Db250cmFjdHMuVjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message mlplatform.v1.ListAuditEventsRequest
@@ -64,6 +64,13 @@ export type AuditEvent = Message<"mlplatform.v1.AuditEvent"> & {
    * @generated from field: string reason = 6;
    */
   reason: string;
+
+  /**
+   * compact JSON: path, size, sha256, terminal shell/duration
+   *
+   * @generated from field: string details = 7;
+   */
+  details: string;
 };
 
 /**

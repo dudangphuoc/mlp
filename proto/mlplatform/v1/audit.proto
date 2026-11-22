@@ -16,5 +16,6 @@ message AuditEvent {
   string action = 4;
   string outcome = 5;
   string reason = 6;
+  string details = 7;   // compact JSON: path, size, sha256, terminal shell/duration
 }
 message ListAuditEventsResponse { repeated AuditEvent events = 1; bool chain_valid = 2; }

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mlplatform/v1/agent.proto.
  */
 export const file_mlplatform_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChltbHBsYXRmb3JtL3YxL2FnZW50LnByb3RvEg1tbHBsYXRmb3JtLnYxIrIBCg9Db25uZWN0aW9uSGVsbG8SMAoIcmVnaXN0ZXIYASABKAsyHC5tbHBsYXRmb3JtLnYxLlJlZ2lzdGVySGVsbG9IABIsCgZlbnJvbGwYAiABKAsyGi5tbHBsYXRmb3JtLnYxLkVucm9sbEhlbGxvSAASNwoMZGF0YV9jaGFubmVsGAMgASgLMh8ubWxwbGF0Zm9ybS52MS5EYXRhQ2hhbm5lbEhlbGxvSABCBgoEa2luZCJ9Cg1SZWdpc3RlckhlbGxvEhIKCmNyZWRlbnRpYWwYASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIqCglob3N0X2luZm8YAyABKAsyFy5tbHBsYXRmb3JtLnYxLkhvc3RJbmZvEhUKDXdnX3B1YmxpY19rZXkYBCABKAkimgEKC0Vucm9sbEhlbGxvEhQKDGVucm9sbF90b2tlbhgBIAEoCRIVCg1hZ2VudF92ZXJzaW9uGAIgASgJEioKCWhvc3RfaW5mbxgDIAEoCzIXLm1scGxhdGZvcm0udjEuSG9zdEluZm8SFQoNd2dfcHVibGljX2tleRgEIAEoCRIbChNwcmV2aW91c19jcmVkZW50aWFsGAUgASgJIjUKEERhdGFDaGFubmVsSGVsbG8SEgoKc2Vzc2lvbl9pZBgBIAEoCRINCgV0b2tlbhgCIAEoCSLUAQoLSGVsbG9SZXN1bHQSCgoCb2sYASABKAgSFAoMZXJyb3JfcmVhc29uGAIgASgJEg8KB2hvc3RfaWQYAyABKAkSEgoKY3JlZGVudGlhbBgEIAEoCRISCgpvdmVybGF5X2lwGAUgASgJEi0KB3dnX3BlZXIYBiABKAsyHC5tbHBsYXRmb3JtLnYxLldpcmVHdWFyZFBlZXISEAoIcmF5X2hlYWQYByABKAkSEgoKbm9kZV9pbWFnZRgIIAEoCRIVCg1tbHBfbmV0X2ltYWdlGAkgASgJIkoKDVdpcmVHdWFyZFBlZXISEgoKcHVibGljX2tleRgBIAEoCRIQCghlbmRwb2ludBgCIAEoCRITCgthbGxvd2VkX2lwcxgDIAEoCSI1ChFEYXRhQ2hhbm5lbEFjY2VwdBIKCgJvaxgBIAEoCBIUCgxlcnJvcl9yZWFzb24YAiABKAkilgQKDkFnZW50VG9Db250cm9sEhEKCXN0cmVhbV9pZBgBIAEoBBItCgloZWFydGJlYXQYCiABKAsyGC5tbHBsYXRmb3JtLnYxLkhlYXJ0YmVhdEgAEiwKCWhvc3RfaW5mbxgLIAEoCzIXLm1scGxhdGZvcm0udjEuSG9zdEluZm9IABIyCgxob3N0X21ldHJpY3MYDCABKAsyGi5tbHBsYXRmb3JtLnYxLkhvc3RNZXRyaWNzSAASOgoQY29tbWFuZF9wcm9ncmVzcxgNIAEoCzIeLm1scGxhdGZvcm0udjEuQ29tbWFuZFByb2dyZXNzSAASNgoOY29tbWFuZF9yZXN1bHQYDiABKAsyHC5tbHBsYXRmb3JtLnYxLkNvbW1hbmRSZXN1bHRIABIwCgtzZXR1cF9zdGFnZRgQIAEoCzIZLm1scGxhdGZvcm0udjEuU2V0dXBTdGFnZUgAEiwKCWxvZ19jaHVuaxgRIAEoCzIXLm1scGxhdGZvcm0udjEuTG9nQ2h1bmtIABI4Cg9jb250YWluZXJfZXZlbnQYEyABKAsyHS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lckV2ZW50SAASPgoSY29udGFpbmVyX3NuYXBzaG90GBQgASgLMiAubWxwbGF0Zm9ybS52MS5Db250YWluZXJTbmFwc2hvdEgAQgYKBGJvZHlKBAgPEBBKBAgSEBMiqwIKDkNvbnRyb2xUb0FnZW50EhEKCXN0cmVhbV9pZBgBIAEoBBIyCgxoZWxsb19yZXN1bHQYCiABKAsyGi5tbHBsYXRmb3JtLnYxLkhlbGxvUmVzdWx0SAASLQoJaGVhcnRiZWF0GAsgASgLMhgubWxwbGF0Zm9ybS52MS5IZWFydGJlYXRIABIuCgdjb21tYW5kGAwgASgLMhsubWxwbGF0Zm9ybS52MS5BZ2VudENvbW1hbmRIABI7ChFvcGVuX2RhdGFfY2hhbm5lbBgNIAEoCzIeLm1scGxhdGZvcm0udjEuT3BlbkRhdGFDaGFubmVsSAASLgoGY2FuY2VsGA4gASgLMhwubWxwbGF0Zm9ybS52MS5DYW5jZWxDb21tYW5kSABCBgoEYm9keSIzCglIZWFydGJlYXQSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIrwECghIb3N0SW5mbxIUCgxtYWNoaW5lX25hbWUYASABKAkSKgoJb3NfZmFtaWx5GAIgASgOMhcubWxwbGF0Zm9ybS52MS5Pc0ZhbWlseRIWCg5vc19kZXNjcmlwdGlvbhgDIAEoCRIOCgZrZXJuZWwYBCABKAkSFAoMYXJjaGl0ZWN0dXJlGAUgASgJEhQKDGxvZ2ljYWxfY3B1cxgGIAEoBRIUCgxtZW1vcnlfYnl0ZXMYByABKAQSJAoEZ3B1cxgIIAMoCzIWLm1scGxhdGZvcm0udjEuR3B1SW5mbxImCgVkaXNrcxgJIAMoCzIXLm1scGxhdGZvcm0udjEuRGlza0luZm8SMAoHcnVudGltZRgKIAEoDjIfLm1scGxhdGZvcm0udjEuQ29udGFpbmVyUnVudGltZRIXCg92bV9tZW1vcnlfYnl0ZXMYCyABKAQSDwoHdm1fY3B1cxgMIAEoBRIWCg5kb2NrZXJfdmVyc2lvbhgNIAEoCRIVCg1udmlkaWFfZHJpdmVyGA4gASgJEhQKDGN1ZGFfdmVyc2lvbhgPIAEoCRIRCglkYXRhX3BhdGgYECABKAkSEwoLbW9kZWxzX3BhdGgYESABKAkSFQoNYWdlbnRfdmVyc2lvbhgSIAEoCRIRCglhZ2VudF9yaWQYEyABKAkSEQoJYWdlbnRfZXhlGBQgASgJEhcKD3NlcnZpY2VfbWFuYWdlchgVIAEoCRIXCg9hZ2VudF9zdGF0ZV9kaXIYFiABKAkiZgoHR3B1SW5mbxINCgVpbmRleBgBIAEoBRIMCgR1dWlkGAIgASgJEgwKBG5hbWUYAyABKAkSFAoMbWVtb3J5X2J5dGVzGAQgASgEEhoKEmNvbXB1dGVfY2FwYWJpbGl0eRgFIAEoCSJCCghEaXNrSW5mbxINCgVtb3VudBgBIAEoCRITCgt0b3RhbF9ieXRlcxgCIAEoBBISCgpmcmVlX2J5dGVzGAMgASgEIsACCgtIb3N0TWV0cmljcxImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLY3B1X3BlcmNlbnQYAiABKAESGQoRbWVtb3J5X3VzZWRfYnl0ZXMYAyABKAQSJgoEZ3B1cxgEIAMoCzIYLm1scGxhdGZvcm0udjEuR3B1U2FtcGxlEiYKBWRpc2tzGAUgAygLMhcubWxwbGF0Zm9ybS52MS5EaXNrSW5mbxIUCgxuZXRfcnhfYnl0ZXMYBiABKAQSFAoMbmV0X3R4X2J5dGVzGAcgASgEEjIKCmNvbnRhaW5lcnMYCCADKAsyHi5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclNhbXBsZRITCgtkb2NrZXJfZG93bhgJIAEoCBIUCgxkb2NrZXJfZXJyb3IYCiABKAkicgoJR3B1U2FtcGxlEgwKBHV1aWQYASABKAkSFAoMdXRpbF9wZXJjZW50GAIgASgBEhkKEW1lbW9yeV91c2VkX2J5dGVzGAMgASgEEhUKDXRlbXBlcmF0dXJlX2MYBCABKAESDwoHcG93ZXJfdxgFIAEoASJZCg9Db250YWluZXJTYW1wbGUSDAoEbmFtZRgBIAEoCRINCgVzdGF0ZRgCIAEoCRITCgtjcHVfcGVyY2VudBgDIAEoARIUCgxtZW1vcnlfYnl0ZXMYBCABKAQiOAoKU2V0dXBTdGFnZRINCgVzdGFnZRgBIAEoCRIKCgJvaxgCIAEoCBIPCgdtZXNzYWdlGAMgASgJIkwKCExvZ0NodW5rEg4KBnNvdXJjZRgBIAEoCRINCgVsaW5lcxgCIAMoCRISCgphdHRlbXB0X2lkGAMgASgJEg0KBXRzX21zGAQgAygDIoICCg5Db250YWluZXJTdGF0ZRIMCgRuYW1lGAEgASgJEjkKBmxhYmVscxgCIAMoCzIpLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3RhdGUuTGFiZWxzRW50cnkSDQoFc3RhdGUYAyABKAkSEQoJZXhpdF9jb2RlGAQgASgFEhIKCm9vbV9raWxsZWQYBSABKAgSLwoLZmluaXNoZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCXNwZWNfaGFzaBgHIAEoCRotCgtMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlIKDkNvbnRhaW5lckV2ZW50EjAKCWNvbnRhaW5lchgBIAEoCzIdLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3RhdGUSDgoGYWN0aW9uGAIgASgJIkYKEUNvbnRhaW5lclNuYXBzaG90EjEKCmNvbnRhaW5lcnMYASADKAsyHS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclN0YXRlIr0GCgxBZ2VudENvbW1hbmQSEgoKY29tbWFuZF9pZBgBIAEoCRIwCgticm93c2VfcGF0aBgQIAEoCzIZLm1scGxhdGZvcm0udjEuQnJvd3NlUGF0aEgAEjYKDnByZXB1bGxfaW1hZ2VzGBIgASgLMhwubWxwbGF0Zm9ybS52MS5QcmVwdWxsSW1hZ2VzSAASMgoMY29sbGVjdF9sb2dzGBQgASgLMhoubWxwbGF0Zm9ybS52MS5Db2xsZWN0TG9nc0gAEi0KCXVuaW5zdGFsbBgWIAEoCzIYLm1scGxhdGZvcm0udjEuVW5pbnN0YWxsSAASLwoKZGlzY29ubmVjdBgXIAEoCzIZLm1scGxhdGZvcm0udjEuRGlzY29ubmVjdEgAEjgKD2NvbnRhaW5lcl9hcHBseRgeIAEoCzIdLm1scGxhdGZvcm0udjEuQ29udGFpbmVyQXBwbHlIABI2Cg5jb250YWluZXJfc3RvcBgfIAEoCzIcLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3RvcEgAEjoKEGNvbnRhaW5lcl9yZW1vdmUYICABKAsyHi5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclJlbW92ZUgAEj0KEmNvbnRhaW5lcl9ydW5fb25jZRghIAEoCzIfLm1scGxhdGZvcm0udjEuQ29udGFpbmVyUnVuT25jZUgAEjAKC2ltYWdlX2J1aWxkGCIgASgLMhkubWxwbGF0Zm9ybS52MS5JbWFnZUJ1aWxkSAASLAoJZmlsZV9yZWFkGCMgASgLMhcubWxwbGF0Zm9ybS52MS5GaWxlUmVhZEgAEi4KCmZpbGVfd3JpdGUYJCABKAsyGC5tbHBsYXRmb3JtLnYxLkZpbGVXcml0ZUgAEjAKC2ZpbGVfZGVsZXRlGCUgASgLMhkubWxwbGF0Zm9ybS52MS5GaWxlRGVsZXRlSAASLgoKcnVuX3NjcmlwdBgmIAEoCzIYLm1scGxhdGZvcm0udjEuUnVuU2NyaXB0SABCBgoEa2luZEoECAoQC0oECAsQDEoECAwQDUoECA0QDkoECA4QD0oECA8QEEoECBEQEkoECBMQFEoECBUQFiLuBAoNQ29udGFpbmVyU3BlYxIMCgRuYW1lGAEgASgJEg0KBWltYWdlGAIgASgJEg8KB2NvbW1hbmQYAyADKAkSEgoKZW50cnlwb2ludBgEIAMoCRIyCgNlbnYYBSADKAsyJS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclNwZWMuRW52RW50cnkSOAoGbGFiZWxzGAYgAygLMigubWxwbGF0Zm9ybS52MS5Db250YWluZXJTcGVjLkxhYmVsc0VudHJ5EiQKBm1vdW50cxgHIAMoCzIULm1scGxhdGZvcm0udjEuTW91bnQSDwoHbmV0d29yaxgIIAEoCRIMCgRncHVzGAkgAygJEgwKBGNwdXMYCiABKAESFAoMbWVtb3J5X2J5dGVzGAsgASgEEhEKCXNobV9ieXRlcxgMIAEoBBIPCgdjYXBfYWRkGA0gAygJEikKBXBvcnRzGA4gAygLMhoubWxwbGF0Zm9ybS52MS5Qb3J0QmluZGluZxIPCgdyZXN0YXJ0GA8gASgJEgwKBGluaXQYECABKAgSDwoHd29ya2RpchgRIAEoCRI6CgdzeXNjdGxzGBIgAygLMikubWxwbGF0Zm9ybS52MS5Db250YWluZXJTcGVjLlN5c2N0bHNFbnRyeRoqCghFbnZFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGi0KC0xhYmVsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEaLgoMU3lzY3Rsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiOgoFTW91bnQSDgoGc291cmNlGAEgASgJEg4KBnRhcmdldBgCIAEoCRIRCglyZWFkX29ubHkYAyABKAgiWwoLUG9ydEJpbmRpbmcSDwoHaG9zdF9pcBgBIAEoCRIRCglob3N0X3BvcnQYAiABKAUSFgoOY29udGFpbmVyX3BvcnQYAyABKAUSEAoIcHJvdG9jb2wYBCABKAkiawoOQ29udGFpbmVyQXBwbHkSKgoEc3BlYxgBIAEoCzIcLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3BlYxIUCgxrZWVwX2lmX3NhbWUYAiABKAgSFwoPdGltZW91dF9zZWNvbmRzGAMgASgFIkMKDUNvbnRhaW5lclN0b3ASDAoEbmFtZRgBIAEoCRINCgVsYWJlbBgCIAEoCRIVCg1ncmFjZV9zZWNvbmRzGAMgASgFIk4KD0NvbnRhaW5lclJlbW92ZRIMCgRuYW1lGAEgASgJEg0KBWxhYmVsGAIgASgJEg0KBWZvcmNlGAMgASgIEg8KB3ZvbHVtZXMYBCADKAkiVwoQQ29udGFpbmVyUnVuT25jZRIqCgRzcGVjGAEgASgLMhwubWxwbGF0Zm9ybS52MS5Db250YWluZXJTcGVjEhcKD3RpbWVvdXRfc2Vjb25kcxgCIAEoBSKkAQoKSW1hZ2VCdWlsZBILCgN0YWcYASABKAkSMwoFZmlsZXMYAiADKAsyJC5tbHBsYXRmb3JtLnYxLkltYWdlQnVpbGQuRmlsZXNFbnRyeRINCgVmb3JjZRgDIAEoCBIXCg90aW1lb3V0X3NlY29uZHMYBCABKAUaLAoKRmlsZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAw6AjgBIisKCEZpbGVSZWFkEgwKBHBhdGgYASABKAkSEQoJbWF4X2J5dGVzGAIgASgDIj4KCUZpbGVXcml0ZRIMCgRwYXRoGAEgASgJEg8KB2NvbnRlbnQYAiABKAwSEgoKZXhlY3V0YWJsZRgDIAEoCCItCgpGaWxlRGVsZXRlEgwKBHBhdGgYASABKAkSEQoJcmVjdXJzaXZlGAIgASgIInMKCVJ1blNjcmlwdBIMCgRwYXRoGAEgASgJEg0KBXNoZWxsGAIgASgJEgwKBGFyZ3MYAyADKAkSEAoIZGV0YWNoZWQYBCABKAgSEAoIam9iX25hbWUYBSABKAkSFwoPdGltZW91dF9zZWNvbmRzGAYgASgFIiMKCkJyb3dzZVBhdGgSFQoNcmVsYXRpdmVfcGF0aBgBIAEoCSI9ChBCcm93c2VQYXRoUmVzdWx0EikKB2VudHJpZXMYASADKAsyGC5tbHBsYXRmb3JtLnYxLlBhdGhFbnRyeSI3CglQYXRoRW50cnkSDAoEbmFtZRgBIAEoCRIOCgZpc19kaXIYAiABKAgSDAoEc2l6ZRgDIAEoBCIfCg1QcmVwdWxsSW1hZ2VzEg4KBmltYWdlcxgBIAMoCSIhCgtDb2xsZWN0TG9ncxISCgp1cGxvYWRfdXJsGAEgASgJIgsKCVVuaW5zdGFsbCIMCgpEaXNjb25uZWN0IiMKDUNhbmNlbENvbW1hbmQSEgoKY29tbWFuZF9pZBgBIAEoCSJHCg9Db21tYW5kUHJvZ3Jlc3MSEgoKY29tbWFuZF9pZBgBIAEoCRIPCgdtZXNzYWdlGAIgASgJEg8KB3BlcmNlbnQYAyABKAEi+QEKDUNvbW1hbmRSZXN1bHQSEgoKY29tbWFuZF9pZBgBIAEoCRIKCgJvaxgCIAEoCBIUCgxlcnJvcl9yZWFzb24YAyABKAkSDwoHbWVzc2FnZRgEIAEoCRIQCghlbmRwb2ludBgFIAEoCRIRCglleGl0X2NvZGUYBiABKAUSDgoGb3V0cHV0GAcgASgJEgwKBGRhdGEYCCABKAwSDAoEa2VwdBgJIAEoCBIOCgZleGlzdHMYCyABKAgSNgoLYnJvd3NlX3BhdGgYCiABKAsyHy5tbHBsYXRmb3JtLnYxLkJyb3dzZVBhdGhSZXN1bHRIAEIICgZyZXN1bHQipQEKD09wZW5EYXRhQ2hhbm5lbBISCgpzZXNzaW9uX2lkGAEgASgJEg0KBXRva2VuGAIgASgJEjEKCG5vdGVib29rGAogASgLMh0ubWxwbGF0Zm9ybS52MS5Ob3RlYm9va1RhcmdldEgAEjIKCWhvc3RfZmlsZRgLIAEoCzIdLm1scGxhdGZvcm0udjEuSG9zdEZpbGVUYXJnZXRIAEIICgZ0YXJnZXQiHgoOTm90ZWJvb2tUYXJnZXQSDAoEcG9ydBgBIAEoBSJNCg5Ib3N0RmlsZVRhcmdldBIMCgRwYXRoGAEgASgJEg4KBm9mZnNldBgCIAEoBBIOCgZsZW5ndGgYAyABKAQSDQoFdG9rZW4YBCABKAkqSAoIT3NGYW1pbHkSGQoVT1NfRkFNSUxZX1VOU1BFQ0lGSUVEEAASCQoFTElOVVgQARILCgdXSU5ET1dTEAISCQoFTUFDT1MQAypVChBDb250YWluZXJSdW50aW1lEhcKE1JVTlRJTUVfVU5TUEVDSUZJRUQQABIKCgZOQVRJVkUQARIICgRXU0wyEAISEgoORE9DS0VSX0RFU0tUT1AQA0IaqgIXTUxQbGF0Zm9ybS5Db250cmFjdHMuVjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChltbHBsYXRmb3JtL3YxL2FnZW50LnByb3RvEg1tbHBsYXRmb3JtLnYxIrIBCg9Db25uZWN0aW9uSGVsbG8SMAoIcmVnaXN0ZXIYASABKAsyHC5tbHBsYXRmb3JtLnYxLlJlZ2lzdGVySGVsbG9IABIsCgZlbnJvbGwYAiABKAsyGi5tbHBsYXRmb3JtLnYxLkVucm9sbEhlbGxvSAASNwoMZGF0YV9jaGFubmVsGAMgASgLMh8ubWxwbGF0Zm9ybS52MS5EYXRhQ2hhbm5lbEhlbGxvSABCBgoEa2luZCJ9Cg1SZWdpc3RlckhlbGxvEhIKCmNyZWRlbnRpYWwYASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIqCglob3N0X2luZm8YAyABKAsyFy5tbHBsYXRmb3JtLnYxLkhvc3RJbmZvEhUKDXdnX3B1YmxpY19rZXkYBCABKAkimgEKC0Vucm9sbEhlbGxvEhQKDGVucm9sbF90b2tlbhgBIAEoCRIVCg1hZ2VudF92ZXJzaW9uGAIgASgJEioKCWhvc3RfaW5mbxgDIAEoCzIXLm1scGxhdGZvcm0udjEuSG9zdEluZm8SFQoNd2dfcHVibGljX2tleRgEIAEoCRIbChNwcmV2aW91c19jcmVkZW50aWFsGAUgASgJIjUKEERhdGFDaGFubmVsSGVsbG8SEgoKc2Vzc2lvbl9pZBgBIAEoCRINCgV0b2tlbhgCIAEoCSLUAQoLSGVsbG9SZXN1bHQSCgoCb2sYASABKAgSFAoMZXJyb3JfcmVhc29uGAIgASgJEg8KB2hvc3RfaWQYAyABKAkSEgoKY3JlZGVudGlhbBgEIAEoCRISCgpvdmVybGF5X2lwGAUgASgJEi0KB3dnX3BlZXIYBiABKAsyHC5tbHBsYXRmb3JtLnYxLldpcmVHdWFyZFBlZXISEAoIcmF5X2hlYWQYByABKAkSEgoKbm9kZV9pbWFnZRgIIAEoCRIVCg1tbHBfbmV0X2ltYWdlGAkgASgJIkoKDVdpcmVHdWFyZFBlZXISEgoKcHVibGljX2tleRgBIAEoCRIQCghlbmRwb2ludBgCIAEoCRITCgthbGxvd2VkX2lwcxgDIAEoCSI1ChFEYXRhQ2hhbm5lbEFjY2VwdBIKCgJvaxgBIAEoCBIUCgxlcnJvcl9yZWFzb24YAiABKAkilgQKDkFnZW50VG9Db250cm9sEhEKCXN0cmVhbV9pZBgBIAEoBBItCgloZWFydGJlYXQYCiABKAsyGC5tbHBsYXRmb3JtLnYxLkhlYXJ0YmVhdEgAEiwKCWhvc3RfaW5mbxgLIAEoCzIXLm1scGxhdGZvcm0udjEuSG9zdEluZm9IABIyCgxob3N0X21ldHJpY3MYDCABKAsyGi5tbHBsYXRmb3JtLnYxLkhvc3RNZXRyaWNzSAASOgoQY29tbWFuZF9wcm9ncmVzcxgNIAEoCzIeLm1scGxhdGZvcm0udjEuQ29tbWFuZFByb2dyZXNzSAASNgoOY29tbWFuZF9yZXN1bHQYDiABKAsyHC5tbHBsYXRmb3JtLnYxLkNvbW1hbmRSZXN1bHRIABIwCgtzZXR1cF9zdGFnZRgQIAEoCzIZLm1scGxhdGZvcm0udjEuU2V0dXBTdGFnZUgAEiwKCWxvZ19jaHVuaxgRIAEoCzIXLm1scGxhdGZvcm0udjEuTG9nQ2h1bmtIABI4Cg9jb250YWluZXJfZXZlbnQYEyABKAsyHS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lckV2ZW50SAASPgoSY29udGFpbmVyX3NuYXBzaG90GBQgASgLMiAubWxwbGF0Zm9ybS52MS5Db250YWluZXJTbmFwc2hvdEgAQgYKBGJvZHlKBAgPEBBKBAgSEBMiqwIKDkNvbnRyb2xUb0FnZW50EhEKCXN0cmVhbV9pZBgBIAEoBBIyCgxoZWxsb19yZXN1bHQYCiABKAsyGi5tbHBsYXRmb3JtLnYxLkhlbGxvUmVzdWx0SAASLQoJaGVhcnRiZWF0GAsgASgLMhgubWxwbGF0Zm9ybS52MS5IZWFydGJlYXRIABIuCgdjb21tYW5kGAwgASgLMhsubWxwbGF0Zm9ybS52MS5BZ2VudENvbW1hbmRIABI7ChFvcGVuX2RhdGFfY2hhbm5lbBgNIAEoCzIeLm1scGxhdGZvcm0udjEuT3BlbkRhdGFDaGFubmVsSAASLgoGY2FuY2VsGA4gASgLMhwubWxwbGF0Zm9ybS52MS5DYW5jZWxDb21tYW5kSABCBgoEYm9keSIzCglIZWFydGJlYXQSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIvYECghIb3N0SW5mbxIUCgxtYWNoaW5lX25hbWUYASABKAkSKgoJb3NfZmFtaWx5GAIgASgOMhcubWxwbGF0Zm9ybS52MS5Pc0ZhbWlseRIWCg5vc19kZXNjcmlwdGlvbhgDIAEoCRIOCgZrZXJuZWwYBCABKAkSFAoMYXJjaGl0ZWN0dXJlGAUgASgJEhQKDGxvZ2ljYWxfY3B1cxgGIAEoBRIUCgxtZW1vcnlfYnl0ZXMYByABKAQSJAoEZ3B1cxgIIAMoCzIWLm1scGxhdGZvcm0udjEuR3B1SW5mbxImCgVkaXNrcxgJIAMoCzIXLm1scGxhdGZvcm0udjEuRGlza0luZm8SMAoHcnVudGltZRgKIAEoDjIfLm1scGxhdGZvcm0udjEuQ29udGFpbmVyUnVudGltZRIXCg92bV9tZW1vcnlfYnl0ZXMYCyABKAQSDwoHdm1fY3B1cxgMIAEoBRIWCg5kb2NrZXJfdmVyc2lvbhgNIAEoCRIVCg1udmlkaWFfZHJpdmVyGA4gASgJEhQKDGN1ZGFfdmVyc2lvbhgPIAEoCRIRCglkYXRhX3BhdGgYECABKAkSEwoLbW9kZWxzX3BhdGgYESABKAkSFQoNYWdlbnRfdmVyc2lvbhgSIAEoCRIRCglhZ2VudF9yaWQYEyABKAkSEQoJYWdlbnRfZXhlGBQgASgJEhcKD3NlcnZpY2VfbWFuYWdlchgVIAEoCRIXCg9hZ2VudF9zdGF0ZV9kaXIYFiABKAkSEAoIaW5zdGFuY2UYFyABKAkSFAoMZ3B1X3ByaW9yaXR5GBggASgJEhAKCGZzX3Jvb3RzGBkgAygJImYKB0dwdUluZm8SDQoFaW5kZXgYASABKAUSDAoEdXVpZBgCIAEoCRIMCgRuYW1lGAMgASgJEhQKDG1lbW9yeV9ieXRlcxgEIAEoBBIaChJjb21wdXRlX2NhcGFiaWxpdHkYBSABKAkiQgoIRGlza0luZm8SDQoFbW91bnQYASABKAkSEwoLdG90YWxfYnl0ZXMYAiABKAQSEgoKZnJlZV9ieXRlcxgDIAEoBCLdAwoLSG9zdE1ldHJpY3MSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC2NwdV9wZXJjZW50GAIgASgBEhkKEW1lbW9yeV91c2VkX2J5dGVzGAMgASgEEiYKBGdwdXMYBCADKAsyGC5tbHBsYXRmb3JtLnYxLkdwdVNhbXBsZRImCgVkaXNrcxgFIAMoCzIXLm1scGxhdGZvcm0udjEuRGlza0luZm8SFAoMbmV0X3J4X2J5dGVzGAYgASgEEhQKDG5ldF90eF9ieXRlcxgHIAEoBBIyCgpjb250YWluZXJzGAggAygLMh4ubWxwbGF0Zm9ybS52MS5Db250YWluZXJTYW1wbGUSEwoLZG9ja2VyX2Rvd24YCSABKAgSFAoMZG9ja2VyX2Vycm9yGAogASgJEioKCWdwdV9zdGF0ZRgLIAEoDjIXLm1scGxhdGZvcm0udjEuR3B1U3RhdGUSEQoJZ3B1X2Vycm9yGAwgASgJEjAKDWdwdV9wcm9jZXNzZXMYDSADKAsyGS5tbHBsYXRmb3JtLnYxLkdwdVByb2Nlc3MSKgoJZ3B1X3lpZWxkGA4gASgLMhcubWxwbGF0Zm9ybS52MS5HcHVZaWVsZCKlBAoJR3B1U2FtcGxlEgwKBHV1aWQYASABKAkSFAoMdXRpbF9wZXJjZW50GAIgASgBEhkKEW1lbW9yeV91c2VkX2J5dGVzGAMgASgEEhUKDXRlbXBlcmF0dXJlX2MYBCABKAESDwoHcG93ZXJfdxgFIAEoARINCgVpbmRleBgGIAEoBRIgChNtZW1vcnlfdXRpbF9wZXJjZW50GAcgASgBSACIAQESGgoSbWVtb3J5X3RvdGFsX2J5dGVzGAggASgEEhoKDXBvd2VyX2xpbWl0X3cYCSABKAFIAYgBARIZCgxzbV9jbG9ja19taHoYCiABKAFIAogBARIdChBzbV9jbG9ja19tYXhfbWh6GAsgASgBSAOIAQESGAoLZmFuX3BlcmNlbnQYDCABKAFIBIgBARIOCgZwc3RhdGUYDSABKAkSGAoQdGhyb3R0bGVfcmVhc29ucxgOIAMoCRIcCg9lY2NfdW5jb3JyZWN0ZWQYDyABKARIBYgBARIgChN0ZW1wZXJhdHVyZV9saW1pdF9jGBAgASgBSAaIAQFCFgoUX21lbW9yeV91dGlsX3BlcmNlbnRCEAoOX3Bvd2VyX2xpbWl0X3dCDwoNX3NtX2Nsb2NrX21oekITChFfc21fY2xvY2tfbWF4X21oekIOCgxfZmFuX3BlcmNlbnRCEgoQX2VjY191bmNvcnJlY3RlZEIWChRfdGVtcGVyYXR1cmVfbGltaXRfYyKVAQoKR3B1UHJvY2VzcxIQCghncHVfdXVpZBgBIAEoCRILCgNwaWQYAiABKAUSEQoJY29udGFpbmVyGAMgASgJEhIKCmF0dGVtcHRfaWQYBCABKAkSEwoLb3duZXJfYWdlbnQYBSABKAkSGQoRdXNlZF9tZW1vcnlfYnl0ZXMYBiABKAQSEQoJZXN0aW1hdGVkGAcgASgIIjYKCEdwdVlpZWxkEg4KBmFjdGl2ZRgBIAEoCBIaChJmb3JlaWduX2NvbnRhaW5lcnMYAiADKAkiWQoPQ29udGFpbmVyU2FtcGxlEgwKBG5hbWUYASABKAkSDQoFc3RhdGUYAiABKAkSEwoLY3B1X3BlcmNlbnQYAyABKAESFAoMbWVtb3J5X2J5dGVzGAQgASgEIjgKClNldHVwU3RhZ2USDQoFc3RhZ2UYASABKAkSCgoCb2sYAiABKAgSDwoHbWVzc2FnZRgDIAEoCSJMCghMb2dDaHVuaxIOCgZzb3VyY2UYASABKAkSDQoFbGluZXMYAiADKAkSEgoKYXR0ZW1wdF9pZBgDIAEoCRINCgV0c19tcxgEIAMoAyKCAgoOQ29udGFpbmVyU3RhdGUSDAoEbmFtZRgBIAEoCRI5CgZsYWJlbHMYAiADKAsyKS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclN0YXRlLkxhYmVsc0VudHJ5Eg0KBXN0YXRlGAMgASgJEhEKCWV4aXRfY29kZRgEIAEoBRISCgpvb21fa2lsbGVkGAUgASgIEi8KC2ZpbmlzaGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglzcGVjX2hhc2gYByABKAkaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJSCg5Db250YWluZXJFdmVudBIwCgljb250YWluZXIYASABKAsyHS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclN0YXRlEg4KBmFjdGlvbhgCIAEoCSJGChFDb250YWluZXJTbmFwc2hvdBIxCgpjb250YWluZXJzGAEgAygLMh0ubWxwbGF0Zm9ybS52MS5Db250YWluZXJTdGF0ZSLQCgoMQWdlbnRDb21tYW5kEhIKCmNvbW1hbmRfaWQYASABKAkSMAoLYnJvd3NlX3BhdGgYECABKAsyGS5tbHBsYXRmb3JtLnYxLkJyb3dzZVBhdGhIABI2Cg5wcmVwdWxsX2ltYWdlcxgSIAEoCzIcLm1scGxhdGZvcm0udjEuUHJlcHVsbEltYWdlc0gAEjIKDGNvbGxlY3RfbG9ncxgUIAEoCzIaLm1scGxhdGZvcm0udjEuQ29sbGVjdExvZ3NIABItCgl1bmluc3RhbGwYFiABKAsyGC5tbHBsYXRmb3JtLnYxLlVuaW5zdGFsbEgAEi8KCmRpc2Nvbm5lY3QYFyABKAsyGS5tbHBsYXRmb3JtLnYxLkRpc2Nvbm5lY3RIABI4Cg9jb250YWluZXJfYXBwbHkYHiABKAsyHS5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lckFwcGx5SAASNgoOY29udGFpbmVyX3N0b3AYHyABKAsyHC5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclN0b3BIABI6ChBjb250YWluZXJfcmVtb3ZlGCAgASgLMh4ubWxwbGF0Zm9ybS52MS5Db250YWluZXJSZW1vdmVIABI9ChJjb250YWluZXJfcnVuX29uY2UYISABKAsyHy5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclJ1bk9uY2VIABIwCgtpbWFnZV9idWlsZBgiIAEoCzIZLm1scGxhdGZvcm0udjEuSW1hZ2VCdWlsZEgAEiwKCWZpbGVfcmVhZBgjIAEoCzIXLm1scGxhdGZvcm0udjEuRmlsZVJlYWRIABIuCgpmaWxlX3dyaXRlGCQgASgLMhgubWxwbGF0Zm9ybS52MS5GaWxlV3JpdGVIABIwCgtmaWxlX2RlbGV0ZRglIAEoCzIZLm1scGxhdGZvcm0udjEuRmlsZURlbGV0ZUgAEi4KCnJ1bl9zY3JpcHQYJiABKAsyGC5tbHBsYXRmb3JtLnYxLlJ1blNjcmlwdEgAEigKB2ZzX2xpc3QYKCABKAsyFS5tbHBsYXRmb3JtLnYxLkZzTGlzdEgAEigKB2ZzX3JlYWQYKSABKAsyFS5tbHBsYXRmb3JtLnYxLkZzUmVhZEgAEioKCGZzX3dyaXRlGCogASgLMhYubWxwbGF0Zm9ybS52MS5Gc1dyaXRlSAASKgoIZnNfbWtkaXIYKyABKAsyFi5tbHBsYXRmb3JtLnYxLkZzTWtkaXJIABIoCgdmc19tb3ZlGCwgASgLMhUubWxwbGF0Zm9ybS52MS5Gc01vdmVIABIsCglmc19kZWxldGUYLSABKAsyFy5tbHBsYXRmb3JtLnYxLkZzRGVsZXRlSAASMgoMcHJvY2Vzc19saXN0GC4gASgLMhoubWxwbGF0Zm9ybS52MS5Qcm9jZXNzTGlzdEgAEjIKDHByb2Nlc3Nfa2lsbBgvIAEoCzIaLm1scGxhdGZvcm0udjEuUHJvY2Vzc0tpbGxIABIyCgxzZXJ2aWNlX2xpc3QYMCABKAsyGi5tbHBsYXRmb3JtLnYxLlNlcnZpY2VMaXN0SAASOAoPc2VydmljZV9jb250cm9sGDEgASgLMh0ubWxwbGF0Zm9ybS52MS5TZXJ2aWNlQ29udHJvbEgAEjcKD3N5c3RlbV9sb2dfcmVhZBgyIAEoCzIcLm1scGxhdGZvcm0udjEuU3lzdGVtTG9nUmVhZEgAQgYKBGtpbmRKBAgKEAtKBAgLEAxKBAgMEA1KBAgNEA5KBAgOEA9KBAgPEBBKBAgREBJKBAgTEBRKBAgVEBYi7gQKDUNvbnRhaW5lclNwZWMSDAoEbmFtZRgBIAEoCRINCgVpbWFnZRgCIAEoCRIPCgdjb21tYW5kGAMgAygJEhIKCmVudHJ5cG9pbnQYBCADKAkSMgoDZW52GAUgAygLMiUubWxwbGF0Zm9ybS52MS5Db250YWluZXJTcGVjLkVudkVudHJ5EjgKBmxhYmVscxgGIAMoCzIoLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3BlYy5MYWJlbHNFbnRyeRIkCgZtb3VudHMYByADKAsyFC5tbHBsYXRmb3JtLnYxLk1vdW50Eg8KB25ldHdvcmsYCCABKAkSDAoEZ3B1cxgJIAMoCRIMCgRjcHVzGAogASgBEhQKDG1lbW9yeV9ieXRlcxgLIAEoBBIRCglzaG1fYnl0ZXMYDCABKAQSDwoHY2FwX2FkZBgNIAMoCRIpCgVwb3J0cxgOIAMoCzIaLm1scGxhdGZvcm0udjEuUG9ydEJpbmRpbmcSDwoHcmVzdGFydBgPIAEoCRIMCgRpbml0GBAgASgIEg8KB3dvcmtkaXIYESABKAkSOgoHc3lzY3RscxgSIAMoCzIpLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3BlYy5TeXNjdGxzRW50cnkaKgoIRW52RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARotCgtMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGi4KDFN5c2N0bHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjoKBU1vdW50Eg4KBnNvdXJjZRgBIAEoCRIOCgZ0YXJnZXQYAiABKAkSEQoJcmVhZF9vbmx5GAMgASgIIlsKC1BvcnRCaW5kaW5nEg8KB2hvc3RfaXAYASABKAkSEQoJaG9zdF9wb3J0GAIgASgFEhYKDmNvbnRhaW5lcl9wb3J0GAMgASgFEhAKCHByb3RvY29sGAQgASgJImsKDkNvbnRhaW5lckFwcGx5EioKBHNwZWMYASABKAsyHC5tbHBsYXRmb3JtLnYxLkNvbnRhaW5lclNwZWMSFAoMa2VlcF9pZl9zYW1lGAIgASgIEhcKD3RpbWVvdXRfc2Vjb25kcxgDIAEoBSJDCg1Db250YWluZXJTdG9wEgwKBG5hbWUYASABKAkSDQoFbGFiZWwYAiABKAkSFQoNZ3JhY2Vfc2Vjb25kcxgDIAEoBSJOCg9Db250YWluZXJSZW1vdmUSDAoEbmFtZRgBIAEoCRINCgVsYWJlbBgCIAEoCRINCgVmb3JjZRgDIAEoCBIPCgd2b2x1bWVzGAQgAygJIlcKEENvbnRhaW5lclJ1bk9uY2USKgoEc3BlYxgBIAEoCzIcLm1scGxhdGZvcm0udjEuQ29udGFpbmVyU3BlYxIXCg90aW1lb3V0X3NlY29uZHMYAiABKAUipAEKCkltYWdlQnVpbGQSCwoDdGFnGAEgASgJEjMKBWZpbGVzGAIgAygLMiQubWxwbGF0Zm9ybS52MS5JbWFnZUJ1aWxkLkZpbGVzRW50cnkSDQoFZm9yY2UYAyABKAgSFwoPdGltZW91dF9zZWNvbmRzGAQgASgFGiwKCkZpbGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgMOgI4ASIrCghGaWxlUmVhZBIMCgRwYXRoGAEgASgJEhEKCW1heF9ieXRlcxgCIAEoAyI+CglGaWxlV3JpdGUSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMEhIKCmV4ZWN1dGFibGUYAyABKAgiLQoKRmlsZURlbGV0ZRIMCgRwYXRoGAEgASgJEhEKCXJlY3Vyc2l2ZRgCIAEoCCJzCglSdW5TY3JpcHQSDAoEcGF0aBgBIAEoCRINCgVzaGVsbBgCIAEoCRIMCgRhcmdzGAMgAygJEhAKCGRldGFjaGVkGAQgASgIEhAKCGpvYl9uYW1lGAUgASgJEhcKD3RpbWVvdXRfc2Vjb25kcxgGIAEoBSIjCgpCcm93c2VQYXRoEhUKDXJlbGF0aXZlX3BhdGgYASABKAkiPQoQQnJvd3NlUGF0aFJlc3VsdBIpCgdlbnRyaWVzGAEgAygLMhgubWxwbGF0Zm9ybS52MS5QYXRoRW50cnkiNwoJUGF0aEVudHJ5EgwKBG5hbWUYASABKAkSDgoGaXNfZGlyGAIgASgIEgwKBHNpemUYAyABKAQiFgoGRnNMaXN0EgwKBHBhdGgYASABKAkiNgoGRnNSZWFkEgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgEEg4KBmxlbmd0aBgDIAEoDSJHCgdGc1dyaXRlEgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgEEgwKBGRhdGEYAyABKAwSEAoIdHJ1bmNhdGUYBCABKAgiFwoHRnNNa2RpchIMCgRwYXRoGAEgASgJIiIKBkZzTW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIisKCEZzRGVsZXRlEgwKBHBhdGgYASABKAkSEQoJcmVjdXJzaXZlGAIgASgIIncKB0ZzRW50cnkSDAoEbmFtZRgBIAEoCRIOCgZpc19kaXIYAiABKAgSDAoEc2l6ZRgDIAEoBBIvCgttb2RpZmllZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDwoHaXNfbGluaxgFIAEoCCJVCglGc0xpc3RpbmcSDAoEcGF0aBgBIAEoCRInCgdlbnRyaWVzGAIgAygLMhYubWxwbGF0Zm9ybS52MS5Gc0VudHJ5EhEKCXRydW5jYXRlZBgDIAEoCCJ2CgZGc1N0YXQSDAoEcGF0aBgBIAEoCRIMCgRzaXplGAIgASgEEi8KC21vZGlmaWVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZzaGEyNTYYBCABKAkSDwoHaXNfdGV4dBgFIAEoCCIbCgtQcm9jZXNzTGlzdBIMCgRzb3J0GAEgASgJIsABCgtQcm9jZXNzSW5mbxILCgNwaWQYASABKAUSDAoEcHBpZBgCIAEoBRIMCgRuYW1lGAMgASgJEgwKBHVzZXIYBCABKAkSEwoLY3B1X3BlcmNlbnQYBSABKAESEQoJcnNzX2J5dGVzGAYgASgEEi4KCnN0YXJ0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2NvbW1hbmQYCCABKAkSEQoJY29udGFpbmVyGAkgASgJIk4KDlByb2Nlc3NMaXN0aW5nEi0KCXByb2Nlc3NlcxgBIAMoCzIaLm1scGxhdGZvcm0udjEuUHJvY2Vzc0luZm8SDQoFdG90YWwYAiABKAUiNwoLUHJvY2Vzc0tpbGwSCwoDcGlkGAEgASgFEg0KBWZvcmNlGAIgASgIEgwKBHRyZWUYAyABKAgiDQoLU2VydmljZUxpc3QiZgoLU2VydmljZUluZm8SDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRINCgVzdGF0ZRgDIAEoCRIRCglzdWJfc3RhdGUYBCABKAkSEgoKc3RhcnRfdHlwZRgFIAEoCSJPCg5TZXJ2aWNlTGlzdGluZxIsCghzZXJ2aWNlcxgBIAMoCzIaLm1scGxhdGZvcm0udjEuU2VydmljZUluZm8SDwoHbWFuYWdlchgCIAEoCSIuCg5TZXJ2aWNlQ29udHJvbBIMCgRuYW1lGAEgASgJEg4KBmFjdGlvbhgCIAEoCSIsCg1TeXN0ZW1Mb2dSZWFkEgwKBHVuaXQYASABKAkSDQoFbGluZXMYAiABKAUiHwoNUHJlcHVsbEltYWdlcxIOCgZpbWFnZXMYASADKAkiIQoLQ29sbGVjdExvZ3MSEgoKdXBsb2FkX3VybBgBIAEoCSILCglVbmluc3RhbGwiDAoKRGlzY29ubmVjdCIjCg1DYW5jZWxDb21tYW5kEhIKCmNvbW1hbmRfaWQYASABKAkiRwoPQ29tbWFuZFByb2dyZXNzEhIKCmNvbW1hbmRfaWQYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIPCgdwZXJjZW50GAMgASgBIscDCg1Db21tYW5kUmVzdWx0EhIKCmNvbW1hbmRfaWQYASABKAkSCgoCb2sYAiABKAgSFAoMZXJyb3JfcmVhc29uGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSEAoIZW5kcG9pbnQYBSABKAkSEQoJZXhpdF9jb2RlGAYgASgFEg4KBm91dHB1dBgHIAEoCRIMCgRkYXRhGAggASgMEgwKBGtlcHQYCSABKAgSDgoGZXhpc3RzGAsgASgIEjYKC2Jyb3dzZV9wYXRoGAogASgLMh8ubWxwbGF0Zm9ybS52MS5Ccm93c2VQYXRoUmVzdWx0SAASLgoKZnNfbGlzdGluZxgMIAEoCzIYLm1scGxhdGZvcm0udjEuRnNMaXN0aW5nSAASKAoHZnNfc3RhdBgNIAEoCzIVLm1scGxhdGZvcm0udjEuRnNTdGF0SAASOAoPcHJvY2Vzc19saXN0aW5nGA4gASgLMh0ubWxwbGF0Zm9ybS52MS5Qcm9jZXNzTGlzdGluZ0gAEjgKD3NlcnZpY2VfbGlzdGluZxgPIAEoCzIdLm1scGxhdGZvcm0udjEuU2VydmljZUxpc3RpbmdIAEIICgZyZXN1bHQi2AEKD09wZW5EYXRhQ2hhbm5lbBISCgpzZXNzaW9uX2lkGAEgASgJEg0KBXRva2VuGAIgASgJEjEKCG5vdGVib29rGAogASgLMh0ubWxwbGF0Zm9ybS52MS5Ob3RlYm9va1RhcmdldEgAEjIKCWhvc3RfZmlsZRgLIAEoCzIdLm1scGxhdGZvcm0udjEuSG9zdEZpbGVUYXJnZXRIABIxCgh0ZXJtaW5hbBgMIAEoCzIdLm1scGxhdGZvcm0udjEuVGVybWluYWxUYXJnZXRIAEIICgZ0YXJnZXQiSAoOVGVybWluYWxUYXJnZXQSDQoFc2hlbGwYASABKAkSDAoEY29scxgCIAEoDRIMCgRyb3dzGAMgASgNEgsKA2N3ZBgEIAEoCSIeCg5Ob3RlYm9va1RhcmdldBIMCgRwb3J0GAEgASgFIl0KDkhvc3RGaWxlVGFyZ2V0EgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgEEg4KBmxlbmd0aBgDIAEoBBINCgV0b2tlbhgEIAEoCRIOCgZ1cGxvYWQYBSABKAgqSAoIT3NGYW1pbHkSGQoVT1NfRkFNSUxZX1VOU1BFQ0lGSUVEEAASCQoFTElOVVgQARILCgdXSU5ET1dTEAISCQoFTUFDT1MQAypVChBDb250YWluZXJSdW50aW1lEhcKE1JVTlRJTUVfVU5TUEVDSUZJRUQQABIKCgZOQVRJVkUQARIICgRXU0wyEAISEgoORE9DS0VSX0RFU0tUT1AQAypnCghHcHVTdGF0ZRIZChVHUFVfU1RBVEVfVU5TUEVDSUZJRUQQABISCg5HUFVfU1RBVEVfTk9ORRABEhAKDEdQVV9TVEFURV9PSxACEhoKFkdQVV9TVEFURV9EUklWRVJfRVJST1IQA0IaqgIXTUxQbGF0Zm9ybS5Db250cmFjdHMuVjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message mlplatform.v1.ConnectionHello
@@ -534,6 +534,27 @@ export type HostInfo = Message<"mlplatform.v1.HostInfo"> & {
    * @generated from field: string agent_state_dir = 22;
    */
   agentStateDir: string;
+
+  /**
+   * "" = default install; "dev" = second agent sharing this machine's Docker daemon
+   *
+   * @generated from field: string instance = 23;
+   */
+  instance: string;
+
+  /**
+   * normal | yield
+   *
+   * @generated from field: string gpu_priority = 24;
+   */
+  gpuPriority: string;
+
+  /**
+   * folders the file browser may open
+   *
+   * @generated from field: repeated string fs_roots = 25;
+   */
+  fsRoots: string[];
 };
 
 /**
@@ -662,6 +683,26 @@ export type HostMetrics = Message<"mlplatform.v1.HostMetrics"> & {
    * @generated from field: string docker_error = 10;
    */
   dockerError: string;
+
+  /**
+   * @generated from field: mlplatform.v1.GpuState gpu_state = 11;
+   */
+  gpuState: GpuState;
+
+  /**
+   * @generated from field: string gpu_error = 12;
+   */
+  gpuError: string;
+
+  /**
+   * @generated from field: repeated mlplatform.v1.GpuProcess gpu_processes = 13;
+   */
+  gpuProcesses: GpuProcess[];
+
+  /**
+   * @generated from field: mlplatform.v1.GpuYield gpu_yield = 14;
+   */
+  gpuYield?: GpuYield | undefined;
 };
 
 /**
@@ -672,6 +713,8 @@ export const HostMetricsSchema: GenMessage<HostMetrics> = /*@__PURE__*/
   messageDesc(file_mlplatform_v1_agent, 13);
 
 /**
+ * Absent readings ([N/A] on consumer cards) are left unset.
+ *
  * @generated from message mlplatform.v1.GpuSample
  */
 export type GpuSample = Message<"mlplatform.v1.GpuSample"> & {
@@ -699,6 +742,63 @@ export type GpuSample = Message<"mlplatform.v1.GpuSample"> & {
    * @generated from field: double power_w = 5;
    */
   powerW: number;
+
+  /**
+   * @generated from field: int32 index = 6;
+   */
+  index: number;
+
+  /**
+   * @generated from field: optional double memory_util_percent = 7;
+   */
+  memoryUtilPercent?: number | undefined;
+
+  /**
+   * @generated from field: uint64 memory_total_bytes = 8;
+   */
+  memoryTotalBytes: bigint;
+
+  /**
+   * @generated from field: optional double power_limit_w = 9;
+   */
+  powerLimitW?: number | undefined;
+
+  /**
+   * @generated from field: optional double sm_clock_mhz = 10;
+   */
+  smClockMhz?: number | undefined;
+
+  /**
+   * @generated from field: optional double sm_clock_max_mhz = 11;
+   */
+  smClockMaxMhz?: number | undefined;
+
+  /**
+   * @generated from field: optional double fan_percent = 12;
+   */
+  fanPercent?: number | undefined;
+
+  /**
+   * @generated from field: string pstate = 13;
+   */
+  pstate: string;
+
+  /**
+   * hw_slowdown | hw_thermal | hw_power_brake | sw_thermal | sw_power_cap
+   *
+   * @generated from field: repeated string throttle_reasons = 14;
+   */
+  throttleReasons: string[];
+
+  /**
+   * @generated from field: optional uint64 ecc_uncorrected = 15;
+   */
+  eccUncorrected?: bigint | undefined;
+
+  /**
+   * @generated from field: optional double temperature_limit_c = 16;
+   */
+  temperatureLimitC?: number | undefined;
 };
 
 /**
@@ -707,6 +807,81 @@ export type GpuSample = Message<"mlplatform.v1.GpuSample"> & {
  */
 export const GpuSampleSchema: GenMessage<GpuSample> = /*@__PURE__*/
   messageDesc(file_mlplatform_v1_agent, 14);
+
+/**
+ * A process holding GPU memory; container/attempt resolved from the cgroup (Linux) or estimated from --gpus (Windows/WSL).
+ *
+ * @generated from message mlplatform.v1.GpuProcess
+ */
+export type GpuProcess = Message<"mlplatform.v1.GpuProcess"> & {
+  /**
+   * @generated from field: string gpu_uuid = 1;
+   */
+  gpuUuid: string;
+
+  /**
+   * @generated from field: int32 pid = 2;
+   */
+  pid: number;
+
+  /**
+   * @generated from field: string container = 3;
+   */
+  container: string;
+
+  /**
+   * @generated from field: string attempt_id = 4;
+   */
+  attemptId: string;
+
+  /**
+   * mlp.agent label: host id of the agent that created the container
+   *
+   * @generated from field: string owner_agent = 5;
+   */
+  ownerAgent: string;
+
+  /**
+   * @generated from field: uint64 used_memory_bytes = 6;
+   */
+  usedMemoryBytes: bigint;
+
+  /**
+   * @generated from field: bool estimated = 7;
+   */
+  estimated: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuProcess.
+ * Use `create(GpuProcessSchema)` to create a new message.
+ */
+export const GpuProcessSchema: GenMessage<GpuProcess> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 15);
+
+/**
+ * gpu_priority=yield: active while a container of another agent on this Docker daemon holds a GPU.
+ *
+ * @generated from message mlplatform.v1.GpuYield
+ */
+export type GpuYield = Message<"mlplatform.v1.GpuYield"> & {
+  /**
+   * @generated from field: bool active = 1;
+   */
+  active: boolean;
+
+  /**
+   * @generated from field: repeated string foreign_containers = 2;
+   */
+  foreignContainers: string[];
+};
+
+/**
+ * Describes the message mlplatform.v1.GpuYield.
+ * Use `create(GpuYieldSchema)` to create a new message.
+ */
+export const GpuYieldSchema: GenMessage<GpuYield> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 16);
 
 /**
  * @generated from message mlplatform.v1.ContainerSample
@@ -738,7 +913,7 @@ export type ContainerSample = Message<"mlplatform.v1.ContainerSample"> & {
  * Use `create(ContainerSampleSchema)` to create a new message.
  */
 export const ContainerSampleSchema: GenMessage<ContainerSample> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 15);
+  messageDesc(file_mlplatform_v1_agent, 17);
 
 /**
  * @generated from message mlplatform.v1.SetupStage
@@ -767,7 +942,7 @@ export type SetupStage = Message<"mlplatform.v1.SetupStage"> & {
  * Use `create(SetupStageSchema)` to create a new message.
  */
 export const SetupStageSchema: GenMessage<SetupStage> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 16);
+  messageDesc(file_mlplatform_v1_agent, 18);
 
 /**
  * Continuous container logs (20/10 §2.4): chunks ≤ 64 KB or 1 s; ts_ms parallels lines (source timestamp, used to deduplicate on resend).
@@ -801,7 +976,7 @@ export type LogChunk = Message<"mlplatform.v1.LogChunk"> & {
  * Use `create(LogChunkSchema)` to create a new message.
  */
 export const LogChunkSchema: GenMessage<LogChunk> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 17);
+  messageDesc(file_mlplatform_v1_agent, 19);
 
 /**
  * D-38: the agent is a container bridge — it only reports facts about containers; the control plane interprets them (attempt, Ray node, mlp-net).
@@ -854,7 +1029,7 @@ export type ContainerState = Message<"mlplatform.v1.ContainerState"> & {
  * Use `create(ContainerStateSchema)` to create a new message.
  */
 export const ContainerStateSchema: GenMessage<ContainerState> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 18);
+  messageDesc(file_mlplatform_v1_agent, 20);
 
 /**
  * @generated from message mlplatform.v1.ContainerEvent
@@ -876,7 +1051,7 @@ export type ContainerEvent = Message<"mlplatform.v1.ContainerEvent"> & {
  * Use `create(ContainerEventSchema)` to create a new message.
  */
 export const ContainerEventSchema: GenMessage<ContainerEvent> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 19);
+  messageDesc(file_mlplatform_v1_agent, 21);
 
 /**
  * @generated from message mlplatform.v1.ContainerSnapshot
@@ -893,7 +1068,7 @@ export type ContainerSnapshot = Message<"mlplatform.v1.ContainerSnapshot"> & {
  * Use `create(ContainerSnapshotSchema)` to create a new message.
  */
 export const ContainerSnapshotSchema: GenMessage<ContainerSnapshot> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 20);
+  messageDesc(file_mlplatform_v1_agent, 22);
 
 /**
  * @generated from message mlplatform.v1.AgentCommand
@@ -993,6 +1168,72 @@ export type AgentCommand = Message<"mlplatform.v1.AgentCommand"> & {
      */
     value: RunScript;
     case: "runScript";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsList fs_list = 40;
+     */
+    value: FsList;
+    case: "fsList";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsRead fs_read = 41;
+     */
+    value: FsRead;
+    case: "fsRead";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsWrite fs_write = 42;
+     */
+    value: FsWrite;
+    case: "fsWrite";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsMkdir fs_mkdir = 43;
+     */
+    value: FsMkdir;
+    case: "fsMkdir";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsMove fs_move = 44;
+     */
+    value: FsMove;
+    case: "fsMove";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsDelete fs_delete = 45;
+     */
+    value: FsDelete;
+    case: "fsDelete";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ProcessList process_list = 46;
+     */
+    value: ProcessList;
+    case: "processList";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ProcessKill process_kill = 47;
+     */
+    value: ProcessKill;
+    case: "processKill";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ServiceList service_list = 48;
+     */
+    value: ServiceList;
+    case: "serviceList";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ServiceControl service_control = 49;
+     */
+    value: ServiceControl;
+    case: "serviceControl";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.SystemLogRead system_log_read = 50;
+     */
+    value: SystemLogRead;
+    case: "systemLogRead";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1001,7 +1242,7 @@ export type AgentCommand = Message<"mlplatform.v1.AgentCommand"> & {
  * Use `create(AgentCommandSchema)` to create a new message.
  */
 export const AgentCommandSchema: GenMessage<AgentCommand> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 21);
+  messageDesc(file_mlplatform_v1_agent, 23);
 
 /**
  * A platform container. The agent adds labels mlp.managed=1 + mlp.spec=<sha256 spec> (compared on re-apply).
@@ -1117,7 +1358,7 @@ export type ContainerSpec = Message<"mlplatform.v1.ContainerSpec"> & {
  * Use `create(ContainerSpecSchema)` to create a new message.
  */
 export const ContainerSpecSchema: GenMessage<ContainerSpec> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 22);
+  messageDesc(file_mlplatform_v1_agent, 24);
 
 /**
  * @generated from message mlplatform.v1.Mount
@@ -1144,7 +1385,7 @@ export type Mount = Message<"mlplatform.v1.Mount"> & {
  * Use `create(MountSchema)` to create a new message.
  */
 export const MountSchema: GenMessage<Mount> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 23);
+  messageDesc(file_mlplatform_v1_agent, 25);
 
 /**
  * @generated from message mlplatform.v1.PortBinding
@@ -1176,7 +1417,7 @@ export type PortBinding = Message<"mlplatform.v1.PortBinding"> & {
  * Use `create(PortBindingSchema)` to create a new message.
  */
 export const PortBindingSchema: GenMessage<PortBinding> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 24);
+  messageDesc(file_mlplatform_v1_agent, 26);
 
 /**
  * Creates a container from the spec. keep_if_same: a running container with the same name and mlp.spec is kept as is (ok, kept=true).
@@ -1205,7 +1446,7 @@ export type ContainerApply = Message<"mlplatform.v1.ContainerApply"> & {
  * Use `create(ContainerApplySchema)` to create a new message.
  */
 export const ContainerApplySchema: GenMessage<ContainerApply> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 25);
+  messageDesc(file_mlplatform_v1_agent, 27);
 
 /**
  * Stops (SIGTERM, waits for grace, then SIGKILL) by name or k=v label; does not remove — the die event reports the exit code.
@@ -1234,7 +1475,7 @@ export type ContainerStop = Message<"mlplatform.v1.ContainerStop"> & {
  * Use `create(ContainerStopSchema)` to create a new message.
  */
 export const ContainerStopSchema: GenMessage<ContainerStop> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 26);
+  messageDesc(file_mlplatform_v1_agent, 28);
 
 /**
  * @generated from message mlplatform.v1.ContainerRemove
@@ -1266,7 +1507,7 @@ export type ContainerRemove = Message<"mlplatform.v1.ContainerRemove"> & {
  * Use `create(ContainerRemoveSchema)` to create a new message.
  */
 export const ContainerRemoveSchema: GenMessage<ContainerRemove> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 27);
+  messageDesc(file_mlplatform_v1_agent, 29);
 
 /**
  * Runs until exit (e.g. keygen); returns exit_code + stdout (≤ 64 KB).
@@ -1290,7 +1531,7 @@ export type ContainerRunOnce = Message<"mlplatform.v1.ContainerRunOnce"> & {
  * Use `create(ContainerRunOnceSchema)` to create a new message.
  */
 export const ContainerRunOnceSchema: GenMessage<ContainerRunOnce> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 28);
+  messageDesc(file_mlplatform_v1_agent, 30);
 
 /**
  * Builds an image from the attached files (Dockerfile + …); skipped if the tag already exists (unless force).
@@ -1324,7 +1565,7 @@ export type ImageBuild = Message<"mlplatform.v1.ImageBuild"> & {
  * Use `create(ImageBuildSchema)` to create a new message.
  */
 export const ImageBuildSchema: GenMessage<ImageBuild> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 29);
+  messageDesc(file_mlplatform_v1_agent, 31);
 
 /**
  * File in the agent's state directory (relative path, cannot escape it).
@@ -1348,7 +1589,7 @@ export type FileRead = Message<"mlplatform.v1.FileRead"> & {
  * Use `create(FileReadSchema)` to create a new message.
  */
 export const FileReadSchema: GenMessage<FileRead> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 30);
+  messageDesc(file_mlplatform_v1_agent, 32);
 
 /**
  * @generated from message mlplatform.v1.FileWrite
@@ -1375,7 +1616,7 @@ export type FileWrite = Message<"mlplatform.v1.FileWrite"> & {
  * Use `create(FileWriteSchema)` to create a new message.
  */
 export const FileWriteSchema: GenMessage<FileWrite> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 31);
+  messageDesc(file_mlplatform_v1_agent, 33);
 
 /**
  * @generated from message mlplatform.v1.FileDelete
@@ -1397,7 +1638,7 @@ export type FileDelete = Message<"mlplatform.v1.FileDelete"> & {
  * Use `create(FileDeleteSchema)` to create a new message.
  */
 export const FileDeleteSchema: GenMessage<FileDelete> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 32);
+  messageDesc(file_mlplatform_v1_agent, 34);
 
 /**
  * Runs a script. detached: detached from the agent process via the service manager (systemd-run / launchctl / schtasks SYSTEM) —
@@ -1442,7 +1683,7 @@ export type RunScript = Message<"mlplatform.v1.RunScript"> & {
  * Use `create(RunScriptSchema)` to create a new message.
  */
 export const RunScriptSchema: GenMessage<RunScript> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 33);
+  messageDesc(file_mlplatform_v1_agent, 35);
 
 /**
  * @generated from message mlplatform.v1.BrowsePath
@@ -1459,7 +1700,7 @@ export type BrowsePath = Message<"mlplatform.v1.BrowsePath"> & {
  * Use `create(BrowsePathSchema)` to create a new message.
  */
 export const BrowsePathSchema: GenMessage<BrowsePath> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 34);
+  messageDesc(file_mlplatform_v1_agent, 36);
 
 /**
  * @generated from message mlplatform.v1.BrowsePathResult
@@ -1476,7 +1717,7 @@ export type BrowsePathResult = Message<"mlplatform.v1.BrowsePathResult"> & {
  * Use `create(BrowsePathResultSchema)` to create a new message.
  */
 export const BrowsePathResultSchema: GenMessage<BrowsePathResult> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 35);
+  messageDesc(file_mlplatform_v1_agent, 37);
 
 /**
  * @generated from message mlplatform.v1.PathEntry
@@ -1503,7 +1744,486 @@ export type PathEntry = Message<"mlplatform.v1.PathEntry"> & {
  * Use `create(PathEntrySchema)` to create a new message.
  */
 export const PathEntrySchema: GenMessage<PathEntry> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 36);
+  messageDesc(file_mlplatform_v1_agent, 38);
+
+/**
+ * ── Remote ops: absolute paths inside HostInfo.fs_roots (FLEET_PATH_OUTSIDE_ROOT otherwise) ──
+ *
+ * @generated from message mlplatform.v1.FsList
+ */
+export type FsList = Message<"mlplatform.v1.FsList"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsList.
+ * Use `create(FsListSchema)` to create a new message.
+ */
+export const FsListSchema: GenMessage<FsList> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 39);
+
+/**
+ * @generated from message mlplatform.v1.FsRead
+ */
+export type FsRead = Message<"mlplatform.v1.FsRead"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: uint64 offset = 2;
+   */
+  offset: bigint;
+
+  /**
+   * @generated from field: uint32 length = 3;
+   */
+  length: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsRead.
+ * Use `create(FsReadSchema)` to create a new message.
+ */
+export const FsReadSchema: GenMessage<FsRead> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 40);
+
+/**
+ * @generated from message mlplatform.v1.FsWrite
+ */
+export type FsWrite = Message<"mlplatform.v1.FsWrite"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: uint64 offset = 2;
+   */
+  offset: bigint;
+
+  /**
+   * @generated from field: bytes data = 3;
+   */
+  data: Uint8Array;
+
+  /**
+   * @generated from field: bool truncate = 4;
+   */
+  truncate: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsWrite.
+ * Use `create(FsWriteSchema)` to create a new message.
+ */
+export const FsWriteSchema: GenMessage<FsWrite> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 41);
+
+/**
+ * @generated from message mlplatform.v1.FsMkdir
+ */
+export type FsMkdir = Message<"mlplatform.v1.FsMkdir"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsMkdir.
+ * Use `create(FsMkdirSchema)` to create a new message.
+ */
+export const FsMkdirSchema: GenMessage<FsMkdir> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 42);
+
+/**
+ * @generated from message mlplatform.v1.FsMove
+ */
+export type FsMove = Message<"mlplatform.v1.FsMove"> & {
+  /**
+   * @generated from field: string from = 1;
+   */
+  from: string;
+
+  /**
+   * @generated from field: string to = 2;
+   */
+  to: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsMove.
+ * Use `create(FsMoveSchema)` to create a new message.
+ */
+export const FsMoveSchema: GenMessage<FsMove> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 43);
+
+/**
+ * @generated from message mlplatform.v1.FsDelete
+ */
+export type FsDelete = Message<"mlplatform.v1.FsDelete"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: bool recursive = 2;
+   */
+  recursive: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsDelete.
+ * Use `create(FsDeleteSchema)` to create a new message.
+ */
+export const FsDeleteSchema: GenMessage<FsDelete> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 44);
+
+/**
+ * @generated from message mlplatform.v1.FsEntry
+ */
+export type FsEntry = Message<"mlplatform.v1.FsEntry"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool is_dir = 2;
+   */
+  isDir: boolean;
+
+  /**
+   * @generated from field: uint64 size = 3;
+   */
+  size: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp modified_at = 4;
+   */
+  modifiedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: bool is_link = 5;
+   */
+  isLink: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsEntry.
+ * Use `create(FsEntrySchema)` to create a new message.
+ */
+export const FsEntrySchema: GenMessage<FsEntry> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 45);
+
+/**
+ * @generated from message mlplatform.v1.FsListing
+ */
+export type FsListing = Message<"mlplatform.v1.FsListing"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: repeated mlplatform.v1.FsEntry entries = 2;
+   */
+  entries: FsEntry[];
+
+  /**
+   * @generated from field: bool truncated = 3;
+   */
+  truncated: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsListing.
+ * Use `create(FsListingSchema)` to create a new message.
+ */
+export const FsListingSchema: GenMessage<FsListing> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 46);
+
+/**
+ * @generated from message mlplatform.v1.FsStat
+ */
+export type FsStat = Message<"mlplatform.v1.FsStat"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: uint64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp modified_at = 3;
+   */
+  modifiedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string sha256 = 4;
+   */
+  sha256: string;
+
+  /**
+   * @generated from field: bool is_text = 5;
+   */
+  isText: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.FsStat.
+ * Use `create(FsStatSchema)` to create a new message.
+ */
+export const FsStatSchema: GenMessage<FsStat> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 47);
+
+/**
+ * @generated from message mlplatform.v1.ProcessList
+ */
+export type ProcessList = Message<"mlplatform.v1.ProcessList"> & {
+  /**
+   * @generated from field: string sort = 1;
+   */
+  sort: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ProcessList.
+ * Use `create(ProcessListSchema)` to create a new message.
+ */
+export const ProcessListSchema: GenMessage<ProcessList> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 48);
+
+/**
+ * @generated from message mlplatform.v1.ProcessInfo
+ */
+export type ProcessInfo = Message<"mlplatform.v1.ProcessInfo"> & {
+  /**
+   * @generated from field: int32 pid = 1;
+   */
+  pid: number;
+
+  /**
+   * @generated from field: int32 ppid = 2;
+   */
+  ppid: number;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string user = 4;
+   */
+  user: string;
+
+  /**
+   * @generated from field: double cpu_percent = 5;
+   */
+  cpuPercent: number;
+
+  /**
+   * @generated from field: uint64 rss_bytes = 6;
+   */
+  rssBytes: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started_at = 7;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string command = 8;
+   */
+  command: string;
+
+  /**
+   * @generated from field: string container = 9;
+   */
+  container: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ProcessInfo.
+ * Use `create(ProcessInfoSchema)` to create a new message.
+ */
+export const ProcessInfoSchema: GenMessage<ProcessInfo> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 49);
+
+/**
+ * @generated from message mlplatform.v1.ProcessListing
+ */
+export type ProcessListing = Message<"mlplatform.v1.ProcessListing"> & {
+  /**
+   * @generated from field: repeated mlplatform.v1.ProcessInfo processes = 1;
+   */
+  processes: ProcessInfo[];
+
+  /**
+   * @generated from field: int32 total = 2;
+   */
+  total: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.ProcessListing.
+ * Use `create(ProcessListingSchema)` to create a new message.
+ */
+export const ProcessListingSchema: GenMessage<ProcessListing> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 50);
+
+/**
+ * @generated from message mlplatform.v1.ProcessKill
+ */
+export type ProcessKill = Message<"mlplatform.v1.ProcessKill"> & {
+  /**
+   * @generated from field: int32 pid = 1;
+   */
+  pid: number;
+
+  /**
+   * @generated from field: bool force = 2;
+   */
+  force: boolean;
+
+  /**
+   * @generated from field: bool tree = 3;
+   */
+  tree: boolean;
+};
+
+/**
+ * Describes the message mlplatform.v1.ProcessKill.
+ * Use `create(ProcessKillSchema)` to create a new message.
+ */
+export const ProcessKillSchema: GenMessage<ProcessKill> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 51);
+
+/**
+ * @generated from message mlplatform.v1.ServiceList
+ */
+export type ServiceList = Message<"mlplatform.v1.ServiceList"> & {
+};
+
+/**
+ * Describes the message mlplatform.v1.ServiceList.
+ * Use `create(ServiceListSchema)` to create a new message.
+ */
+export const ServiceListSchema: GenMessage<ServiceList> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 52);
+
+/**
+ * @generated from message mlplatform.v1.ServiceInfo
+ */
+export type ServiceInfo = Message<"mlplatform.v1.ServiceInfo"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string description = 2;
+   */
+  description: string;
+
+  /**
+   * @generated from field: string state = 3;
+   */
+  state: string;
+
+  /**
+   * @generated from field: string sub_state = 4;
+   */
+  subState: string;
+
+  /**
+   * @generated from field: string start_type = 5;
+   */
+  startType: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ServiceInfo.
+ * Use `create(ServiceInfoSchema)` to create a new message.
+ */
+export const ServiceInfoSchema: GenMessage<ServiceInfo> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 53);
+
+/**
+ * @generated from message mlplatform.v1.ServiceListing
+ */
+export type ServiceListing = Message<"mlplatform.v1.ServiceListing"> & {
+  /**
+   * @generated from field: repeated mlplatform.v1.ServiceInfo services = 1;
+   */
+  services: ServiceInfo[];
+
+  /**
+   * @generated from field: string manager = 2;
+   */
+  manager: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ServiceListing.
+ * Use `create(ServiceListingSchema)` to create a new message.
+ */
+export const ServiceListingSchema: GenMessage<ServiceListing> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 54);
+
+/**
+ * @generated from message mlplatform.v1.ServiceControl
+ */
+export type ServiceControl = Message<"mlplatform.v1.ServiceControl"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string action = 2;
+   */
+  action: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.ServiceControl.
+ * Use `create(ServiceControlSchema)` to create a new message.
+ */
+export const ServiceControlSchema: GenMessage<ServiceControl> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 55);
+
+/**
+ * @generated from message mlplatform.v1.SystemLogRead
+ */
+export type SystemLogRead = Message<"mlplatform.v1.SystemLogRead"> & {
+  /**
+   * @generated from field: string unit = 1;
+   */
+  unit: string;
+
+  /**
+   * @generated from field: int32 lines = 2;
+   */
+  lines: number;
+};
+
+/**
+ * Describes the message mlplatform.v1.SystemLogRead.
+ * Use `create(SystemLogReadSchema)` to create a new message.
+ */
+export const SystemLogReadSchema: GenMessage<SystemLogRead> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 56);
 
 /**
  * @generated from message mlplatform.v1.PrepullImages
@@ -1520,7 +2240,7 @@ export type PrepullImages = Message<"mlplatform.v1.PrepullImages"> & {
  * Use `create(PrepullImagesSchema)` to create a new message.
  */
 export const PrepullImagesSchema: GenMessage<PrepullImages> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 37);
+  messageDesc(file_mlplatform_v1_agent, 57);
 
 /**
  * @generated from message mlplatform.v1.CollectLogs
@@ -1537,7 +2257,7 @@ export type CollectLogs = Message<"mlplatform.v1.CollectLogs"> & {
  * Use `create(CollectLogsSchema)` to create a new message.
  */
 export const CollectLogsSchema: GenMessage<CollectLogs> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 38);
+  messageDesc(file_mlplatform_v1_agent, 58);
 
 /**
  * @generated from message mlplatform.v1.Uninstall
@@ -1550,7 +2270,7 @@ export type Uninstall = Message<"mlplatform.v1.Uninstall"> & {
  * Use `create(UninstallSchema)` to create a new message.
  */
 export const UninstallSchema: GenMessage<Uninstall> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 39);
+  messageDesc(file_mlplatform_v1_agent, 59);
 
 /**
  * @generated from message mlplatform.v1.Disconnect
@@ -1563,7 +2283,7 @@ export type Disconnect = Message<"mlplatform.v1.Disconnect"> & {
  * Use `create(DisconnectSchema)` to create a new message.
  */
 export const DisconnectSchema: GenMessage<Disconnect> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 40);
+  messageDesc(file_mlplatform_v1_agent, 60);
 
 /**
  * @generated from message mlplatform.v1.CancelCommand
@@ -1580,7 +2300,7 @@ export type CancelCommand = Message<"mlplatform.v1.CancelCommand"> & {
  * Use `create(CancelCommandSchema)` to create a new message.
  */
 export const CancelCommandSchema: GenMessage<CancelCommand> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 41);
+  messageDesc(file_mlplatform_v1_agent, 61);
 
 /**
  * @generated from message mlplatform.v1.CommandProgress
@@ -1607,7 +2327,7 @@ export type CommandProgress = Message<"mlplatform.v1.CommandProgress"> & {
  * Use `create(CommandProgressSchema)` to create a new message.
  */
 export const CommandProgressSchema: GenMessage<CommandProgress> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 42);
+  messageDesc(file_mlplatform_v1_agent, 62);
 
 /**
  * @generated from message mlplatform.v1.CommandResult
@@ -1684,6 +2404,30 @@ export type CommandResult = Message<"mlplatform.v1.CommandResult"> & {
      */
     value: BrowsePathResult;
     case: "browsePath";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsListing fs_listing = 12;
+     */
+    value: FsListing;
+    case: "fsListing";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.FsStat fs_stat = 13;
+     */
+    value: FsStat;
+    case: "fsStat";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ProcessListing process_listing = 14;
+     */
+    value: ProcessListing;
+    case: "processListing";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.ServiceListing service_listing = 15;
+     */
+    value: ServiceListing;
+    case: "serviceListing";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1692,7 +2436,7 @@ export type CommandResult = Message<"mlplatform.v1.CommandResult"> & {
  * Use `create(CommandResultSchema)` to create a new message.
  */
 export const CommandResultSchema: GenMessage<CommandResult> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 43);
+  messageDesc(file_mlplatform_v1_agent, 63);
 
 /**
  * @generated from message mlplatform.v1.OpenDataChannel
@@ -1723,6 +2467,12 @@ export type OpenDataChannel = Message<"mlplatform.v1.OpenDataChannel"> & {
      */
     value: HostFileTarget;
     case: "hostFile";
+  } | {
+    /**
+     * @generated from field: mlplatform.v1.TerminalTarget terminal = 12;
+     */
+    value: TerminalTarget;
+    case: "terminal";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1731,7 +2481,42 @@ export type OpenDataChannel = Message<"mlplatform.v1.OpenDataChannel"> & {
  * Use `create(OpenDataChannelSchema)` to create a new message.
  */
 export const OpenDataChannelSchema: GenMessage<OpenDataChannel> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 44);
+  messageDesc(file_mlplatform_v1_agent, 64);
+
+/**
+ * Interactive shell; frames on the channel: [u8 kind][u32 BE length][payload ≤ 64 KiB], kinds 0 data, 1 resize (u16 cols, u16 rows),
+ * 2 exit (i32 code), 3 ping.
+ *
+ * @generated from message mlplatform.v1.TerminalTarget
+ */
+export type TerminalTarget = Message<"mlplatform.v1.TerminalTarget"> & {
+  /**
+   * @generated from field: string shell = 1;
+   */
+  shell: string;
+
+  /**
+   * @generated from field: uint32 cols = 2;
+   */
+  cols: number;
+
+  /**
+   * @generated from field: uint32 rows = 3;
+   */
+  rows: number;
+
+  /**
+   * @generated from field: string cwd = 4;
+   */
+  cwd: string;
+};
+
+/**
+ * Describes the message mlplatform.v1.TerminalTarget.
+ * Use `create(TerminalTargetSchema)` to create a new message.
+ */
+export const TerminalTargetSchema: GenMessage<TerminalTarget> = /*@__PURE__*/
+  messageDesc(file_mlplatform_v1_agent, 65);
 
 /**
  * @generated from message mlplatform.v1.NotebookTarget
@@ -1748,7 +2533,7 @@ export type NotebookTarget = Message<"mlplatform.v1.NotebookTarget"> & {
  * Use `create(NotebookTargetSchema)` to create a new message.
  */
 export const NotebookTargetSchema: GenMessage<NotebookTarget> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 45);
+  messageDesc(file_mlplatform_v1_agent, 66);
 
 /**
  * @generated from message mlplatform.v1.HostFileTarget
@@ -1773,6 +2558,11 @@ export type HostFileTarget = Message<"mlplatform.v1.HostFileTarget"> & {
    * @generated from field: string token = 4;
    */
   token: string;
+
+  /**
+   * @generated from field: bool upload = 5;
+   */
+  upload: boolean;
 };
 
 /**
@@ -1780,7 +2570,7 @@ export type HostFileTarget = Message<"mlplatform.v1.HostFileTarget"> & {
  * Use `create(HostFileTargetSchema)` to create a new message.
  */
 export const HostFileTargetSchema: GenMessage<HostFileTarget> = /*@__PURE__*/
-  messageDesc(file_mlplatform_v1_agent, 46);
+  messageDesc(file_mlplatform_v1_agent, 67);
 
 /**
  * @generated from enum mlplatform.v1.OsFamily
@@ -1843,4 +2633,35 @@ export enum ContainerRuntime {
  */
 export const ContainerRuntimeSchema: GenEnum<ContainerRuntime> = /*@__PURE__*/
   enumDesc(file_mlplatform_v1_agent, 1);
+
+/**
+ * @generated from enum mlplatform.v1.GpuState
+ */
+export enum GpuState {
+  /**
+   * @generated from enum value: GPU_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: GPU_STATE_NONE = 1;
+   */
+  NONE = 1,
+
+  /**
+   * @generated from enum value: GPU_STATE_OK = 2;
+   */
+  OK = 2,
+
+  /**
+   * @generated from enum value: GPU_STATE_DRIVER_ERROR = 3;
+   */
+  DRIVER_ERROR = 3,
+}
+
+/**
+ * Describes the enum mlplatform.v1.GpuState.
+ */
+export const GpuStateSchema: GenEnum<GpuState> = /*@__PURE__*/
+  enumDesc(file_mlplatform_v1_agent, 2);
 
