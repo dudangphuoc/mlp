@@ -8,4 +8,4 @@ using MLPlatform.Security;
 namespace MLPlatform.ControlPlane.Application.Audit;
 
 public sealed record AuditRow(long Seq, Guid Id, DateTimeOffset At, Guid? WorkspaceId, Guid? ActorId, string Action, string Outcome, string? Reason,
-    string PrevHash, string Hash);
+    string? Details, string PrevHash, string Hash);

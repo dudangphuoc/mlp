@@ -20,7 +20,7 @@ public sealed class ListAuditQueryHandler(IReadSession db, WorkspaceAuthorizer a
         var valid = true;
         foreach (var e in all)
         {
-            if (e.PrevHash != prev || e.Hash != AuditChain.Hash(e.PrevHash, e.Id, e.At, e.WorkspaceId, e.ActorId, e.Action, e.Outcome, e.Reason)) { valid = false; break; }
+            if (e.PrevHash != prev || e.Hash != AuditChain.Hash(e.PrevHash, e.Id, e.At, e.WorkspaceId, e.ActorId, e.Action, e.Outcome, e.Reason, e.Details)) { valid = false; break; }
             prev = e.Hash;
         }
         return (await db.ListAuditEventsAsync(q.WorkspaceId, ct), valid);

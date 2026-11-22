@@ -13,7 +13,7 @@ public static partial class AuditSql
     [SqlQuery("Audit/LastHash.sql")] public static partial Task<string?> LastHashAsync(this IWriteSession db, CancellationToken ct);
     [SqlQuery("Audit/InsertEvent.sql")]
     public static partial Task InsertAuditEventAsync(this IWriteSession db, Guid id, DateTimeOffset at, Guid? workspaceId, Guid? actorId, string action,
-        string outcome, string? reason, string prevHash, string hash, CancellationToken ct);
+        string outcome, string? reason, string? details, string prevHash, string hash, CancellationToken ct);
     [SqlQuery("Audit/ListEvents.sql")] public static partial Task<List<AuditRow>> ListAuditEventsAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
     [SqlQuery("Audit/AllEvents.sql")] public static partial Task<List<AuditRow>> AllEventsAsync(this IReadSession db, CancellationToken ct);
 }
