@@ -2809,5 +2809,9 @@
   "Utilisation": "Mức dùng",
   "vram_full": "đầy VRAM",
   "yield": "nhường",
-  "yielded": "đang nhường"
+  "yielded": "đang nhường",
+  "Agent updates": "Cập nhật agent",
+  "update": "cập nhật",
+  "Util": "Dùng",
+  "default": "mặc định"
 }

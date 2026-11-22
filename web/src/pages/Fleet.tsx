@@ -5,117 +5,165 @@ import { OsFamily } from "../gen/mlplatform/v1/agent_pb";
 import type { AgentUpgrade, Host } from "../gen/mlplatform/v1/fleet_pb";
 import { bytes } from "../lib/format";
 import {
-  CommandBlock, Dialog, EmptyState, ErrorBox, Field, HardwareChip, PageHeader, ProgressSteps, RelTime, Skeleton, StateBadge, Tabs, Tip,
+  CommandBlock, Dialog, EmptyState, ErrorBox, Field, ProgressSteps, RelTime, Skeleton, StateBadge, Tabs,
 } from "../components/ui";
 import { ClusterMapView } from "./Ops";
 import { DataCacheList } from "../components/DataSync";
 import { RayHealthView } from "../components/RayHealth";
 import { translate as t } from "../i18n";
-import { HostConsole, type ConsoleTab } from "../components/hostops/HostConsole";
-import { FleetGpuView } from "../components/hostops/FleetGpuView";
-import { Activity, CheckCircle2, CircleX, Clock, Loader2, RefreshCw, SquareTerminal, TriangleAlert } from "lucide-react";
+import { GpuPanel } from "../components/hostops/GpuPanel";
+import { TerminalPanel } from "../components/hostops/TerminalPanel";
+import { FilesPanel } from "../components/hostops/FilesPanel";
+import { ProcessesPanel } from "../components/hostops/ProcessesPanel";
+import { ServicesPanel } from "../components/hostops/ServicesPanel";
+import { CheckCircle2, CircleX, Clock, Loader2, RefreshCw } from "lucide-react";
 
-type Tab = "list" | "gpu" | "map" | "ray" | "data" | "agents";
+type Tab = "machines" | "map" | "ray" | "data" | "agents";
+type HostTab = "overview" | "gpu" | "terminal" | "files" | "processes" | "services" | "activity";
 const search = () => new URLSearchParams(window.location.search);
+const online = (h: Host) => h.state === "online" || h.state === "busy";
 
-/** S-02-1 Machine list, S-02-2 Add machine, S-02-5 Cluster map + OTA agent updates (D-38). */
+/** Machines workbench: machine list on the left, the selected machine's tools on the right (full page, no sheets). */
 export function FleetPage({ ws, go }: { ws: string; go: (p: string) => void }) {
   const qc = useQueryClient();
-  const tab = (search().get("tab") as Tab) || "list";
-  const open = search().get("new") === "1";
-  const [activity, setActivity] = useState<Host | null>(null);
-  const [hostConsole, setConsole] = useState<{ h: Host; tab: ConsoleTab } | null>(null);
+  const q = search();
+  const tab = (q.get("tab") as Tab) || "machines";
+  const open = q.get("new") === "1";
   const hosts = useQuery({ queryKey: ["hosts", ws], queryFn: () => api.fleet.listHosts({ workspaceId: ws }), refetchInterval: 5000 });
   const upgrades = useQuery({ queryKey: ["agent-upgrades", ws], queryFn: () => api.fleet.listAgentUpgrades({ workspaceId: ws }), refetchInterval: 3000 });
   const upgrade = useMutation({
     mutationFn: (v: { hostIds: string[]; force?: boolean }) => api.fleet.upgradeAgents({ workspaceId: ws, hostIds: v.hostIds, force: v.force ?? false }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["agent-upgrades", ws] }); go("fleet?tab=agents"); },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["agent-upgrades", ws] }),
   });
   const list = hosts.data?.hosts ?? [];
-  const online = list.filter((h) => h.state === "online" || h.state === "busy").length;
-  const outdated = list.filter((h) => h.updateAvailable);
+  const selected = list.find((h) => h.id === q.get("host")) ?? list[0];
+  const hostTab = (q.get("view") as HostTab) || "overview";
+  const select = (id: string, view: HostTab = hostTab) => go(`fleet?host=${id}&view=${view}`);
   const running = new Set((upgrades.data?.upgrades ?? []).filter((u) => u.state === "queued" || u.state === "running").map((u) => u.hostId));
   return (
-    <>
-      <PageHeader title={t("Machines (Fleet)")} subtitle={t("{a}/{b} machines online · {g} GPU", { a: online, b: list.length, g: list.reduce((n, h) => n + (h.hostInfo?.gpus.length ?? 0), 0) })}
-        actions={<>
-          <button className="btn-ghost" disabled={upgrade.isPending || outdated.length === 0} onClick={() => upgrade.mutate({ hostIds: [] })}
-            title={outdated.length === 0 ? t("Every machine runs the latest agent") : undefined}>
-            <RefreshCw className="h-4 w-4" />{outdated.length > 0 ? t("Update agent ({n} machines)", { n: outdated.length }) : t("Agent up to date")}</button>
-          <button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("+ Add machine")}</button>
-        </>} />
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <Tabs<Tab> value={tab} onChange={(t) => go(`fleet?tab=${t}`)} tabs={[
+          { key: "machines", label: t("Machines"), count: list.length },
+          { key: "map", label: t("Cluster map") },
+          { key: "ray", label: "Ray" },
+          { key: "data", label: t("Data on machines") },
+          { key: "agents", label: t("Agent updates"), count: running.size || undefined },
+        ]} />
+        <button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("+ Add machine")}</button>
+      </div>
       <ErrorBox error={hosts.error ? errorText(hosts.error) : upgrade.error ? errorText(upgrade.error) : null} onRetry={() => void hosts.refetch()} />
-      <Tabs<Tab> value={tab} onChange={(t) => go(`fleet?tab=${t}`)} tabs={[
-        { key: "list", label: t("List"), count: list.length },
-        { key: "gpu", label: "GPU" },
-        { key: "map", label: t("Cluster map") },
-        { key: "ray", label: "Ray" },
-        { key: "data", label: t("Data on machines") },
-        { key: "agents", label: t("Update agent"), count: running.size || undefined },
-      ]} />
-      {tab === "gpu" ? <FleetGpuView ws={ws} hosts={list} onOpen={(h) => setConsole({ h, tab: "gpu" })} />
-        : tab === "map" ? <ClusterMapView ws={ws} go={go} />
+      {tab === "map" ? <ClusterMapView ws={ws} go={go} />
         : tab === "data" ? <DataCacheList ws={ws} go={go} />
         : tab === "ray" ? <RayHealthView ws={ws} />
         : tab === "agents" ? <UpgradeHistory items={upgrades.data?.upgrades ?? []} latest={list[0]?.latestAgentVersion} loading={upgrades.isLoading} />
-        : hosts.isLoading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-44" />)}</div>
-        : list.length === 0 ? (
-          <EmptyState title={t("No machines yet")} action={<button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("Add your first machine")}</button>} />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
-            {list.map((h) => <HostCard key={h.id} h={h} busy={running.has(h.id)} onUpgrade={(force) => upgrade.mutate({ hostIds: [h.id], force })} onActivity={() => setActivity(h)}
-              onConsole={(tab) => setConsole({ h, tab })} />)}
-          </div>
-        )}
+        : hosts.isLoading ? <Skeleton rows={6} />
+        : list.length === 0 ? <EmptyState title={t("No machines yet")} action={<button className="btn-primary" onClick={() => go("fleet?new=1")}>{t("Add your first machine")}</button>} />
+        : (
+          <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[300px_1fr]">
+            <MachineList ws={ws} hosts={list} selectedId={selected?.id} onSelect={(id) => select(id)} />
+            {selected && <MachineWorkspace ws={ws} h={selected} tab={hostTab} onTab={(v) => select(selected.id, v)} busy={running.has(selected.id)}
+              onUpgrade={(force) => upgrade.mutate({ hostIds: [selected.id], force })} />}
+          </div>)}
       {open && <EnrollDialog ws={ws} onClose={() => go("fleet")} />}
-      {activity && <HostActivitySheet ws={ws} h={activity} onClose={() => setActivity(null)} />}
-      {hostConsole && <HostConsole ws={ws} h={hostConsole.h} initial={hostConsole.tab} onClose={() => setConsole(null)} />}
-    </>
+    </div>
   );
 }
 
-function HostCard({ h, busy, onUpgrade, onActivity, onConsole }:
-  { h: Host; busy: boolean; onUpgrade: (force: boolean) => void; onActivity: () => void; onConsole: (tab: ConsoleTab) => void }) {
+function MiniBar({ pct, tone }: { pct: number; tone: string }) {
+  return <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2"><div className={`h-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} /></div>;
+}
+
+function MachineList({ ws, hosts, selectedId, onSelect }: { ws: string; hosts: Host[]; selectedId?: string; onSelect: (id: string) => void }) {
+  return (
+    <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
+      {hosts.map((h) => <MachineRow key={h.id} ws={ws} h={h} active={h.id === selectedId} onClick={() => onSelect(h.id)} />)}
+    </div>
+  );
+}
+
+function MachineRow({ ws, h, active, onClick }: { ws: string; h: Host; active: boolean; onClick: () => void }) {
+  const gpus = useQuery({ queryKey: ["host-gpus", ws, h.id], queryFn: () => api.fleet.getHostGpus({ workspaceId: ws, hostId: h.id }),
+    refetchInterval: 15000, enabled: (h.hostInfo?.gpus.length ?? 0) > 0 && online(h) });
+  return (
+    <button onClick={onClick} className={`w-full rounded-lg border p-3 text-left transition ${active ? "border-accent bg-accent/10" : "border-line bg-surface hover:bg-surface-2"}`}>
+      <div className="flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${online(h) ? "bg-success" : h.state === "degraded" ? "bg-warning" : "bg-fg-subtle"}`} />
+        <span className="min-w-0 flex-1 truncate text-base font-medium">{h.name}</span>
+        {h.updateAvailable && <span className="badge bg-sky-100 text-sky-700">{t("update")}</span>}
+      </div>
+      <div className="mt-1 truncate text-sm text-fg-muted">{h.hostInfo?.logicalCpus ?? "—"} CPU · {h.hostInfo ? bytes(h.hostInfo.memoryBytes) : "—"} RAM{h.hostInfo?.instance ? ` · ${h.hostInfo.instance}` : ""}</div>
+      {(gpus.data?.gpus ?? []).map((g) => {
+        const s = g.sample;
+        const total = Number(s?.memoryTotalBytes || g.info?.memoryBytes || 1n);
+        return (
+          <div key={g.info?.uuid} className="mt-2 space-y-1 text-sm">
+            <div className="flex justify-between text-fg-muted"><span className="truncate">GPU {g.info?.index} · {g.info?.name}</span><span className="tabular-nums">{s?.temperatureC.toFixed(0)}°C</span></div>
+            <div className="flex items-center gap-2"><span className="w-12 text-xs text-fg-subtle">{t("Util")}</span><MiniBar pct={s?.utilPercent ?? 0} tone="bg-accent" /><span className="w-10 text-right text-xs tabular-nums">{s?.utilPercent.toFixed(0)}%</span></div>
+            <div className="flex items-center gap-2"><span className="w-12 text-xs text-fg-subtle">VRAM</span><MiniBar pct={(Number(s?.memoryUsedBytes ?? 0n) / total) * 100} tone="bg-violet-400" /><span className="w-10 text-right text-xs tabular-nums">{((Number(s?.memoryUsedBytes ?? 0n) / total) * 100).toFixed(0)}%</span></div>
+          </div>);
+      })}
+    </button>
+  );
+}
+
+function MachineWorkspace({ ws, h, tab, onTab, busy, onUpgrade }:
+  { ws: string; h: Host; tab: HostTab; onTab: (t: HostTab) => void; busy: boolean; onUpgrade: (force: boolean) => void }) {
+  const live = online(h);
+  return (
+    <div className="flex min-h-0 flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-xl font-semibold">{h.name}</h2>
+        <StateBadge state={h.state} reason={h.stateReason || undefined} />
+        <span className="text-sm text-fg-muted">{h.hostInfo?.osDescription}</span>
+      </div>
+      <Tabs<HostTab> value={tab} onChange={onTab} tabs={[
+        { key: "overview", label: t("Overview") },
+        { key: "gpu", label: "GPU", count: h.hostInfo?.gpus.length || undefined },
+        { key: "terminal", label: t("Terminal") },
+        { key: "files", label: t("Files") },
+        { key: "processes", label: t("Processes") },
+        { key: "services", label: t("Services") },
+        { key: "activity", label: t("Activity") },
+      ]} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {tab === "overview" ? <MachineOverview h={h} busy={busy} onUpgrade={onUpgrade} />
+          : tab === "activity" ? <HostActivityPanel ws={ws} h={h} />
+          : !live ? <EmptyState bare title={t("The machine is offline.")} />
+          : tab === "gpu" ? <GpuPanel ws={ws} hostId={h.id} />
+          : tab === "terminal" ? <TerminalPanel key={h.id} ws={ws} hostId={h.id} />
+          : tab === "files" ? <FilesPanel key={h.id} ws={ws} hostId={h.id} />
+          : tab === "processes" ? <ProcessesPanel ws={ws} hostId={h.id} />
+          : <ServicesPanel ws={ws} hostId={h.id} />}
+      </div>
+    </div>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+  return <div className="rounded-lg border border-line p-3"><div className="text-xs text-fg-subtle">{label}</div><div className="mt-1 text-base">{value}</div></div>;
+}
+
+function MachineOverview({ h, busy, onUpgrade }: { h: Host; busy: boolean; onUpgrade: (force: boolean) => void }) {
   const i = h.hostInfo;
   return (
-    <div className="card space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="truncate font-medium">{h.name}</div>
-          <div className="truncate text-xs text-fg-subtle">{i?.osDescription ?? "—"}</div>
-        </div>
-        <StateBadge state={h.state} reason={h.stateReason || undefined} />
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Fact label="CPU" value={`${i?.logicalCpus ?? "—"}`} />
+        <Fact label="RAM" value={i ? bytes(i.memoryBytes) : "—"} />
+        <Fact label="GPU" value={i?.gpus.length ? i.gpus.map((g) => `${g.name} · ${bytes(g.memoryBytes)}`).join(", ") : t("no GPU")} />
+        <Fact label="Docker" value={i?.dockerVersion || "—"} />
+        <Fact label="VPN" value={<span className="mono">{h.overlayIp || "—"} · {h.vpnStatus || "—"}</span>} />
+        <Fact label={t("heartbeat")} value={<RelTime at={h.lastSeenAt} />} />
+        <Fact label={t("GPU priority")} value={`${i?.instance || t("default")} · ${t(i?.gpuPriority || "normal")}`} />
+        <Fact label="Agent" value={<span className="mono">{h.agentVersion.slice(0, 10) || "—"}</span>} />
       </div>
-      {h.state === "degraded" && h.stateReason && (
-        <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-2 text-xs text-warning">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="line-clamp-3 break-words">{t(h.stateReason)}</span>
-        </div>)}
-      <div className="flex flex-wrap gap-1.5">
-        {i?.gpus.length ? i.gpus.map((g) => <button key={g.uuid} onClick={() => onConsole("gpu")}><HardwareChip>▮ {g.name} · {bytes(g.memoryBytes)}</HardwareChip></button>) : <HardwareChip>{t("no GPU")}</HardwareChip>}
-        {i?.instance && <HardwareChip>{i.instance} · {i.gpuPriority}</HardwareChip>}
-        <HardwareChip>{i?.logicalCpus ?? "—"} CPU</HardwareChip>
-        <HardwareChip>{i ? bytes(i.memoryBytes) : "—"} RAM</HardwareChip>
-      </div>
-      <div className="flex items-center justify-between gap-2 border-t border-line pt-2 text-xs text-fg-muted">
-        <Tip text={h.vpnMessage || t("Not checked yet")}><span className="inline-flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${h.vpnStatus === "connected" ? "bg-success" : h.vpnStatus === "failed" ? "bg-danger" : "bg-warning"}`} />
-          <span className="mono">VPN {h.overlayIp || "—"}</span>{h.vpnStatus === "failed" && <span className="text-danger">{t("not connected")}</span>}
-        </span></Tip>
-        <span>{t("heartbeat")} <RelTime at={h.lastSeenAt} /></span>
-      </div>
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="inline-flex gap-1">
-          <button className="btn-ghost h-7 px-2 text-xs" onClick={onActivity}><Activity className="h-3.5 w-3.5" />{t("Activity")}</button>
-          <button className="btn-ghost h-7 px-2 text-xs" disabled={h.state === "offline"} onClick={() => onConsole("terminal")}><SquareTerminal className="h-3.5 w-3.5" />{t("Manage")}</button>
-        </span>
-        <Tip text={`Agent ${h.agentVersion} · ${i?.agentRid ?? ""} · ${i?.serviceManager ?? ""}`}>
-          <span className="mono text-fg-muted">agent {h.agentVersion.slice(0, 10) || "—"}</span>
-        </Tip>
+      <div className="flex items-center gap-2">
         {busy ? <span className="badge bg-sky-100 text-sky-700">{t("updating…")}</span>
-          : h.updateAvailable ? <button className="btn-primary h-7 px-2 text-xs" onClick={() => onUpgrade(false)}><RefreshCw className="h-3.5 w-3.5" />{t("Update agent")}</button>
-          : <span className="inline-flex items-center gap-2"><span className="text-success">{t("✓ latest")}</span>
-              <button className="btn-ghost h-7 px-2 text-xs" disabled={h.state === "offline"} onClick={() => onUpgrade(true)}><RefreshCw className="h-3.5 w-3.5" />{t("Reinstall")}</button></span>}
+          : h.updateAvailable ? <button className="btn-primary" onClick={() => onUpgrade(false)}><RefreshCw className="h-4 w-4" />{t("Update agent")}</button>
+          : <button className="btn-ghost" disabled={!online(h)} onClick={() => onUpgrade(true)}><RefreshCw className="h-4 w-4" />{t("Reinstall")}</button>}
       </div>
+      {(i?.fsRoots.length ?? 0) > 0 && <Fact label={t("Allowed folders")} value={<span className="mono text-sm">{i!.fsRoots.join("  ·  ")}</span>} />}
     </div>
   );
 }
@@ -207,11 +255,11 @@ const TRACE: Record<string, { icon: typeof CheckCircle2; cls: string; label: str
 };
 
 /** What the control plane asked this machine to do, and the agent's own log — so nothing happens on a machine unseen. */
-function HostActivitySheet({ ws, h, onClose }: { ws: string; h: Host; onClose: () => void }) {
+function HostActivityPanel({ ws, h }: { ws: string; h: Host }) {
   const q = useQuery({ queryKey: ["host-activity", ws, h.id], queryFn: () => api.fleet.getHostActivity({ workspaceId: ws, hostId: h.id }), refetchInterval: 4000 });
   const a = q.data;
   return (
-    <Dialog wide title={t("Activity on {name}", { name: h.name })} onClose={onClose}>
+    <div>
       <ErrorBox error={q.error ? errorText(q.error) : null} />
       {!a ? <Skeleton rows={6} /> : (
         <div className="space-y-5">
@@ -249,6 +297,6 @@ function HostActivitySheet({ ws, h, onClose }: { ws: string; h: Host; onClose: (
                   {a.agentLog.split("\n").slice(-200).join("\n")}</pre>}
           </section>
         </div>)}
-    </Dialog>
+    </div>
   );
 }
