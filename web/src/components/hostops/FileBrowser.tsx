@@ -113,7 +113,7 @@ export function FileBrowser({ ws, hostId, onOpenFile, compact }: { ws: string; h
           <table className="w-full table-fixed text-sm">
             <thead className="sticky top-0 bg-surface text-left text-xs text-fg-subtle">
               <tr className="h-8"><th className="px-3 font-normal">{t("Name")}</th><th className="w-24 px-3 text-right font-normal">{t("Size")}</th>
-                {!compact && <th className="w-36 px-3 font-normal">{t("Modified")}</th>}</tr>
+                {!compact && <th className="w-40 px-3 font-normal">{t("Modified")}</th>}</tr>
             </thead>
             <tbody>
               {cwd !== "" && !drives.includes(cwd) && (
@@ -122,8 +122,8 @@ export function FileBrowser({ ws, hostId, onOpenFile, compact }: { ws: string; h
                 <tr key={e.name} className={`h-8 cursor-pointer ${picked?.name === e.name ? "bg-primary/15" : "hover:bg-surface-2"}`}
                   onClick={() => setPicked(e)} onDoubleClick={() => (e.isDir ? go(joinPath(cwd, e.name)) : onOpenFile(joinPath(cwd, e.name)))}>
                   <td className={`truncate px-3 ${e.isDir ? "text-primary" : ""}`}>{e.name}{e.isDir ? "/" : ""}</td>
-                  <td className="px-3 text-right tabular-nums text-fg-muted">{e.isDir ? "" : bytes(e.size)}</td>
-                  {!compact && <td className="px-3 text-xs tabular-nums text-fg-muted">{dateTime(e.modifiedAt)}</td>}
+                  <td className="whitespace-nowrap px-3 text-right tabular-nums text-fg-muted">{e.isDir ? "" : bytes(e.size)}</td>
+                  {!compact && <td className="truncate whitespace-nowrap px-3 text-xs tabular-nums text-fg-muted">{dateTime(e.modifiedAt)}</td>}
                 </tr>))}
             </tbody>
           </table>
