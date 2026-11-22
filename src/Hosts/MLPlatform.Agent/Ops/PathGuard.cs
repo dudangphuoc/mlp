@@ -1,14 +1,24 @@
 namespace MLPlatform.Agent.Ops;
 
-/// <summary>Keeps remote file operations inside the allowed roots, resolving every symlink component of the
-/// path.</summary>
+/// <summary>Keeps remote file operations inside the roots (every drive, or the --fs-root folders when given),
+/// resolving every symlink component of the path.</summary>
 public static class PathGuard
 {
     private static readonly StringComparison Cmp =
         OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
     public static List<string> Roots(AgentOptions o, string stateDir) =>
-        [.. new[] { o.DataPath, o.ModelsPath, stateDir }.Concat(o.FsRoots)
+        o.FsRoots.Count == 0 ? Drives() : Folders(o.FsRoots);
+
+    /// <summary>Every ready local or network drive; "/" on Linux and macOS.</summary>
+    public static List<string> Drives() =>
+        OperatingSystem.IsWindows()
+            ? [.. DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType is DriveType.Fixed or DriveType.Removable or DriveType.Network)
+                .Select(d => d.RootDirectory.FullName)]
+            : ["/"];
+
+    private static List<string> Folders(IEnumerable<string> folders) =>
+        [.. folders
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Select(r => Real(Path.GetFullPath(r)))
             .Distinct(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)];

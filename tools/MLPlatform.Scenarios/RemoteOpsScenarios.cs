@@ -13,7 +13,7 @@ public static class RemoteOpsScenarios
     public static async Task RunAsync(Context c)
     {
         var fleet = new FleetService.FleetServiceClient(c.Channel);
-        await c.Step("Ops: allowed roots, list/write/read/move/delete inside data, outside refused", () => FilesAsync(c, fleet));
+        await c.Step("Ops: drives listed, list/write/read/move/delete anywhere, relative paths and drive roots refused", () => FilesAsync(c, fleet));
         await c.Step("Ops: upload + download over the data channel, sha256 matches", () => TransferAsync(c));
         await c.Step("Ops: process list, kill a scenario process, PID 1 refused", () => ProcessesAsync(c, fleet));
         await c.Step("Ops: terminal WebSocket echo, resize, exit code, audited open/close", () => TerminalAsync(c));
@@ -34,8 +34,8 @@ public static class RemoteOpsScenarios
     private static async Task FilesAsync(Context c, FleetService.FleetServiceClient fleet)
     {
         var roots = await fleet.ListHostFilesAsync(new HostPathRequest { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = "" }, c.Auth);
-        var data = roots.Entries.Select(e => e.Name).FirstOrDefault(n => n.EndsWith(Path.GetFileName(c.DataDir), StringComparison.Ordinal))
-                   ?? throw new Exception("data folder missing from roots: " + string.Join(", ", roots.Entries.Select(e => e.Name)));
+        Assert(roots.Entries.Count > 0, "no drives listed");
+        var data = c.DataDir;
         var file = Path.Combine(data, "ops", "hello.txt");
         var w = await fleet.WriteHostFileAsync(new WriteHostFileRequest { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = file, Truncate = true,
             Data = Google.Protobuf.ByteString.CopyFromUtf8("hello mlp\n") }, c.Auth);
@@ -47,14 +47,12 @@ public static class RemoteOpsScenarios
         var ls = await fleet.ListHostFilesAsync(new HostPathRequest { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = Path.Combine(data, "ops") }, c.Auth);
         Assert(ls.Entries.Any(e => e.Name == "moved.txt") && ls.Entries.All(e => e.Name != "hello.txt"), "move not visible");
         await fleet.DeleteHostPathAsync(new DeleteHostPathRequest { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = Path.Combine(data, "ops"), Recursive = true }, c.Auth);
-        await ExpectReason("FLEET_PATH_OUTSIDE_ROOT", async () => await fleet.ReadHostFileAsync(new ReadHostFileRequest
-            { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = "/etc/hosts" }, c.Auth));
-        await ExpectReason("FLEET_PATH_OUTSIDE_ROOT", async () => await fleet.WriteHostFileAsync(new WriteHostFileRequest
-            { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = "/etc/mlp-escape.txt", Truncate = true }, c.Auth));
+        var hosts = await fleet.ReadHostFileAsync(new ReadHostFileRequest { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = "/etc/hosts" }, c.Auth);
+        Assert(hosts.Data.Length > 0, "whole-drive browsing: /etc/hosts not readable");
         await ExpectReason("FLEET_PATH_OUTSIDE_ROOT", async () => await fleet.ListHostFilesAsync(new HostPathRequest
             { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = "../.." }, c.Auth));
         await ExpectReason("FLEET_PATH_OUTSIDE_ROOT", async () => await fleet.DeleteHostPathAsync(new DeleteHostPathRequest
-            { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = data, Recursive = true }, c.Auth));
+            { WorkspaceId = c.WorkspaceId, HostId = c.HostId, Path = roots.Entries[0].Name, Recursive = true }, c.Auth));
     }
 
     private static HttpClient Http(Context c)
@@ -77,8 +75,8 @@ public static class RemoteOpsScenarios
         Assert((await put.Content.ReadAsStringAsync()).Contains(sha), "upload sha256 differs");
         var got = await h.GetByteArrayAsync(q);
         Assert(got.AsSpan().SequenceEqual(payload), "download differs");
-        var outside = await h.GetAsync($"/api/hosts/{c.HostId}/files?workspace_id={c.WorkspaceId}&path={Uri.EscapeDataString("/etc/hosts")}");
-        Assert((int)outside.StatusCode == 403, "download outside the roots must be 403, got " + (int)outside.StatusCode);
+        var outside = await h.GetAsync($"/api/hosts/{c.HostId}/files?workspace_id={c.WorkspaceId}&path={Uri.EscapeDataString("relative/path.txt")}");
+        Assert((int)outside.StatusCode == 403, "download of a relative path must be 403, got " + (int)outside.StatusCode);
     }
 
     private static async Task ProcessesAsync(Context c, FleetService.FleetServiceClient fleet)
