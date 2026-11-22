@@ -46,3 +46,42 @@ spec:
   entryPoints: [websecure]
   routes: [{ match: "HostSNI(`agent.mlp.hexbox.vn`)", services: [{ name: mlp-agent, port: 7443 }] }]
   tls: { passthrough: true }
+---
+# api.mlp.hexbox.vn → api directly: REST + gRPC-web on 5081 (HTTP/1), native gRPC on 5080 (h2c).
+apiVersion: v1
+kind: Service
+metadata: { name: mlp-api, namespace: mlp }
+spec: { ports: [{ name: http, port: 5081, targetPort: 5081 }] }
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata: { name: mlp-api-cp, namespace: mlp, labels: { kubernetes.io/service-name: mlp-api } }
+addressType: IPv4
+ports: [{ name: http, port: 5081, protocol: TCP }]
+endpoints: [{ addresses: ["10.88.255.1"], conditions: { ready: true } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: mlp-api-grpc, namespace: mlp }
+spec: { ports: [{ name: h2c, port: 5080, targetPort: 5080 }] }
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata: { name: mlp-api-grpc-cp, namespace: mlp, labels: { kubernetes.io/service-name: mlp-api-grpc } }
+addressType: IPv4
+ports: [{ name: h2c, port: 5080, protocol: TCP }]
+endpoints: [{ addresses: ["10.88.255.1"], conditions: { ready: true } }]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: { name: mlp-api, namespace: mlp }
+spec:
+  entryPoints: [web, websecure]
+  routes:
+    - match: Host(`api.mlp.hexbox.vn`) && HeaderRegexp(`Content-Type`, `^application/grpc(\+proto)?$`)
+      priority: 1100
+      services: [{ name: mlp-api-grpc, port: 5080, scheme: h2c }]
+    - match: Host(`api.mlp.hexbox.vn`)
+      priority: 1000
+      services: [{ name: mlp-api, port: 5081 }]
+  tls: { secretName: mlp-wildcard-tls }
