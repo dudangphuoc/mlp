@@ -255,6 +255,9 @@ if (agentBin is not null)
     await Step("M02: BrowseHostPath blocks escaping data_path", () => ExpectStatus(StatusCode.FailedPrecondition, "DATA_PATH_OUTSIDE_ROOT",
         async () => await fleet.BrowseHostPathAsync(new BrowseHostPathRequest { WorkspaceId = wsId, HostId = hostId, RelativePath = "../.." }, auth)));
 
+    await RemoteOpsScenarios.RunAsync(new RemoteOpsScenarios.Context(channel, auth, auth.GetValue("authorization")![7..], wsId, hostId, dataDir.FullName,
+        Environment.GetEnvironmentVariable("MLP_WEB_URL") ?? "http://127.0.0.1:5081", Step));
+
     await Step("M02: stop agent → offline; restart with credential → online, same host_id", async () =>
     {
         agent!.Kill(); await agent.WaitForExitAsync();
@@ -272,6 +275,26 @@ if (agentBin is not null)
         Assert(await WaitHost(h => h.Id == hostId, 2) is null, "machine still listed");
     });
     if (agent is { HasExited: false }) agent.Kill();
+}
+
+if (agentBin is not null)
+{
+    System.Diagnostics.Process StartGpuAgent(string state, string[] extra, Dictionary<string, string> env)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo(agentBin.EndsWith(".dll") ? "dotnet" : agentBin) { RedirectStandardOutput = true, RedirectStandardError = true };
+        if (agentBin.EndsWith(".dll")) psi.ArgumentList.Add(agentBin);
+        foreach (var a in ((string[])["--state", state, "--cp", agentCp, .. AgentTlsArgs]).Concat(extra)) psi.ArgumentList.Add(a);
+        foreach (var (k, v) in env) psi.Environment[k] = v;
+        var p = System.Diagnostics.Process.Start(psi)!;
+        p.OutputDataReceived += (_, _) => { }; p.ErrorDataReceived += (_, _) => { };
+        p.BeginOutputReadLine(); p.BeginErrorReadLine();
+        return p;
+    }
+    var gpuWs = (await iam.GetMeAsync(new Empty(), auth)).Workspaces[0].WorkspaceId;
+    await GpuScenarios.RunAsync(new GpuScenarios.Context(channel, auth, gpuWs, Step, StartGpuAgent,
+        Environment.GetEnvironmentVariable("MLP_TEST_SMALL_IMAGE") ?? "busybox:1.36",
+        Environment.GetEnvironmentVariable("MLP_RAY") == "1" ? Environment.GetEnvironmentVariable("MLP_TEST_IMAGE") ?? "rayproject/ray:2.60.0-py312-cpu" : null,
+        Environment.GetEnvironmentVariable("MLP_TEST_NETWORK") ?? "mlp-dev"));
 }
 
 if (agentBin is not null && Environment.GetEnvironmentVariable("MLP_RAY") == "1")

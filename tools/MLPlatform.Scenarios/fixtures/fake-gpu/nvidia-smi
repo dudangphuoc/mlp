@@ -1,0 +1,11 @@
+#!/bin/sh
+# Fake nvidia-smi for the verify stack (MLP_NVIDIA_SMI): one GPU, readings from MLP_FAKE_GPU_* variables.
+UUID="${MLP_FAKE_GPU_UUID:-GPU-fake-0000}"
+TEMP="${MLP_FAKE_GPU_TEMP:-55}"
+[ -n "${MLP_FAKE_GPU_FAIL:-}" ] && [ -f "$MLP_FAKE_GPU_FAIL" ] && { echo "Failed to initialize NVML: Driver/library version mismatch" >&2; exit 9; }
+case "$*" in
+  *query-compute-apps*) exit 0 ;;
+  *compute_cap*) echo "0, $UUID, Fake GPU 24GB, 24576, 8.9, 555.42" ;;
+  *query-gpu=*) echo "0, $UUID, 37, 12, 6144, 24576, $TEMP, 182.5, 450.00, 2100, 2700, 41, P2, 0x0000000000000000, [N/A], 4" ;;
+  *) echo "NVIDIA-SMI fake" ;;
+esac
