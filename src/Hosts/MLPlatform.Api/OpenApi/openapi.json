@@ -166,6 +166,25 @@
         "x-public": false
       }
     },
+    "/openapi/docs": {
+      "get": {
+        "operationId": "OpenApi.GET_openapi_docs",
+        "tags": [
+          "rest:OpenApi"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
     "/openapi/gateway.json": {
       "get": {
         "operationId": "OpenApi.GET_openapi_gateway.json",

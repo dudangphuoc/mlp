@@ -17,6 +17,7 @@ public static class OpenApiEndpoints
         app.MapGet("/openapi/v1.json", (CurrentUser user) =>
             user.UserId is null ? Results.StatusCode(401) : Results.Text(Full.Value, "application/json"));
         app.MapGet("/openapi/gateway.json", () => Results.Text(Gateway.Value, "application/json"));
+        app.MapGet("/openapi/docs", () => Results.Content(DocsPage.Html, "text/html; charset=utf-8"));
     }
 
     private static string ReadEmbedded()

@@ -6,7 +6,7 @@
 |---|---:|
 | gRPC services | 24 |
 | gRPC methods | 258 |
-| REST routes | 15 |
+| REST routes | 16 |
 | Commands and queries | 368 |
 | Modules | 23 |
 | Database tables | 89 |

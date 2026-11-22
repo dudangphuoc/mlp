@@ -14,6 +14,7 @@
 | GET | `/mcp` | Mcp |  |
 | POST | `/mcp` | Mcp |  |
 | ANY | `/nb/{id:guid}/{**rest}` | Notebooks |  |
+| GET | `/openapi/docs` | OpenApi |  |
 | GET | `/openapi/gateway.json` | OpenApi |  |
 | GET | `/openapi/v1.json` | OpenApi |  |
 | GET | `/overlay/peers` | Overlay |  |
