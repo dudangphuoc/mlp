@@ -6,25 +6,26 @@
 set -u
 JOB="$(cd "$(dirname "$0")" && pwd)"
 STATUS="$JOB/status.txt"; PHASE="$JOB/phase"
-EXE='__EXE__'; URL='__URL__'; SHA='__SHA__'; SVC='__SVC__'
+EXE='__EXE__'; URL='__URL__'; SHA='__SHA__'; SVC='__SVC__'; INST='__INST__'
+SFX=''; LBL=io.mlplatform.agent; [ -n "$INST" ] && SFX="-$INST" && LBL="$LBL.$INST"
 say() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$STATUS"; }
 phase() { echo "$1" > "$PHASE.tmp" && mv -f "$PHASE.tmp" "$PHASE"; say "$1"; }
 sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }
 svc_stop() {
   case "$SVC" in
-    systemd) systemctl stop mlplatform-agent ;;
-    launchd) launchctl bootout system/io.mlplatform.agent 2>/dev/null || true ;;
+    systemd) systemctl stop "mlplatform-agent$SFX" ;;
+    launchd) launchctl bootout system/$LBL 2>/dev/null || true ;;
   esac
 }
 svc_start() {
   case "$SVC" in
-    systemd) systemctl start mlplatform-agent ;;
-    launchd) launchctl bootstrap system /Library/LaunchDaemons/io.mlplatform.agent.plist 2>/dev/null || launchctl kickstart -k system/io.mlplatform.agent ;;
+    systemd) systemctl start "mlplatform-agent$SFX" ;;
+    launchd) launchctl bootstrap system "/Library/LaunchDaemons/$LBL.plist" 2>/dev/null || launchctl kickstart -k "system/$LBL" ;;
   esac
 }
 recovery_on() {
   case "$SVC" in
-    systemd) cat > /etc/systemd/system/mlplatform-agent-upgrade-recover.service <<UNIT
+    systemd) cat > /etc/systemd/system/mlplatform-agent$SFX-upgrade-recover.service <<UNIT
 [Unit]
 Description=MLPlatform agent upgrade recovery
 After=network-online.target
@@ -34,11 +35,11 @@ ExecStart=/bin/sh $JOB/upgrade.sh recover
 [Install]
 WantedBy=multi-user.target
 UNIT
-      systemctl daemon-reload; systemctl enable mlplatform-agent-upgrade-recover.service >/dev/null 2>&1 ;;
-    launchd) cat > /Library/LaunchDaemons/io.mlplatform.agent-upgrade-recover.plist <<PLIST
+      systemctl daemon-reload; systemctl enable mlplatform-agent$SFX-upgrade-recover.service >/dev/null 2>&1 ;;
+    launchd) cat > /Library/LaunchDaemons/$LBL-upgrade-recover.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>Label</key><string>io.mlplatform.agent-upgrade-recover</string>
+<plist version="1.0"><dict><key>Label</key><string>$LBL-upgrade-recover</string>
 <key>ProgramArguments</key><array><string>/bin/sh</string><string>$JOB/upgrade.sh</string><string>recover</string></array>
 <key>RunAtLoad</key><true/></dict></plist>
 PLIST
@@ -47,8 +48,8 @@ PLIST
 }
 recovery_off() {
   case "$SVC" in
-    systemd) systemctl disable mlplatform-agent-upgrade-recover.service >/dev/null 2>&1; rm -f /etc/systemd/system/mlplatform-agent-upgrade-recover.service; systemctl daemon-reload ;;
-    launchd) rm -f /Library/LaunchDaemons/io.mlplatform.agent-upgrade-recover.plist ;;
+    systemd) systemctl disable mlplatform-agent$SFX-upgrade-recover.service >/dev/null 2>&1; rm -f /etc/systemd/system/mlplatform-agent$SFX-upgrade-recover.service; systemctl daemon-reload ;;
+    launchd) rm -f /Library/LaunchDaemons/$LBL-upgrade-recover.plist ;;
   esac
 }
 put() { cp "$1" "$EXE.new" && chmod 0755 "$EXE.new" && mv -f "$EXE.new" "$EXE"
@@ -63,7 +64,7 @@ wait_ok() {   # wait for the control plane to confirm the new version
 }
 
 # One upgrade at a time per machine
-LOCK=/tmp/mlplatform-agent-upgrade.lock
+LOCK=/tmp/mlplatform-agent$SFX-upgrade.lock
 if ! mkdir "$LOCK" 2>/dev/null; then
   if [ -f "$LOCK/pid" ] && kill -0 "$(cat "$LOCK/pid")" 2>/dev/null; then say "failed: another upgrade is already running"; exit 1; fi
   rm -rf "$LOCK"; mkdir "$LOCK"

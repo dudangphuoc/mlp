@@ -14,7 +14,7 @@ using Host = MLPlatform.Contracts.V1.Host;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class FleetGrpc(IMediator mediator, AgentRegistry agents, IConfiguration cfg, AgentUpgrader upgrader) : FleetService.FleetServiceBase
+public sealed partial class FleetGrpc(IMediator mediator, AgentRegistry agents, IConfiguration cfg, AgentUpgrader upgrader) : FleetService.FleetServiceBase
 {
     private static Guid G(string s, string field) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [field] = "Invalid UUID" });
@@ -24,9 +24,10 @@ public sealed class FleetGrpc(IMediator mediator, AgentRegistry agents, IConfigu
         var e = await mediator.Send(new CreateEnrollmentCommand(G(r.WorkspaceId, "workspace_id"), r.Os.ToString().ToLowerInvariant(),
             r.DataPath, r.ModelsPath), ctx.CancellationToken);
         var cp = cfg["PublicUrl"] ?? "https://localhost";
+        var inst = cfg["Fleet:Instance"] is { Length: > 0 } i ? i : null;
         var cmd = r.Os == OsFamily.Windows
-            ? $"iwr {cp}/install/agent.ps1 -UseBasicParsing | iex; Install-MlpAgent -Token {e.Token} -Data '{r.DataPath}' -Models '{r.ModelsPath}'"
-            : $"curl -fsSL {cp}/install/agent.sh | sudo sh -s -- --token {e.Token} --data '{r.DataPath}' --models '{r.ModelsPath}'";
+            ? $"iwr {cp}/install/agent.ps1 -UseBasicParsing | iex; Install-MlpAgent -Token {e.Token} -Data '{r.DataPath}' -Models '{r.ModelsPath}'{(inst is null ? "" : " -Instance " + inst)}"
+            : $"curl -fsSL {cp}/install/agent.sh | sudo sh -s -- --token {e.Token} --data '{r.DataPath}' --models '{r.ModelsPath}'{(inst is null ? "" : " --instance " + inst)}";
         return new Enrollment { Id = e.Id.ToString(), Token = e.Token, InstallCommand = cmd, ExpiresAt = Timestamp.FromDateTimeOffset(e.ExpiresAt) };
     }
 

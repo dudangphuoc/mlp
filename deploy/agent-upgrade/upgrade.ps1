@@ -4,16 +4,17 @@
 param([switch]$Recover)
 $ErrorActionPreference = "Continue"
 $Job = $PSScriptRoot; $Status = Join-Path $Job "status.txt"; $PhaseFile = Join-Path $Job "phase"
-$Exe = '__EXE__'; $Url = '__URL__'; $Sha = '__SHA__'; $Task = 'MLPlatform Agent'
+$Exe = '__EXE__'; $Url = '__URL__'; $Sha = '__SHA__'; $Inst = '__INST__'; $Task = if ($Inst) { "MLPlatform Agent ($Inst)" } else { 'MLPlatform Agent' }
+$mine = { Get-Process mlp-agent -ErrorAction SilentlyContinue | Where-Object { $_.Path -ieq $Exe } }
 function Say($m) { Add-Content -Path $Status -Value ("{0} {1}" -f (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"), $m) -Encoding UTF8 }
 function Phase($p) { Set-Content -Path "$PhaseFile.tmp" -Value $p -Encoding UTF8; Move-Item -Force "$PhaseFile.tmp" $PhaseFile; Say $p }
 function SvcStop {
     Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue
     # the parent cmd.exe (older installs wrapped the agent for logging) holds a lock on agent.log → stop it too
-    Get-CimInstance Win32_Process -Filter "Name='cmd.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*mlp-agent.exe*' } |
+    Get-CimInstance Win32_Process -Filter "Name='cmd.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*$Exe*" } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-    Get-Process mlp-agent -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    for ($i = 0; $i -lt 30 -and (Get-Process mlp-agent -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 500 }
+    & $mine | Stop-Process -Force -ErrorAction SilentlyContinue
+    for ($i = 0; $i -lt 30 -and (& $mine); $i++) { Start-Sleep -Milliseconds 500 }
 }
 # Older installs ran the agent via "cmd /c … >> agent.log": switch to running the exe directly (the agent writes its own log).
 function MigrateTask {
@@ -27,11 +28,11 @@ function MigrateTask {
 # A Scheduled Task runs only one instance: wait for the task to return to Ready before starting it, and verify the agent process actually comes up (up to 3 retries).
 function SvcStart {
     for ($try = 0; $try -lt 3; $try++) {
-        for ($i = 0; $i -lt 30 -and (Get-ScheduledTask -TaskName $Task).State -eq "Running" -and -not (Get-Process mlp-agent -ErrorAction SilentlyContinue); $i++) {
+        for ($i = 0; $i -lt 30 -and (Get-ScheduledTask -TaskName $Task).State -eq "Running" -and -not (& $mine); $i++) {
             Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500
         }
         Start-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue
-        for ($i = 0; $i -lt 20; $i++) { if (Get-Process mlp-agent -ErrorAction SilentlyContinue) { return }; Start-Sleep -Milliseconds 500 }
+        for ($i = 0; $i -lt 20; $i++) { if (& $mine) { return }; Start-Sleep -Milliseconds 500 }
         Say "agent not up yet — retrying start ($($try + 1))"
     }
 }

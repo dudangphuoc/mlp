@@ -1,6 +1,7 @@
 #!/bin/sh
 # Install the MLPlatform agent (Linux/macOS) — plug-and-play (20/04 §2, revised 2026-11-18). Served by the control plane at /install/agent.sh.
 #   curl -fsSL https://<cp>/install/agent.sh | sudo sh -s -- --token mlpe_… --data /datasets --models /models
+#   … --instance dev   # second agent on the same machine (own paths/service, yields the GPU to the default one)
 #   curl -fsSL https://<cp>/install/agent.sh | sh -s -- --doctor            # check the machine only, no install
 # 1) doctor: platform, Docker, GPU + NVIDIA Container Toolkit, RAM/disk, route to the control plane.
 # 2) send the doctor results to the control plane → it builds the agent for this platform from its own source (cached for later machines).
@@ -10,7 +11,7 @@ set -eu
 CP_URL="__MLP_PUBLIC_URL__"            # substituted by the control plane when served
 AGENT_ADDR="__MLP_AGENT_ADDR__"        # host:7443
 PIN="__MLP_AGENT_PIN__"                # SHA-256 of the agent channel TLS certificate (pinned — self-signed certificates work)
-TOKEN=""; DATA=""; MODELS=""; DOCTOR_ONLY=0
+TOKEN=""; DATA=""; MODELS=""; DOCTOR_ONLY=0; INSTANCE=""; FS_ROOTS=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --token) TOKEN="$2"; shift 2 ;;
@@ -18,6 +19,8 @@ while [ $# -gt 0 ]; do
     --models) MODELS="$2"; shift 2 ;;
     --cp) CP_URL="$2"; shift 2 ;;
     --doctor) DOCTOR_ONLY=1; shift ;;
+    --instance) INSTANCE="$2"; shift 2 ;;
+    --fs-root) FS_ROOTS="$FS_ROOTS $2"; shift 2 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -111,10 +114,13 @@ done
 URL=$(field url); EXPECTED=$(field sha256)
 echo "  agent $RID ready (source version $(field version))"
 
+case "$INSTANCE" in ""|[a-z0-9]*) ;; *) echo "--instance must be lowercase letters/digits" >&2; exit 2 ;; esac
+SFX=""; [ -n "$INSTANCE" ] && SFX="-$INSTANCE"
+UNIT="mlplatform-agent$SFX"; LABEL="io.mlplatform.agent"; [ -n "$INSTANCE" ] && LABEL="$LABEL.$INSTANCE"
 if [ "$OS" = Darwin ]; then
-  PREFIX=/usr/local/mlplatform-agent; STATE="/Library/Application Support/MLPlatform"
+  PREFIX=/usr/local/mlplatform-agent$SFX; STATE="/Library/Application Support/MLPlatform$SFX"
 else
-  PREFIX=/opt/mlplatform-agent; STATE=/var/lib/mlplatform-agent
+  PREFIX=/opt/mlplatform-agent$SFX; STATE=/var/lib/mlplatform-agent$SFX
 fi
 mkdir -p "$PREFIX" "$STATE" "$DATA" "$MODELS"
 
@@ -129,30 +135,33 @@ rm -rf "$TMP"
 step "Registering the service"
 ARGS="--state \"$STATE/agent.json\" --cp $AGENT_ADDR --token $TOKEN --data \"$DATA\" --models \"$MODELS\""
 [ -n "$PIN" ] && ARGS="$ARGS --pin $PIN"
+EXTRA_XML=""
+if [ -n "$INSTANCE" ]; then ARGS="$ARGS --instance $INSTANCE"; EXTRA_XML="<string>--instance</string><string>$INSTANCE</string>"; fi
+for r in $FS_ROOTS; do ARGS="$ARGS --fs-root \"$r\""; EXTRA_XML="$EXTRA_XML<string>--fs-root</string><string>$r</string>"; done
 if [ "$OS" = Darwin ]; then ARGS="$ARGS --service launchd"; SVC_XML="<string>--service</string><string>launchd</string>"; else ARGS="$ARGS --service systemd"; SVC_XML=""; fi
 PIN_XML=""; [ -n "$PIN" ] && PIN_XML="<string>--pin</string><string>$PIN</string>"
 if [ "$OS" = Darwin ]; then
-  PLIST=/Library/LaunchDaemons/io.mlplatform.agent.plist
+  PLIST=/Library/LaunchDaemons/$LABEL.plist
   cat > "$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>io.mlplatform.agent</string>
+  <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key><array>
     <string>$PREFIX/mlp-agent</string><string>--state</string><string>$STATE/agent.json</string>
     <string>--cp</string><string>$AGENT_ADDR</string><string>--token</string><string>$TOKEN</string>
-    <string>--data</string><string>$DATA</string><string>--models</string><string>$MODELS</string>$PIN_XML$SVC_XML
+    <string>--data</string><string>$DATA</string><string>--models</string><string>$MODELS</string>$PIN_XML$SVC_XML$EXTRA_XML
   </array>
   <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
   <key>StandardErrorPath</key><string>$STATE/agent.log</string><key>StandardOutPath</key><string>$STATE/agent.log</string>
 </dict></plist>
 PLIST
-  launchctl bootout system/io.mlplatform.agent 2>/dev/null || true
+  launchctl bootout system/$LABEL 2>/dev/null || true
   launchctl bootstrap system "$PLIST"
 else
-  cat > /etc/systemd/system/mlplatform-agent.service <<UNIT
+  cat > /etc/systemd/system/$UNIT.service <<UNIT
 [Unit]
-Description=MLPlatform agent
+Description=MLPlatform agent $INSTANCE
 After=network-online.target docker.service
 Wants=network-online.target
 
@@ -167,6 +176,6 @@ RestartForceExitStatus=75
 WantedBy=multi-user.target
 UNIT
   systemctl daemon-reload
-  systemctl enable --now mlplatform-agent
+  systemctl enable --now "$UNIT"
 fi
 step "Done — the machine will appear on the Machines (Fleet) page once it connects"

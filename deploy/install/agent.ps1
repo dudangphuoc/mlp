@@ -1,5 +1,5 @@
 # Install the MLPlatform agent on Windows (Docker Desktop + WSL 2) — plug-and-play (D-37). Served by the control plane at /install/agent.ps1.
-#   iwr <cp>/install/agent.ps1 -UseBasicParsing | iex; Install-MlpAgent -Token mlpe_… -Data 'D:\datasets' -Models 'D:\models'
+#   iwr <cp>/install/agent.ps1 -UseBasicParsing | iex; Install-MlpAgent -Token mlpe_… -Data 'D:\datasets' -Models 'D:\models' [-Instance dev]
 #   iwr <cp>/install/agent.ps1 -UseBasicParsing | iex; Test-MlpAgentHost            # doctor only
 # Run in PowerShell with "Run as Administrator". The agent runs as a Scheduled Task at startup (restarts automatically on failure).
 $script:MlpCp = "__MLP_PUBLIC_URL__"
@@ -7,7 +7,7 @@ $script:MlpAgentAddr = "__MLP_AGENT_ADDR__"
 $script:MlpPin = "__MLP_AGENT_PIN__"
 
 function Test-MlpAgentHost {
-    param([string]$Data = "", [string]$Models = "")
+    param([string]$Data = "", [string]$Models = "", [string]$Instance = "")
     $ErrorActionPreference = "Continue"   # docker/nvidia-smi write to stderr normally — PowerShell 5.1 must not treat that as a terminating error
     $script:ok = 0; $script:warns = 0; $script:fails = 0
     function Ok($k, $v)   { Write-Host ("  [OK]   {0,-26} {1}" -f $k, $v) -ForegroundColor Green;  $script:ok++ }
@@ -17,7 +17,7 @@ function Test-MlpAgentHost {
     # Docker Desktop stores registry credentials in Credential Manager — unusable when running over SSH or as a Scheduled Task (S4U).
     # The agent and doctor use a dedicated DOCKER_CONFIG without credsStore (public images / the platform registry need no login).
     # On Windows the Docker CLI falls back to wincred when the config has no credsStore → declare an empty platform helper (always "not found").
-    $dc = "C:\ProgramData\MLPlatform\docker"
+    $dc = "C:\ProgramData\MLPlatform$(if ($Instance) { "-$Instance" })\docker"
     New-Item -ItemType Directory -Force $dc | Out-Null
     [IO.File]::WriteAllText("$dc\docker-credential-mlpnone.cmd", "@echo off`r`nif `"%1`"==`"get`" (echo credentials not found in native keychain& exit /b 1)`r`nif `"%1`"==`"list`" (echo {}& exit /b 0)`r`nexit /b 0`r`n")
     [IO.File]::WriteAllText("$dc\config.json", '{"auths":{},"credsStore":"mlpnone"}')
@@ -66,11 +66,11 @@ function Test-MlpAgentHost {
 }
 
 function Install-MlpAgent {
-    param([Parameter(Mandatory)][string]$Token, [Parameter(Mandatory)][string]$Data, [Parameter(Mandatory)][string]$Models)
+    param([Parameter(Mandatory)][string]$Token, [Parameter(Mandatory)][string]$Data, [Parameter(Mandatory)][string]$Models, [string]$Instance = "", [string[]]$FsRoot = @())
     $ErrorActionPreference = "Stop"
     if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         throw "Run PowerShell with 'Run as Administrator'" }
-    $doctor = Test-MlpAgentHost -Data $Data -Models $Models
+    $doctor = Test-MlpAgentHost -Data $Data -Models $Models -Instance $Instance
     if ($doctor.errors -gt 0) { throw "Fix the [FAIL] items, then run the install command again." }
 
     Write-Host "`n==> Asking the control plane to build the agent for this machine"
@@ -85,21 +85,26 @@ function Install-MlpAgent {
     }
     if ($st.status -ne "ready") { throw "Agent build failed: $($st | ConvertTo-Json -Compress)" }
 
-    $prefix = "C:\Program Files\MLPlatform"; $state = "C:\ProgramData\MLPlatform"
+    $sfx = if ($Instance) { "-$Instance" } else { "" }
+    $taskName = if ($Instance) { "MLPlatform Agent ($Instance)" } else { "MLPlatform Agent" }
+    $prefix = "C:\Program Files\MLPlatform$sfx"; $state = "C:\ProgramData\MLPlatform$sfx"
     New-Item -ItemType Directory -Force $prefix, $state, $Data, $Models | Out-Null
     Write-Host "`n==> Downloading agent ($($st.rid))"
     $tmp = Join-Path $env:TEMP "mlp-agent.exe"
     Invoke-WebRequest "$script:MlpCp$($st.url)" -OutFile $tmp -UseBasicParsing
     if ((Get-FileHash $tmp -Algorithm SHA256).Hash.ToLowerInvariant() -ne $st.sha256) { Remove-Item $tmp; throw "SHA-256 mismatch — aborting" }
     # Reinstall: stop the running agent (the .exe is locked while the process is alive).
-    Get-ScheduledTask -TaskName "MLPlatform Agent" -ErrorAction SilentlyContinue | Stop-ScheduledTask -ErrorAction SilentlyContinue
-    Get-Process mlp-agent -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    for ($i = 0; $i -lt 20 -and (Get-Process mlp-agent -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 500 }
+    Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue | Stop-ScheduledTask -ErrorAction SilentlyContinue
+    $mine = { Get-Process mlp-agent -ErrorAction SilentlyContinue | Where-Object { $_.Path -ieq "$prefix\mlp-agent.exe" } }
+    & $mine | Stop-Process -Force -ErrorAction SilentlyContinue
+    for ($i = 0; $i -lt 20 -and (& $mine); $i++) { Start-Sleep -Milliseconds 500 }
     Move-Item -Force $tmp "$prefix\mlp-agent.exe"
 
-    Write-Host "`n==> Registering Scheduled Task 'MLPlatform Agent'"
+    Write-Host "`n==> Registering Scheduled Task '$taskName'"
     $agentArgs = "--state `"$state\agent.json`" --cp $script:MlpAgentAddr --token $Token --data `"$Data`" --models `"$Models`""
     if ($script:MlpPin) { $agentArgs += " --pin $script:MlpPin" }
+    if ($Instance) { $agentArgs += " --instance $Instance" }
+    foreach ($r in $FsRoot) { $agentArgs += " --fs-root `"$r`"" }
     $agentArgs += " --service schtasks"   # OTA (D-38): the upgrade script stops/starts the agent via the Scheduled Task
     # The agent writes agent.log itself (no cmd.exe wrapper — cmd used to hold a file lock that made the next start fail).
     $action = New-ScheduledTaskAction -Execute "$prefix\mlp-agent.exe" -Argument $agentArgs -WorkingDirectory $state
@@ -108,7 +113,7 @@ function Install-MlpAgent {
     $principal = New-ScheduledTaskPrincipal -UserId $me -LogonType S4U -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable
     $triggers = @((New-ScheduledTaskTrigger -AtStartup), (New-ScheduledTaskTrigger -AtLogOn -User $me))
-    Register-ScheduledTask -TaskName "MLPlatform Agent" -Action $action -Principal $principal -Settings $settings -Trigger $triggers -Force -ErrorAction Stop | Out-Null
-    Start-ScheduledTask -TaskName "MLPlatform Agent" -ErrorAction Stop
+    Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings -Trigger $triggers -Force -ErrorAction Stop | Out-Null
+    Start-ScheduledTask -TaskName $taskName -ErrorAction Stop
     Write-Host "`n==> Done — the machine will appear on the Machines (Fleet) page once it connects" -ForegroundColor Green
 }

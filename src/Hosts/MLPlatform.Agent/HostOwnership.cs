@@ -8,6 +8,12 @@ public static class HostOwnership
 
     public static string? HostId { get; set; }
 
-    public static bool Owns(IDictionary<string, string> labels) =>
-        HostId is null || !labels.TryGetValue(Label, out var owner) || owner == HostId;
+    /// <summary>True for the default install, which adopts containers created before ownership labels existed.</summary>
+    public static bool ClaimsUnlabeled { get; set; } = true;
+
+    public static bool Owns(IReadOnlyDictionary<string, string> labels) =>
+        HostId is null || (labels.TryGetValue(Label, out var owner) ? owner == HostId : ClaimsUnlabeled);
+
+    public static bool IsForeign(IReadOnlyDictionary<string, string> labels) =>
+        labels.TryGetValue(Label, out var owner) && owner.Length > 0 && owner != HostId;
 }

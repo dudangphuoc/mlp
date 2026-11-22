@@ -22,11 +22,23 @@ public sealed class AgentOptions
     /// <summary>SHA-256 of the enrollment token already used; a service restart with the same --token does not enroll
     /// again.</summary>
     public string? UsedEnrollTokenHash { get; set; }
+    /// <summary>Install instance suffix ("" = default install, "dev" = second agent on the same machine).</summary>
+    public string Instance { get; set; } = "";
+    /// <summary>normal | yield; yield = accept GPU work only while no other agent's GPU container runs here.</summary>
+    public string GpuPriority { get; set; } = "normal";
+    /// <summary>Extra folders the file browser may open besides the data, models and state folders.</summary>
+    public List<string> FsRoots { get; set; } = [];
 
-    public static string DefaultStateDir() =>
-        OperatingSystem.IsWindows() ? @"C:\ProgramData\MLPlatform"
-        : OperatingSystem.IsMacOS() ? "/Library/Application Support/MLPlatform"
-        : "/var/lib/mlplatform-agent";
+    [JsonIgnore]
+    public bool YieldsGpu => GpuPriority == "yield";
+
+    public static string DefaultStateDir(string instance = "")
+    {
+        var suffix = instance.Length > 0 ? "-" + instance : "";
+        return OperatingSystem.IsWindows() ? @"C:\ProgramData\MLPlatform" + suffix
+            : OperatingSystem.IsMacOS() ? "/Library/Application Support/MLPlatform" + suffix
+            : "/var/lib/mlplatform-agent" + suffix;
+    }
 
     public static AgentOptions Load(string path) =>
         File.Exists(path) ? JsonSerializer.Deserialize(File.ReadAllText(path), AgentJson.Default.AgentOptions) ?? new() : new();

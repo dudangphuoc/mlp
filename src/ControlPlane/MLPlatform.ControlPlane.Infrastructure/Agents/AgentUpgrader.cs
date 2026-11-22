@@ -78,7 +78,7 @@ public sealed class AgentUpgrader(AgentRegistry agents, AgentBuildStore builds, 
         var url = (cfg["Install:DownloadBase"] ?? cfg["PublicUrl"] ?? "").TrimEnd('/') + builds.SignedPath(to, rid, TimeSpan.FromHours(1));
         var win = rid.StartsWith("win", StringComparison.Ordinal);
         var script = (win ? PsTemplate : ShTemplate).Replace("__EXE__", info.AgentExe).Replace("__URL__", url)
-            .Replace("__SHA__", st["sha256"]!.ToString()).Replace("__SVC__", info.ServiceManager);
+            .Replace("__SHA__", st["sha256"]!.ToString()).Replace("__SVC__", info.ServiceManager).Replace("__INST__", info.Instance);
         var path = $"{Dir(job)}/upgrade.{(win ? "ps1" : "sh")}";
         var bytes = win ? [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(script)] : System.Text.Encoding.UTF8.GetBytes(script);
         var w = await s.SendCommandAsync(new AgentCommand { FileWrite = new FileWrite { Path = path, Content = ByteString.CopyFrom(bytes), Executable = !win } }, TimeSpan.FromMinutes(1), ct);
