@@ -8,7 +8,7 @@ public static class GpuAttribution
 {
     public static IEnumerable<GpuProcess> Estimate(IReadOnlyList<GpuSample> gpus, IReadOnlyList<GpuContainer> containers)
     {
-        var holders = gpus.ToDictionary(g => g.Uuid, g => containers.Where(c => Holds(c, g)).ToList());
+        var holders = gpus.ToDictionary(g => g.Uuid, g => containers.Where(c => !c.IsInfrastructure && Holds(c, g)).ToList());
         foreach (var g in gpus)
         {
             var on = holders[g.Uuid];

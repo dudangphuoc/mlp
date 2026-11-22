@@ -53,7 +53,7 @@ public static class GpuSampler
     {
         var y = new GpuYield();
         if (!o.YieldsGpu) return y;
-        y.ForeignContainers.AddRange(containers.Where(c => HostOwnership.IsForeign(c.OwnerLabels)).Select(c => c.Name));
+        y.ForeignContainers.AddRange(containers.Where(c => !c.IsInfrastructure && HostOwnership.IsForeign(c.OwnerLabels)).Select(c => c.Name));
         y.Active = y.ForeignContainers.Count > 0;
         return y;
     }

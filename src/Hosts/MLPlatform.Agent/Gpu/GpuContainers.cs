@@ -7,7 +7,7 @@ namespace MLPlatform.Agent.Gpu;
 public static class GpuContainers
 {
     private const string Format = "{{.Id}}|{{.Name}}|{{index .Config.Labels \"mlp.agent\"}}|{{index .Config.Labels \"mlp.attempt\"}}|" +
-        "{{index .Config.Labels \"mlp.gpus\"}}|{{json .HostConfig.DeviceRequests}}";
+        "{{index .Config.Labels \"mlp.gpus\"}}|{{index .Config.Labels \"mlp.role\"}}|{{json .HostConfig.DeviceRequests}}";
 
     public static async Task<List<GpuContainer>> ListAsync(CancellationToken ct)
     {
@@ -23,11 +23,11 @@ public static class GpuContainers
         var res = new List<GpuContainer>();
         foreach (var line in inspectOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var f = line.Split('|', 6);
-            if (f.Length < 6) continue;
-            var gpus = Devices(f[5]);
+            var f = line.Split('|', 7);
+            if (f.Length < 7) continue;
+            var gpus = Devices(f[6]);
             if (gpus.Count == 0 && NvidiaSmi.FakeGpus && Clean(f[4]) is { Length: > 0 } fake) gpus = [.. fake.Split(',')];
-            if (gpus.Count > 0) res.Add(new GpuContainer(f[0], f[1].TrimStart('/'), Clean(f[2]), Clean(f[3]), gpus));
+            if (gpus.Count > 0) res.Add(new GpuContainer(f[0], f[1].TrimStart('/'), Clean(f[2]), Clean(f[3]), Clean(f[5]), gpus));
         }
         return res;
     }

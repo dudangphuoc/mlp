@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
 
 namespace MLPlatform.Agent.Terminal;
 
-/// <summary>openpty + posix_spawnp; the child takes the slave as its controlling terminal through `setsid -c`
-/// (Linux) or `script` (macOS), because posix_spawn cannot set a controlling TTY itself.</summary>
+/// <summary>openpty + posix_spawnp; on Linux `setsid -c` makes the slave the controlling terminal (posix_spawn cannot);
+/// macOS (development only) starts the shell in a new session without a controlling terminal.</summary>
 public sealed class UnixPty : IPty
 {
-    private const int SigHup = 1, SigKill = 9, FileActionsBytes = 256;
+    private const int SigHup = 1, SigKill = 9, SpawnStructBytes = 1024;
+    private const short MacSetSid = 0x0400;
     private readonly int _master;
     private readonly int _pid;
     private int _exited;
@@ -20,8 +20,8 @@ public sealed class UnixPty : IPty
     {
         _master = master;
         _pid = pid;
-        Output = new FileStream(new SafeFileHandle(UnixNative.Dup(master), true), FileAccess.Read, 1);
-        Input = new FileStream(new SafeFileHandle(UnixNative.Dup(master), true), FileAccess.Write, 1);
+        Output = new FdStream(UnixNative.Dup(master));
+        Input = new FdStream(UnixNative.Dup(master));
     }
 
     public static UnixPty Start(string shell, string cwd, int cols, int rows)
@@ -39,7 +39,7 @@ public sealed class UnixPty : IPty
     private static string[] Argv(string shell, string cwd)
     {
         string[] inner = ["/bin/sh", "-c", EnterCwd, cwd, shell];
-        if (OperatingSystem.IsMacOS()) return ["script", "-q", "/dev/null", .. inner];
+        if (OperatingSystem.IsMacOS()) return inner;
         if (File.Exists("/usr/bin/setsid") || File.Exists("/bin/setsid")) return ["setsid", "-c", .. inner];
         return ["script", "-qfc", $"cd '{cwd.Replace("'", "'\\''")}' 2>/dev/null; exec '{shell}' -l", "/dev/null"];
     }
@@ -57,21 +57,26 @@ public sealed class UnixPty : IPty
 
     private static int Spawn(int slave, string[] argv, string[] env)
     {
-        var actions = Marshal.AllocHGlobal(FileActionsBytes);
+        var actions = Marshal.AllocHGlobal(SpawnStructBytes);
+        var attr = Marshal.AllocHGlobal(SpawnStructBytes);
         using var args = new NativeStrings(argv);
         using var envp = new NativeStrings(env);
         var file = Marshal.StringToCoTaskMemUTF8(argv[0]);
         try
         {
             UnixNative.FileActionsInit(actions);
+            UnixNative.AttrInit(attr);
+            if (OperatingSystem.IsMacOS()) UnixNative.AttrSetFlags(attr, MacSetSid);
             for (var fd = 0; fd <= 2; fd++) UnixNative.FileActionsAddDup2(actions, slave, fd);
-            var rc = UnixNative.SpawnP(out var pid, file, actions, 0, args.Pointer, envp.Pointer);
+            var rc = UnixNative.SpawnP(out var pid, file, actions, attr, args.Pointer, envp.Pointer);
             return rc == 0 ? pid : throw new IOException($"posix_spawnp {argv[0]} failed: {rc}");
         }
         finally
         {
             UnixNative.FileActionsDestroy(actions);
+            UnixNative.AttrDestroy(attr);
             Marshal.FreeHGlobal(actions);
+            Marshal.FreeHGlobal(attr);
             Marshal.FreeCoTaskMem(file);
         }
     }
