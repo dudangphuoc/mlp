@@ -28,7 +28,9 @@ jobs:
         run: |
           set -e
           P=ghcr.io/${{ github.repository_owner }}/mlp
-          for img in api web node; do
+          for img in api web node ray-head agent-builder; do
             docker build -f deploy/docker/$img.Dockerfile -t $P/$img:${{ github.sha }} .
             docker push $P/$img:${{ github.sha }}
           done
+          docker build -t $P/net:${{ github.sha }} deploy/docker/net
+          docker push $P/net:${{ github.sha }}
