@@ -37,7 +37,7 @@ public sealed class DataChannelBroker(AgentRegistry agents, ILogger<DataChannelB
             await session.Conn.SendAsync(new ControlToAgent { StreamId = session.Conn.NewStreamId(), OpenDataChannel = target }, ct);
             return await p.Ready.Task.WaitAsync(TimeSpan.FromSeconds(30), ct);
         }
-        finally { _pending.TryRemove(id, out _); }
+        finally { _pending.TryRemove(id, out Pending? _); }
     }
 
     /// <summary>Called from AgentListener when a connection starts with DataChannelHello.</summary>
