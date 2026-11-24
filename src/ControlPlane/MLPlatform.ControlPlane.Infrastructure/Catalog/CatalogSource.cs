@@ -14,8 +14,11 @@ public sealed class CatalogSource(IHttpClientFactory http, IConfiguration cfg, T
     /// <summary>Folder holding the recipes of the last sync; null before the first successful sync.</summary>
     public string? Directory { get; private set; }
 
-    public string Origin => cfg["Catalog:RecipesDir"] is { Length: > 0 } local ? local : cfg["Catalog:Source"] ?? DefaultSource;
-    public string Ref => cfg["Catalog:RecipesDir"] is { Length: > 0 } ? "" : cfg["Catalog:Ref"] ?? "main";
+    public string Origin => Local ?? cfg["Catalog:Source"] ?? DefaultSource;
+    public string Ref => Local is null ? cfg["Catalog:Ref"] ?? "main" : "";
+
+    /// <summary>The local recipe folder when Catalog:RecipesDir names one that exists; otherwise git is used.</summary>
+    private string? Local => cfg["Catalog:RecipesDir"] is { Length: > 0 } d && System.IO.Directory.Exists(d) ? d : null;
     public string Commit { get; private set; } = "";
     public DateTimeOffset? SyncedAt { get; private set; }
     public string Error { get; private set; } = "";
@@ -28,7 +31,7 @@ public sealed class CatalogSource(IHttpClientFactory http, IConfiguration cfg, T
         await _gate.WaitAsync(ct);
         try
         {
-            var dir = cfg["Catalog:RecipesDir"] is { Length: > 0 } local ? local : await FetchAsync(ct);
+            var dir = Local ?? await FetchAsync(ct);
             var count = await mediator.Send(new SyncBuiltinRecipesCommand(dir), ct);
             (Directory, SyncedAt, Error, Recipes) = (dir, time.GetUtcNow(), "", count);
             log.LogInformation("Catalog: synced {Count} builtin recipe(s) from {Origin} {Ref} {Commit}", count, Origin, Ref, Commit);
