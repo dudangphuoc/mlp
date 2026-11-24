@@ -9,7 +9,7 @@ beautifulsoup4==4.12.3
 calflops==0.3.2
 certifi==2024.8.30
 charset-normalizer==3.4.0
-faster-coco-eval==1.8.1
+faster-coco-eval==1.8.0
 filelock==3.16.1
 fsspec==2024.10.0
 gdown==6.5.2

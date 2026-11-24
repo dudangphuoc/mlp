@@ -1,6 +1,7 @@
 torch>=2.0.1
+# faster-coco-eval 1.8.1 calls COCO.getAnns, which the pycocotools/torchvision COCO the DETR repos pass does not have
 torchvision>=0.15.2
-faster-coco-eval>=1.6.6
+faster-coco-eval>=1.6.6,<1.8.1
 PyYAML
 tensorboard
 scipy

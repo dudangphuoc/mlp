@@ -1,6 +1,6 @@
 torch
 torchvision
-faster-coco-eval>=1.6.5
+faster-coco-eval>=1.6.5,<1.8.1
 PyYAML
 tensorboard
 scipy
