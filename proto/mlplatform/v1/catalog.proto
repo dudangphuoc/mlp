@@ -17,6 +17,8 @@ service CatalogService {
   rpc GetInspection(GetInspectionRequest) returns (Inspection);             // cached per (environment, variant, parameters, classes)
   rpc ListRecipeFiles(RecipeEnvRequest) returns (ListRecipeFilesResponse);  // manifest, Dockerfile, shared scripts — read-only
   rpc ReadRecipeFile(ReadRecipeFileRequest) returns (RecipeFileContent);
+  rpc GetCatalogSource(Empty) returns (CatalogSourceInfo);                  // where the builtin recipes come from (git repository, branch, commit)
+  rpc SyncCatalog(Empty) returns (CatalogSourceInfo);                       // Instance Admin: fetch the branch again and resync the builtin recipes
 }
 
 message TaskDef {
@@ -111,3 +113,13 @@ message RecipeFile { string path = 1; int64 size_bytes = 2; }
 message ListRecipeFilesResponse { repeated RecipeFile files = 1; }
 message ReadRecipeFileRequest { string workspace_id = 1; string recipe = 2; string path = 3; }
 message RecipeFileContent { string path = 1; string text = 2; bool truncated = 3; }
+
+message CatalogSourceInfo {
+  string origin = 1;                       // git repository URL, or the local folder (local = true)
+  string ref = 2;                          // branch
+  string commit = 3;                       // commit of the last sync
+  google.protobuf.Timestamp synced_at = 4;
+  string error = 5;                        // last sync failure, empty when it worked
+  bool local = 6;
+  int32 recipes = 7;                       // recipes read by the last sync
+}

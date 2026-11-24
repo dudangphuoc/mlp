@@ -191,3 +191,15 @@
 | text | 2 | string |
 | truncated | 3 | bool |
 
+## CatalogSourceInfo
+
+| Field | # | Type |
+|---|---:|---|
+| origin | 1 | string |
+| ref | 2 | string |
+| commit | 3 | string |
+| synced_at | 4 | Timestamp |
+| error | 5 | string |
+| local | 6 | bool |
+| recipes | 7 | int32 |
+

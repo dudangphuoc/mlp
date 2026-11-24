@@ -165,6 +165,8 @@ public sealed class CommandHandler(AgentState state, Containers containers, Ops.
                 Directory.CreateDirectory(Path.GetDirectoryName(p)!);
                 await File.WriteAllBytesAsync(p, content.ToByteArray(), ct);
             }
+            if (await BuildFetcher.FetchAsync(dir.FullName, b.Fetches, log, ct) is { } fetchError)
+                return new CommandResult { Ok = false, ErrorReason = "FLEET_IMAGE_BUILD_FAILED", Message = fetchError };
             var limit = b.TimeoutSeconds > 0 ? TimeSpan.FromSeconds(b.TimeoutSeconds) : TimeSpan.FromMinutes(20);
             var lastProgress = -1L;
             var (code, tail) = await Docker.RunStreamingAsync(["build", "--progress=plain", "-t", b.Tag, dir.FullName], line =>

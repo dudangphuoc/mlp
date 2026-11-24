@@ -20,7 +20,10 @@ license:
   weights: "per the model the user imports"
 tasks: [classify, detect, tabular-classify, tabular-regress]
 environment:
-  dockerfile: Dockerfile
+  base: nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04
+  apt: [python3, python3-pip]
+  copy: [{from: generic-onnx/handler.py, to: /opt/recipe/}, {from: generic-onnx/inspect_onnx.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: optional
   python: "3.11"
 data:

@@ -26,7 +26,10 @@ license:
   notes: ""
 tasks: [tabular-classify, tabular-regress]
 environment:
-  dockerfile: Dockerfile
+  base: python:3.12-slim
+  apt: [libgomp1]
+  copy: [{from: tabular-gbdt/train.py, to: /opt/recipe/}, {from: tabular-gbdt/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: optional            # XGBoost device=cuda when a GPU is granted
   python: "3.12"
 data:

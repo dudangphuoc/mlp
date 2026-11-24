@@ -1,4 +1,4 @@
-"""Regenerate recipes/<name>/constraints.txt: resolve each Dockerfile's pip installs for Linux x86_64 with uv, keeping the
+"""Regenerate recipes/<name>/constraints.txt: resolve each recipe's pip installs (environment.pip in mlp-recipe.yaml) for Linux x86_64 with uv, keeping the
 torch/CUDA packages of the base image (bases/*.txt, from `pip list --format=freeze` inside the image).
 
     uv tool run python tools/recipe-locks/lock.py [recipe ...]
@@ -81,6 +81,6 @@ for r in only:
         else: final.append(f"{n}=={v}"); added += 1
     if r == "generic-onnx": final += ["tensorrt-cu12==10.7.0", "tensorrt-cu12-libs==10.7.0", "tensorrt-cu12-bindings==10.7.0", "nvidia-cuda-runtime-cu12==12.9.79"]
     if r == "vibevoice-tts": final += ["flash-attn==2.7.4.post1", "einops==0.8.2"]
-    head = f"# Exact versions for every pip install in {r}/Dockerfile (PIP_CONSTRAINT); base image {BASE_IMAGE[base]}.\n# Regenerate with tools/recipe-locks/lock.py after changing the Dockerfile's packages.\n"
+    head = f"# Exact versions for every pip install of {r} (PIP_CONSTRAINT); base image {BASE_IMAGE[base]}.\n# Regenerate with tools/recipe-locks/lock.py after changing environment.pip in mlp-recipe.yaml.\n"
     (ROOT / "recipes" / r / "constraints.txt").write_text(head + "\n".join(sorted(set(final), key=str.lower)) + "\n")
     print(f"OK   {r}: {len(final)} pins ({added} added or changed by the recipe, {kept} as in the base image, {'base kept' if strict else 'base loosened'}), python {py}")

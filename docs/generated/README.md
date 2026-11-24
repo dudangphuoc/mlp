@@ -5,9 +5,9 @@
 | Area | Count |
 |---|---:|
 | gRPC services | 24 |
-| gRPC methods | 286 |
+| gRPC methods | 288 |
 | REST routes | 22 |
-| Commands and queries | 408 |
+| Commands and queries | 409 |
 | Modules | 23 |
 | Database tables | 94 |
 

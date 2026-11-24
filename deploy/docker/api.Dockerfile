@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends clang zlib1g-de
 WORKDIR /src
 COPY . .
 RUN dotnet publish src/Hosts/MLPlatform.Api -c Release -m:1 -o /out \
- && mkdir -p /out/install && cp deploy/install/agent.sh deploy/install/agent.ps1 /out/install/ && cp -r db /out/db && cp -r recipes /out/recipes
+ && mkdir -p /out/install && cp deploy/install/agent.sh deploy/install/agent.ps1 /out/install/ && cp -r db /out/db
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:11.0-resolute-chiseled
 WORKDIR /app

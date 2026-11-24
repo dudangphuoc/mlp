@@ -18,7 +18,9 @@ license:
   notes: ""        # warnings are set per PML variant below
 tasks: [detect, segment]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+  copy: [{from: rf-detr/run_rfdetr.py, to: /opt/recipe/}, {from: rf-detr/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: required
   minVramGb: 8
   python: "3.11"

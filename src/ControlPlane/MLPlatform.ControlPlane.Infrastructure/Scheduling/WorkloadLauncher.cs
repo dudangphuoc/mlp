@@ -8,7 +8,7 @@ using MLPlatform.Ray;
 namespace MLPlatform.ControlPlane.Infrastructure;
 
 /// <summary>Fully allocated → send StartWorkload to the agent on each host (20/08 §9 step 3).</summary>
-public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, RecipeEnvironments envs, LogStore logs, ILogger<WorkloadLauncher> log) : MLPlatform.ControlPlane.Application.Scheduling.IWorkloadControl
+public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory scopes, RayJobsClient ray, IConfiguration cfg, RecipeEnvironments envs, RecipeSourceStore sources, CatalogSource catalog, LogStore logs, ILogger<WorkloadLauncher> log) : MLPlatform.ControlPlane.Application.Scheduling.IWorkloadControl
 {
     private const int ServePortBase = 8500;
     private const int ServePortRange = 100;
@@ -46,10 +46,11 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         var isNotebook = spec.Env.ContainsKey("MLP_NOTEBOOK");
         var sw = BaseSpec(a, spec, alloc, nodeRank);
         var servePort = isServe ? ConfigureServing(sw, alloc) : 0;
-        if (!isNotebook && HostContainers.RecipeImage(spec.Image, cfg["Catalog:RecipesDir"]) is not null)
+        if (!isNotebook && HostContainers.RecipeImage(spec.Image, catalog.Directory) is not null)
         {
             if (await PrepareRecipeImageAsync(a, alloc.HostId, session, spec.Image, isServe, ct) is not { } tag) return false;
             sw.Image = tag;
+            AddCodeCaches(sw, a.WorkspaceId);
         }
         else if (!await PrepareCodeEnvAsync(sw, a, spec, session, ct)) return false;
         if (spec.Env.TryGetValue("MLP_SHM_GB", out var shmGb) && ulong.TryParse(shmGb, out var gb) && gb > 0) sw.ShmBytes = gb << 30;
@@ -247,6 +248,12 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         }
         await Event("attempt.image_build", "info", $"Building image {rbuild.Tag} on {hostId} (limit {rbuild.TimeoutSeconds / 60} min; reused once built)");
         var started = TimeProvider.System.GetTimestamp();
+        if (await MaterializeFailureAsync(rbuild, ct) is { } missing)
+        {
+            await Event("attempt.image_failed", "error", "Source archive not available: " + missing);
+            await FailAsync(a.Id, "image_build_failed", missing, ct);
+            return null;
+        }
         var br = await session.SendCommandAsync(new AgentCommand { ImageBuild = rbuild }, TimeSpan.FromMinutes(65), ct);
         var took = TimeProvider.System.GetElapsedTime(started);
         await Event(br.Ok ? "attempt.image_ready" : "attempt.image_failed", br.Ok ? "info" : "error",
@@ -255,6 +262,13 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         await envs.RecordAsync(a.WorkspaceId, image, rbuild.Tag, hostId, br.Ok, $"{br.ErrorReason} {br.Message}".Trim());
         if (!br.Ok) { await FailAsync(a.Id, br.ErrorReason, "Recipe image build failed: " + br.Message, ct); return null; }
         return rbuild.Tag;
+    }
+
+    /// <summary>Signs the source archives of a recipe build; the reason when one cannot be fetched.</summary>
+    private async Task<string?> MaterializeFailureAsync(ImageBuild build, CancellationToken ct)
+    {
+        try { await sources.MaterializeAsync(build, ct); return null; }
+        catch (Exception e) when (e is MLPlatform.Cqrs.AppException or HttpRequestException or IOException) { return e.Message; }
     }
 
     /// <summary>The agent yielded its GPU to another environment: remove the ranks already started, release the

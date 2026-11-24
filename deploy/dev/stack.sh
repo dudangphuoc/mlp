@@ -87,7 +87,7 @@ full() {
   docker rm -f mlp-ray-head >/dev/null 2>&1 || true   # ray-head moves into wireguard's network namespace (overlay)
   rm -rf "$STATE/recipes-docker"; mkdir -p "$STATE/recipes-docker" "$STATE/agents"   # builtin recipes + GPU recipe for testing real machines (copies)
   cp -R "$ROOT"/recipes/* "$ROOT/tools/MLPlatform.Scenarios/fixtures/gpu-recipe" "$STATE/recipes-docker/"
-  "${COMPOSE[@]}" up -d wireguard ray-head certs-init db-migrate agent-builder api web   # DB/S3 = external infrastructure from .env
+  MLP_CATALOG_LOCAL_DIR=/app/recipes "${COMPOSE[@]}" up -d wireguard ray-head certs-init db-migrate agent-builder api web   # recipes from this checkout (dev), not git; DB/S3 = external infrastructure from .env
   for i in $(seq 1 60); do curl -sf http://127.0.0.1:5081/health/ready >/dev/null && break; sleep 3; done
   curl -sf http://127.0.0.1:5081/health/ready && echo " — api ready; web http://127.0.0.1:8080"
   docker logs mlp-api-dev 2>&1 | grep -o "mlpb_[a-z0-9]*" | tail -1 > "$STATE/token" || true
@@ -118,7 +118,7 @@ builder() {   # one image, CPU limited in compose.dev.yaml
 
 api() {
   pkill -f mlp-api || true
-  export MLP__Catalog__RecipesDir="$(recipes_dir)"
+  if [ "${MLP_DEV_CATALOG_GIT:-0}" = 1 ]; then unset MLP__Catalog__RecipesDir; else export MLP__Catalog__RecipesDir="$(recipes_dir)"; fi   # 1 = builtin recipes from git (Catalog:Source/Ref)
   rm -f "$STATE/api.log" "$STATE/token"
   # The background process must not hold the calling shell's stdin/stdout (avoids hanging when called inside $(...)).
   (cd "$ROOT" && nohup nice -n 19 dotnet run --project src/Hosts/MLPlatform.Api --no-build </dev/null > "$STATE/api.log" 2>&1 &)

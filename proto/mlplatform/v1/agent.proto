@@ -282,7 +282,9 @@ message ContainerRemove { string name = 1; string label = 2; bool force = 3; rep
 // Runs until exit (e.g. keygen); returns exit_code + stdout (≤ 64 KB).
 message ContainerRunOnce { ContainerSpec spec = 1; int32 timeout_seconds = 2; }
 // Builds an image from the attached files (Dockerfile + …); skipped if the tag already exists (unless force).
-message ImageBuild { string tag = 1; map<string, bytes> files = 2; bool force = 3; int32 timeout_seconds = 4; }   // 0 = agent default (20 min)
+message ImageBuild { string tag = 1; map<string, bytes> files = 2; bool force = 3; int32 timeout_seconds = 4; repeated BuildFetch fetches = 5; }   // 0 = agent default (20 min)
+// File the agent downloads into the build context before building (too large for a frame); checked against sha256.
+message BuildFetch { string path = 1; string url = 2; string sha256 = 3; }
 // File in the agent's state directory (relative path, cannot escape it).
 message FileRead { string path = 1; int64 max_bytes = 2; }
 message FileWrite { string path = 1; bytes content = 2; bool executable = 3; }

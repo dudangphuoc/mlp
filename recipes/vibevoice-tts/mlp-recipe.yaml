@@ -16,9 +16,9 @@ metadata:
     smokeTested: false
 source:
   git: https://github.com/vibevoice-community/VibeVoice
+  ref: main
   commit: 952326ddb264062466a888cf32a5b2f4e803e16e
   commitDate: "2026-08-29"
-  packages: ["tensorboard", "flash-attn (optional)"]   # also installed in the image (Dockerfile)
 license:
   code: MIT
   weights: MIT
@@ -30,7 +30,11 @@ license:
     Microsoft removed the TTS code because of misuse.
 tasks: [tts]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+  apt: [ffmpeg]
+  pip: ["-e /opt/recipe/src", tensorboard]   # flash-attn is optional (SDPA fallback); compiling it took hours and failures were hidden
+  copy: [{from: vibevoice-tts/handler.py, to: /opt/recipe/}, {from: _shared/converters/, to: /opt/recipe/shared/converters/}]
+  workdir: /opt/recipe
   gpu: required
   minVramGb: 16          # voicepowered-ai README: ≥16 GB for 1.5B LoRA, ≥48 GB for 7B LoRA
   python: "3.11"

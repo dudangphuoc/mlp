@@ -15,3 +15,5 @@ Path prefix: `/mlplatform.v1.CatalogService/`
 | GetInspection | [GetInspectionRequest](../types/catalog.md#getinspectionrequest) → [Inspection](../types/catalog.md#inspection) | read |  |  |  |  |
 | ListRecipeFiles | [RecipeEnvRequest](../types/catalog.md#recipeenvrequest) → [ListRecipeFilesResponse](../types/catalog.md#listrecipefilesresponse) | read |  |  |  |  |
 | ReadRecipeFile | [ReadRecipeFileRequest](../types/catalog.md#readrecipefilerequest) → [RecipeFileContent](../types/catalog.md#recipefilecontent) | read |  |  |  |  |
+| GetCatalogSource | [Empty](../types/common.md#empty) → [CatalogSourceInfo](../types/catalog.md#catalogsourceinfo) | read |  |  |  |  |
+| SyncCatalog | [Empty](../types/common.md#empty) → [CatalogSourceInfo](../types/catalog.md#catalogsourceinfo) | write | Internal |  |  | Platform.RequireInstanceAdminQuery |

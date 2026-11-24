@@ -5,6 +5,7 @@ import { CommandBlock, ErrorBox, PageHeader, StateBadge , Tabs } from "../compon
 import { HubModelBrowser } from "../components/HuggingFace";
 import { RecipeFlow, RecipeUsage, UseForProjectSheet } from "../components/RecipeFlow";
 import { RecipeFilesView } from "../components/RecipeInspect";
+import { CatalogSourceBar, RecipeSourceView } from "../components/RecipeSource";
 import type { Recipe } from "../gen/mlplatform/v1/catalog_pb";
 import { translate as t } from "../i18n";
 
@@ -29,6 +30,7 @@ export function CatalogPage({ ws, onOpen, go }: { ws: string; onOpen: (name: str
         actions={tab === "recipes" ? <input className="input w-64" placeholder={t("Search recipes, tasks…")} value={filter} onChange={(e) => setFilter(e.target.value)} /> : undefined} />
       <Tabs value={tab} onChange={(t) => go(t === "hf" ? "catalog?tab=hf" : "catalog")} tabs={[{ key: "recipes", label: "Recipe", count: recipes.data?.recipes.length }, { key: "hf", label: "🤗 Hugging Face" }]} />
       {tab === "hf" ? <HubModelBrowser ws={ws} go={go} /> : <>
+      <CatalogSourceBar />
       <ErrorBox error={recipes.error ? errorText(recipes.error) : null} />
       {[...groups.entries()].map(([g, list]) => (
         <section key={g} className="mb-6">
@@ -55,8 +57,8 @@ export function CatalogPage({ ws, onOpen, go }: { ws: string; onOpen: (name: str
 }
 
 /** S-17-2 Recipe — variants, license, command (preview rendered with RenderTemplate). */
-type RTab = "flow" | "variants" | "code" | "usage";
-const RTABS: RTab[] = ["flow", "variants", "code", "usage"];
+type RTab = "flow" | "variants" | "source" | "code" | "usage";
+const RTABS: RTab[] = ["flow", "variants", "source", "code", "usage"];
 
 /** S-17-2 (round 1 §8.7): Flow (read-only canvas) · Variants · Full text · Used in; the main action takes the recipe into a project. */
 export function RecipePage({ ws, name, onBack, go }: { ws: string; name: string; onBack: () => void; go: (p: string) => void }) {
@@ -88,8 +90,9 @@ export function RecipePage({ ws, name, onBack, go }: { ws: string; name: string;
       <p className="mb-4 max-w-3xl text-sm text-fg-muted">{t(x.description)}</p>
       {(x.licenseNotes || x.requiresAck) && <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"><b>License {x.licenseCode}.</b> {x.licenseNotes}</div>}
       <Tabs<RTab> value={tab} onChange={setTab} tabs={[{ key: "flow", label: t("Flow") }, { key: "variants", label: t("Variants"), count: x.variants.length },
-        { key: "code", label: t("Full text") }, { key: "usage", label: t("Used in"), count: usage.data?.usages.length }]} />
+        { key: "source", label: t("Source") }, { key: "code", label: t("Full text") }, { key: "usage", label: t("Used in"), count: usage.data?.usages.length }]} />
       {tab === "flow" && (trains ? <RecipeFlow recipe={x} /> : <div className="card text-sm text-fg-muted">{t("This recipe does not train; it only serves or exports.")}</div>)}
+      {tab === "source" && <RecipeSourceView recipe={x} />}
       {tab === "code" && <RecipeFilesView ws={ws} recipe={name} />}
       {tab === "usage" && <RecipeUsage ws={ws} recipe={name} go={go} />}
       {tab === "variants" && <>

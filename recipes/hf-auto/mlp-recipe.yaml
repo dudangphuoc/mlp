@@ -21,7 +21,10 @@ license:
   notes: "License and terms of use come from each model's model card; the importer is responsible for reading them."
 tasks: [classify, detect, semantic, depth, text-classify, ner, generate, asr, audio-classify, zero-shot-detect, zero-shot-classify, zero-shot-image-classify]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+  apt: [ffmpeg]
+  copy: [{from: hf-auto/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: optional
   python: "3.11"
 data:

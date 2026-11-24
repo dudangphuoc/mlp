@@ -12,7 +12,7 @@ using Environment = MLPlatform.Contracts.V1.Environment;
 namespace MLPlatform.ControlPlane.Infrastructure;
 
 /// <summary>The recipe image ("environment") per machine (round 1 slice 2, D-44).</summary>
-public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildStore builds, IServiceScopeFactory scopes, IConfiguration cfg,
+public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildStore builds, RecipeSourceStore sources, CatalogSource catalog, IServiceScopeFactory scopes, IConfiguration cfg,
     TimeProvider time, ILogger<RecipeEnvironments> log)
 {
     private const int MaxFileBytes = 512 * 1024;
@@ -31,7 +31,7 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
     [GeneratedRegex("No such image|Unable to find image|pull access denied|manifest unknown|repository does not exist", RegexOptions.IgnoreCase)]
     private static partial Regex ImageMissing();
 
-    private string? RecipesDir => cfg["Catalog:RecipesDir"];
+    private string? RecipesDir => catalog.Directory;
 
     public static string Image(string recipe) => $"recipes/{recipe}:current";
 
@@ -44,11 +44,12 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
     public Task<(string Url, string Sha256)?> ShimAsync(string arch, CancellationToken ct) =>
         builds.ShimAsync(arch, cfg["Install:DownloadBase"] ?? cfg["PublicUrl"] ?? "", ct);
 
-    /// <summary>Build command of a recipe image ( recipes/{name}:current ); its Tag is the environment tag.</summary>
+    /// <summary>Build command of a recipe image ( recipes/{name}:current ); its Tag is the environment tag; source
+    /// archives still need <see cref="RecipeSourceStore.MaterializeAsync"/>.</summary>
     public ImageBuild? Build(string image, (string Url, string Sha256)? shim) => HostContainers.RecipeImage(image, RecipesDir, shim);
 
     /// <summary>The tag the recipe needs today on a machine of this architecture, without waiting: null while mlp-shim
-    /// is not built yet or when the recipe has no Dockerfile.</summary>
+    /// is not built yet or when the recipe describes no environment.</summary>
     public string? CurrentTag(string recipe, string arch)
     {
         if (builds.Version is not { } ver) return null;
@@ -105,8 +106,8 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
         var arch = Arch(session.Info ?? Info(host));
         if (CurrentTag(recipe, arch) is not { } tag)
         {
-            if (!File.Exists(Path.Combine(RecipesDir ?? "", recipe, "Dockerfile")))
-                throw new PreconditionException("CATALOG_ENV_NO_DOCKERFILE", "The recipe has no Dockerfile on the control plane");
+            if (HostContainers.RecipeImage(Image(recipe), RecipesDir) is null)
+                throw new PreconditionException("CATALOG_ENV_NO_DOCKERFILE", "The recipe has no environment (environment.base) on the control plane");
             _ = Task.Run(() => ShimAsync(arch, CancellationToken.None), CancellationToken.None);
             throw new UnavailableException("CATALOG_SHIM_NOT_READY", $"mlp-shim for linux-{arch} is not built yet; try again in a few minutes");
         }
@@ -130,6 +131,7 @@ public sealed partial class RecipeEnvironments(AgentRegistry agents, AgentBuildS
             else
             {
                 var started = time.GetTimestamp();
+                await sources.MaterializeAsync(rbuild, CancellationToken.None);
                 var br = await session.SendCommandAsync(new AgentCommand { ImageBuild = rbuild }, BuildTimeout, CancellationToken.None);
                 ok = br.Ok;
                 if (!ok) error = $"{br.ErrorReason} {br.Message}".Trim();

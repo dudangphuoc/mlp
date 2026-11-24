@@ -22,7 +22,7 @@ public static class StartupTasks
         await RearmWatchdogsAsync(cfg, mediator);
         await IssueBootstrapTokenAsync(app, mediator);
         await EnsureBucketsAsync(cfg, scope.ServiceProvider);
-        await SyncBuiltinRecipesAsync(app, cfg, mediator);
+        await SyncBuiltinRecipesAsync(app, mediator);
     }
 
     private static async Task EnsureConfiguredAdminAsync(WebApplication app, IConfiguration cfg, IMediator mediator)
@@ -65,10 +65,12 @@ public static class StartupTasks
         }
     }
 
-    private static async Task SyncBuiltinRecipesAsync(WebApplication app, IConfiguration cfg, IMediator mediator)
+    private static async Task SyncBuiltinRecipesAsync(WebApplication app, IMediator mediator)
     {
-        if (cfg["Catalog:RecipesDir"] is not { } dir || !Directory.Exists(dir)) return;
-        var count = await mediator.Send(new SyncBuiltinRecipesCommand(dir));
-        app.Logger.LogInformation("Catalog: synced {Count} builtin recipe(s) from {Dir}", count, dir);
+        try { await app.Services.GetRequiredService<MLPlatform.ControlPlane.Infrastructure.CatalogSource>().SyncAsync(mediator, CancellationToken.None); }
+        catch (Exception e) when (e is AppException or HttpRequestException or IOException or InvalidDataException)
+        {
+            app.Logger.LogWarning("Catalog: could not sync the builtin recipes: {Error}", e.Message);
+        }
     }
 }

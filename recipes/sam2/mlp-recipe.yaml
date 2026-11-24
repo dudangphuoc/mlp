@@ -15,15 +15,19 @@ metadata:
     smokeTested: false
 source:
   git: https://github.com/facebookresearch/sam2
+  ref: main
   commit: 2b90b9f5ceec907a1c18123530e92e794ad901a4
   commitDate: "2024-12-16"
-  packages: ["opencv-python-headless"]   # also installed in the image (Dockerfile)
 license:
   code: Apache-2.0
   weights: Apache-2.0
 tasks: [segment]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+  env: {SAM2_BUILD_CUDA: "0"}   # the CUDA extension is optional (post-processing only)
+  pip: ["--no-build-isolation", "-e /opt/recipe/src", opencv-python-headless]
+  copy: [{from: sam2/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: optional            # CPU works but is slow; GPU recommended for < 1 s interaction
   minVramGb: 4
   python: "3.11"

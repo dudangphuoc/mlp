@@ -180,7 +180,7 @@
         },
         "extraRepos": {
           "type": "array",
-          "description": "Other git repositories cloned into the image, each at a fixed commit",
+          "description": "Other git repositories placed in the image, each at a fixed commit",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -205,13 +205,14 @@
         },
         "downloads": {
           "type": "array",
-          "description": "Files fetched into the image at build time (backbones, upstream scripts); sha256 when the Dockerfile verifies it",
+          "description": "Files fetched when the job starts (pretrained backbones), kept by sha256 in the workspace model cache on the machine; never baked into the image",
           "items": {
             "type": "object",
             "additionalProperties": false,
             "required": [
               "url",
-              "path"
+              "path",
+              "sha256"
             ],
             "properties": {
               "url": {
@@ -232,6 +233,39 @@
           "description": "Extra pip packages the Dockerfile installs next to the source (documentation; the Dockerfile is what installs them)",
           "items": {
             "type": "string"
+          }
+        },
+        "ref": {
+          "type": "string",
+          "description": "Branch or tag the pinned commit comes from"
+        },
+        "path": {
+          "type": "string",
+          "description": "Where the source goes in the image (default /opt/recipe/src)"
+        },
+        "files": {
+          "type": "array",
+          "description": "Single upstream files placed in the image at build time (code, not models)",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
           }
         }
       }
@@ -298,7 +332,7 @@
         },
         "base": {
           "type": "string",
-          "description": "Base image with tag or digest"
+          "description": "Base image with tag or digest; the Dockerfile is generated from this section (no hand-written Dockerfile)"
         },
         "setup": {
           "type": "array",
@@ -326,6 +360,54 @@
         },
         "shmSizeGb": {
           "type": "number"
+        },
+        "apt": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "System packages (apt-get install)"
+        },
+        "pip": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "pip install arguments; entries starting with '-' are passed as written (e.g. '-r /opt/recipe/src/requirements.txt', '-e /opt/recipe/src')"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Image environment variables"
+        },
+        "check": {
+          "type": "string",
+          "description": "Command that must succeed at the end of the build (imports)"
+        },
+        "copy": {
+          "type": "array",
+          "description": "Files from the catalog repository (paths relative to recipes/)",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "workdir": {
+          "type": "string"
         }
       }
     },

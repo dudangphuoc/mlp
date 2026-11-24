@@ -19,7 +19,9 @@ license:
   notes: "Base LLM licenses vary by model (some limit commercial use or user counts) — read the model card before use."
 tasks: [generate]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+  copy: [{from: hf-llm-sft/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: required
   minVramGb: 16
   python: "3.11"

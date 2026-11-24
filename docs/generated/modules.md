@@ -63,7 +63,7 @@ Lower layers never depend on higher ones (gate MLPARCH001); arrows are the decla
 | Notifications | Kernel | 5 | Notify | all | [M16-notifications.md](../../cookbook/40-module/M16-notifications.md) |
 | Audit | Kernel | 1 | Audit |  | [M06-lineage-audit.md](../../cookbook/40-module/M06-lineage-audit.md) |
 | Identity | Foundation | 23 | Identity | all | [M01-iam.md](../../cookbook/40-module/M01-iam.md) |
-| Platform | Foundation | 4 | Platform |  | [M01-iam.md](../../cookbook/40-module/M01-iam.md) |
+| Platform | Foundation | 5 | Platform |  | [M01-iam.md](../../cookbook/40-module/M01-iam.md) |
 | Catalog | Foundation | 13 | Catalog |  | [M17-model-catalog.md](../../cookbook/40-module/M17-model-catalog.md) |
 | Fleet | Foundation | 36 | Fleet | GetHostAsync, SetHostGpuYieldAsync, HostAlertTargetAsync, HostLastMetricsAsync | [M02-fleet.md](../../cookbook/40-module/M02-fleet.md) |
 | Data | Foundation | 22 | Data | all | [M04-data.md](../../cookbook/40-module/M04-data.md) |

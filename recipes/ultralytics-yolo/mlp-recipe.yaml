@@ -21,7 +21,11 @@ license:
     Enterprise License. Trained models and deployments carry this license.
 tasks: [detect, segment, classify, pose, obb]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+  apt: [libgl1, libglib2.0-0]
+  copy: [{from: ultralytics-yolo/handler.py, to: /opt/recipe/}]
+  setup: ["yolo settings sync=False"]
+  workdir: /opt/recipe
   gpu: optional
   minVramGb: 4
   python: "3.11"

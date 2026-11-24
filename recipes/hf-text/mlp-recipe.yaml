@@ -14,16 +14,18 @@ metadata:
     smokeTested: false
 source:
   pip: ["transformers==5.19.0", "datasets", "evaluate==0.4.6", "seqeval", "accelerate", "tensorboard", "scikit-learn"]
-  downloads:   # training scripts of huggingface/transformers, pinned to the commit of tag v5.19.0
-    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/text-classification/run_classification.py", path: run_classification.py}
-    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/token-classification/run_ner.py", path: run_ner.py}
+  files:   # training scripts of huggingface/transformers at the commit of tag v5.19.0
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/text-classification/run_classification.py", path: /opt/recipe/run_classification.py, sha256: 33e3a056eeac22786e3a6bc39343e542151838fee0589ee7bb1d665c42f193d3}
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/token-classification/run_ner.py", path: /opt/recipe/run_ner.py, sha256: 1e0a317f227fcf4c2242b4239f5c741fa7e472a1f62893e34079c78a051df323}
 license:
   code: Apache-2.0
   weights: per each Hub model's model card
   notes: ""
 tasks: [text-classify, ner]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+  copy: [{from: hf-text/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: optional
   minVramGb: 6
   python: "3.11"

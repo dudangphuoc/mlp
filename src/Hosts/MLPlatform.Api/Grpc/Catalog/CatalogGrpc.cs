@@ -13,8 +13,24 @@ using Empty = MLPlatform.Contracts.V1.Empty;
 
 namespace MLPlatform.Api.Grpc;
 
-public sealed class CatalogGrpc(IMediator mediator, RecipeEnvironments envs) : CatalogService.CatalogServiceBase
+public sealed class CatalogGrpc(IMediator mediator, RecipeEnvironments envs, CatalogSource catalog) : CatalogService.CatalogServiceBase
 {
+    public override Task<CatalogSourceInfo> GetCatalogSource(Empty r, ServerCallContext ctx) => Task.FromResult(SourceInfo());
+
+    public override async Task<CatalogSourceInfo> SyncCatalog(Empty r, ServerCallContext ctx)
+    {
+        await mediator.Query(new MLPlatform.ControlPlane.Application.Platform.RequireInstanceAdminQuery(), ctx.CancellationToken);
+        await catalog.SyncAsync(mediator, ctx.CancellationToken);
+        return SourceInfo();
+    }
+
+    private CatalogSourceInfo SourceInfo()
+    {
+        var p = new CatalogSourceInfo { Origin = catalog.Origin, Ref = catalog.Ref, Commit = catalog.Commit, Error = catalog.Error, Local = catalog.Ref.Length == 0, Recipes = catalog.Recipes };
+        if (catalog.SyncedAt is { } at) p.SyncedAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(at);
+        return p;
+    }
+
     private static Guid G(string s) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { ["workspace_id"] = "Invalid UUID" });
 

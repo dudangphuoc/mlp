@@ -23,15 +23,18 @@ source:
     - tensorboard
     - datasets[audio]
     - soundfile
-  downloads:   # training script of huggingface/transformers, pinned to the commit of tag v5.19.0
-    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/speech-recognition/run_speech_recognition_seq2seq.py", path: run_speech_recognition_seq2seq.py}
+  files:   # training script of huggingface/transformers at the commit of tag v5.19.0
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/speech-recognition/run_speech_recognition_seq2seq.py", path: /opt/recipe/run_speech_recognition_seq2seq.py, sha256: 9662bfbe43378eb2506bd9e6c166c174a25adc3a906fcddd51ffbffece8339c9}
 license:
   code: MIT (openai/whisper) · Apache-2.0 (transformers example)
   weights: MIT
   notes: ""
 tasks: [asr]
 environment:
-  dockerfile: Dockerfile
+  base: pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+  apt: [ffmpeg]
+  copy: [{from: whisper/handler.py, to: /opt/recipe/}]
+  workdir: /opt/recipe
   gpu: required
   minVramGb: 6
   python: "3.11"

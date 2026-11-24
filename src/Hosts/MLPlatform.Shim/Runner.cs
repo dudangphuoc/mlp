@@ -36,6 +36,7 @@ public sealed partial class Runner(JobSpec spec, TextWriter log)
             await DownloadDataAsync(ct);
             await ConvertDataAsync(ct);
             await DownloadWeightsAsync(ct);
+            await DownloadSourceFilesAsync(ct);
             await RestoreCheckpointAsync(ct);
             var entry = spec.Entry;
             var code = await ExecuteAsync(entry, spec.Entrypoint == "train" ? entry["runOverrides"] as JsonObject : null, sink, ct);
@@ -652,6 +653,7 @@ public sealed partial class Runner
             await DownloadDataAsync(ct);
             await ConvertDataAsync(ct);
             await DownloadWeightsAsync(ct);
+            await DownloadSourceFilesAsync(ct);
             (trainImages, valImages) = (CountImages("train"), CountImages("val"));
             return (true, $"{trainImages} train and {valImages} val images ready");
         });

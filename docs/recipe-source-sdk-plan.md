@@ -1,6 +1,6 @@
 # Giải pháp: gắn SDK, điền `.env`, bấm F5
 
-- Trạng thái: **đã chốt (D-53, 2026-11-23)**. G0 đạt; **G1–G5 đã làm và kiểm** (mục 9.1–9.5; G3 mới làm phần SDK, G5 chưa chuyển recipe dựng sẵn). G6 chưa làm.
+- Trạng thái: **đã chốt (D-53, 2026-11-23)**. G0 đạt; **G1–G5 đã làm và kiểm** (mục 9.1–9.5). **G7 (danh mục từ git, image sinh từ manifest, model tải lúc chạy) đã làm** (mục 12), còn chạy thật qua nền tảng. G6 chưa làm.
 - Bản 2 (CLI nhiều lệnh, phiên SSH, file cấu hình IDE) bị chủ dự án bác vì quá phức tạp cho dev. Bản này thiết kế lại từ bốn yêu cầu ở mục 1. Phần máy chủ đã qua phản biện ở bản 2 được giữ, gom về mục 6.
 - Ký hiệu: **[đã kiểm]** = đã đọc code hoặc tài liệu chính thức; **[chưa kiểm]** = phải làm thử trước khi cam kết.
 
@@ -488,6 +488,58 @@ Chưa làm trong G5 và lý do:
 - **Chuyển recipe dựng sẵn (`recipes/`) sang một repo git riêng, gỡ `Catalog:RecipesDir` khỏi image api và compose.** Việc này cần tạo repo mới trên GitHub (thao tác ra ngoài, cần chủ dự án đồng ý và chọn nơi đặt) và đổi đường build image recipe có manifest (shim, `HostContainers.RecipeImage`, canvas D-49). Nên làm cùng phần recipe còn dở của G3 (shim tải `hf://`).
 - Chạy từ web chỉ dùng được với repo nằm dưới một nguồn code đã khai; repo không khai nguồn thì phải chạy từ IDE (G2a).
 - Script viết bằng SDK mới có metric và kết quả; script thường vẫn chạy, có log và trạng thái, nhưng không có metric.
+
+## 12. G7: Danh mục lấy từ git và Hugging Face (2026-11-24)
+
+G1–G5 làm phần "dev gắn SDK và F5", nhưng **danh mục chưa đổi**: image api vẫn chứa `recipes/`, mỗi recipe có một Dockerfile viết tay tự `git clone` repo gốc và `curl` backbone khi build. G7 sửa đúng ba yêu cầu gốc còn thiếu.
+
+### 12.1 Mục tiêu (đối chiếu yêu cầu gốc)
+
+| Yêu cầu gốc | G7 làm gì | Nghiệm thu |
+|---|---|---|
+| Không tải sẵn model về server | Bỏ mọi lệnh tải model khỏi build image. Backbone và weight tải lúc job chạy, kiểm sha256, giữ trong volume đệm của workspace trên máy GPU | Image recipe không chứa file `.pth`; lần chạy đầu tải, lần hai dùng lại |
+| Recipe lấy từ git hoặc HF, chỉ định branch | Danh mục đọc từ một repo git ở một branch (`Catalog:Source`, `Catalog:Ref`; mặc định repo này, `main`). Mỗi recipe ghi repo gốc, branch và commit; server tự tải repo gốc ở commit đó | Image api không còn `recipes/`; đổi branch danh mục rồi đồng bộ thì danh mục đổi theo |
+| Người dùng muốn chỉnh thì tự fork | Danh mục chỉ trỏ tới repo gốc. Muốn chỉnh: fork repo gốc hoặc repo danh mục, đổi URL/branch | Trang Model Catalog hiện repo, branch, commit của từng recipe |
+
+### 12.2 Vấn đề của Dockerfile hiện tại
+
+| Vấn đề | Hậu quả |
+|---|---|
+| `git clone` cả lịch sử repo bên trong `docker build` | Phụ thuộc mạng trong bước build, không giới hạn thời gian; dễ treo |
+| `curl` backbone (≈550 MB) vào image | Trái yêu cầu; image phình; mỗi lần đổi recipe tải lại |
+| `pip install --no-cache-dir`, không có cache của BuildKit | Mỗi lần build lại tải lại nhiều GB wheel |
+| `pip install flash-attn … \|\| true` | Dịch flash-attn từ mã nguồn hàng giờ; lỗi bị nuốt, image "xong" mà thiếu thư viện |
+| 15 Dockerfile viết tay, khác nhau từng chút | Khó kiểm, khó sửa đồng loạt |
+
+### 12.3 Thiết kế
+
+- **Image sinh từ manifest**, không còn Dockerfile viết tay. Manifest khai `environment.base`, `apt`, `pip`, `installSource` (ví dụ `-e .`), `env`, `check`; recipe-local files và `_shared` chép vào như cũ.
+- **Server tải mã nguồn**, không phải `docker build`: archive của repo gốc ở commit đã ghim (và các repo phụ, file lẻ có sha256) được tải qua HTTPS, đệm trong S3, đưa vào build context. Tag image = hash của manifest + file + commit, nên đổi commit là ra image mới.
+- **pip dùng cache mount của BuildKit** để build lại không tải lại wheel.
+- **Model tải lúc chạy**: `source.downloads` (url, sha256, path) do mlp-shim tải vào `/mnt/mlp-models/blobs/<sha256>` (volume `mlp-models-<ws>`) rồi liên kết tới path. Inspection của canvas không cần backbone.
+- **Danh mục từ git**: api tải archive của repo danh mục ở `Catalog:Ref`, giải nén `recipes/` vào thư mục đệm theo commit, chạy `SyncBuiltinRecipes`. Có nút đồng bộ lại. `Catalog:RecipesDir` chỉ còn cho dev muốn sửa recipe tại chỗ.
+
+### 12.4 Các bước (mỗi bước rà lại bảng 12.1 trước khi sang bước sau)
+
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| S1 | Sinh image từ manifest; server tải mã nguồn; pip cache | ✔ `RecipeDockerfile`, `RecipeSourceStore`, agent `BuildFetcher` (archive lớn hơn khung 16 MB nên agent tự tải, kiểm sha256) |
+| S2 | Model tải lúc chạy (shim + volume đệm) | ✔ code: mlp-shim tải `source.downloads` vào `/mnt/mlp-models/blobs/<sha256>`, job recipe được gắn volume `mlp-models-<ws>` |
+| S3 | Chuyển D-FINE và hf-text, chạy thử trên máy GPU | ✔ dựng thật trên máy GPU bằng Dockerfile sinh ra: D-FINE 1,4 phút, 3,6 GB; hf-text 5,3 phút, 4,6 GB; không có file `.pth` trong image |
+| S4 | Chuyển 13 recipe còn lại, xoá Dockerfile viết tay | ✔ 15/15 manifest dùng `environment.base`; 15 Dockerfile đã xoá. Dựng thật thêm rt-detrv4 (2 repo), sam2 (`-e`), generic-onnx (image CUDA), tabular-gbdt. Chưa dựng: deimv2, hf-auto, hf-llm-sft, whisper, rf-detr, ultralytics-yolo, 3 vibevoice |
+| S5 | Danh mục từ git, gỡ `recipes/` khỏi image api | ✔ `CatalogSource`: api tải repo này ở `main` và đồng bộ 15 recipe (đã chạy ở máy dev: commit `d485dfb`). `api.Dockerfile` và compose không còn `recipes/`; `Catalog:RecipesDir` chỉ còn cho dev |
+| S6 | Trang Model Catalog: nguồn, branch, commit, đồng bộ | ✔ dòng nguồn + nút Đồng bộ (Instance Admin); tab Nguồn của recipe: repo gốc @ commit, Fork, file tải khi chạy, image nền, apt, pip |
+| S7 | Rà lần cuối theo bảng 12.1 | xem 12.5 |
+
+### 12.5 Rà theo mục tiêu (2026-11-24)
+
+| Mục tiêu | Đạt | Còn thiếu |
+|---|---|---|
+| Không tải sẵn model về server | Build không còn `curl`/`git clone`; 6 image dựng thật không chứa `.pth` | Bước shim tải backbone lúc chạy chưa chạy thật qua nền tảng |
+| Recipe lấy từ git/HF, chỉ định branch | Danh mục đọc từ git theo branch; mỗi recipe ghi repo, branch, commit; server tải repo gốc ở commit | Đường đi qua S3 + link ký + agent tải chưa chạy thật (thử trực tiếp đã dùng cùng archive và cùng Dockerfile) |
+| Muốn chỉnh thì tự fork | Trang Model Catalog hiện repo/branch/commit và nút Fork | — |
+
+Hai phần chưa chạy thật cần control plane mà máy GPU đang nối (`agent.mlp.hexbox.vn`) chạy bản mới và agent trên máy GPU được cập nhật (OTA). Đó là triển khai lên hạ tầng dùng chung, chờ chủ dự án đồng ý.
 
 ## 10. Rủi ro
 

@@ -3,7 +3,7 @@
   "info": {
     "title": "MLPlatform API",
     "version": "v1",
-    "x-proto-hash": "2f146b09c19f894a"
+    "x-proto-hash": "0caf41a36d1e5fd5"
   },
   "paths": {
     "/api/hosts/{id}/files": {
@@ -1406,6 +1406,88 @@
         "x-streaming": false,
         "x-module": "",
         "x-scope-field": "workspace_id"
+      }
+    },
+    "/mlplatform.v1.CatalogService/GetCatalogSource": {
+      "post": {
+        "operationId": "CatalogService.GetCatalogSource",
+        "tags": [
+          "CatalogService"
+        ],
+        "requestBody": {
+          "description": "Empty",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CatalogSourceInfo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSourceInfo"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.CatalogService",
+          "method": "GetCatalogSource",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "",
+        "x-streaming": false,
+        "x-module": ""
+      }
+    },
+    "/mlplatform.v1.CatalogService/SyncCatalog": {
+      "post": {
+        "operationId": "CatalogService.SyncCatalog",
+        "tags": [
+          "CatalogService"
+        ],
+        "requestBody": {
+          "description": "Empty",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CatalogSourceInfo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSourceInfo"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.CatalogService",
+          "method": "SyncCatalog",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "write",
+        "x-audience": "internal",
+        "x-access": "Internal",
+        "x-streaming": false,
+        "x-module": "Platform"
       }
     },
     "/mlplatform.v1.DataService/CreateDataset": {
@@ -16357,6 +16439,34 @@
           }
         },
         "x-proto": "mlplatform.v1.RecipeFileContent"
+      },
+      "CatalogSourceInfo": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
+          },
+          "syncedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string"
+          },
+          "local": {
+            "type": "boolean"
+          },
+          "recipes": {
+            "type": "integer"
+          }
+        },
+        "x-proto": "mlplatform.v1.CatalogSourceInfo"
       },
       "PageRequest": {
         "type": "object",

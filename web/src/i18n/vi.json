@@ -2843,5 +2843,10 @@
   "Base image": "Image nền",
   "Run {name}": "Chạy {name}",
   "Branch, tag or commit": "Branch, tag hoặc commit",
-  "Fetching the code…": "Đang lấy code…"
+  "Fetching the code…": "Đang lấy code…",
+  "Sync": "Đồng bộ",
+  "{n} recipes": "{n} recipe",
+  "Extra repository": "Repo phụ",
+  "Upstream files": "File từ repo gốc",
+  "Downloaded when the job starts": "Tải khi job chạy"
 }

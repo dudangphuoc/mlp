@@ -1,6 +1,7 @@
 # Nguồn của các recipe dựng sẵn
 
 - Ngày rà soát: 2026-11-23.
+- **Từ G7 (2026-11-24) không còn Dockerfile viết tay.** Dockerfile được sinh từ `environment` của manifest; mã nguồn repo gốc do server tải ở `source.commit` (đệm trong S3) rồi agent đưa vào build context; backbone ở `source.downloads` tải khi job chạy, không nằm trong image. Các mục bên dưới nhắc tới "Dockerfile" là mô tả trạng thái trước G7. Chi tiết: [recipe-source-sdk-plan.md](recipe-source-sdk-plan.md) mục 12.
 - Cách làm: đọc cả 15 `recipes/*/mlp-recipe.yaml` và 15 `recipes/*/Dockerfile`, cùng `recipes/_shared/` và `recipes/_tasks/`. Sau đó kiểm trực tiếp trên GitHub, PyPI và Hugging Face rằng mọi commit, phiên bản gói, model và link trọng số được ghi đều tồn tại. Tất cả đều trả HTTP 200.
 - **Không recipe nào được build hay chạy thử thật** (`recipes/README.md`, mục "Overall status").
 - Mục 5 liệt kê những chỗ manifest và Dockerfile không khớp nhau, cùng những thứ chưa tải được. Các chỗ sửa được đã sửa cùng ngày (cột "Trạng thái").

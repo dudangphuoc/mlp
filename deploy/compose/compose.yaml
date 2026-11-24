@@ -92,7 +92,9 @@ services:
       MLP__WireGuard__PeersFile: /net/peers
       MLP__WireGuard__Endpoint: ${MLP_WG_ENDPOINT:?set MLP_WG_ENDPOINT to a host:51820 reachable from plugged-in machines}
       MLP__Scheduler__DefaultWorkloadNetwork: ${MLP_NETWORK:-mlp}
-      MLP__Catalog__RecipesDir: /app/recipes
+      MLP__Catalog__Source: ${MLP_CATALOG_SOURCE:-https://github.com/dudangphuoc/mlp}   # builtin recipes: git repository + branch, fetched by the api
+      MLP__Catalog__Ref: ${MLP_CATALOG_REF:-main}
+      MLP__Catalog__RecipesDir: ${MLP_CATALOG_LOCAL_DIR:-}   # recipe authors only: a folder mounted into the api instead of git
       Kestrel__Endpoints__h2__Url: http://0.0.0.0:5080
       Kestrel__Endpoints__h2__Protocols: Http2
       Kestrel__Endpoints__web__Url: http://0.0.0.0:5081
@@ -106,7 +108,7 @@ services:
     image: ${MLP_IMAGE_PREFIX:-mlp}/api:${MLP_VERSION:-dev}
     build: { context: ../.., dockerfile: deploy/docker/api.Dockerfile }
     environment: *apienv
-    volumes: [net:/net, certs:/certs:ro, agents:/agents, "${MLP_RECIPES_DIR:-../../recipes}:/app/recipes:ro"]
+    volumes: [net:/net, certs:/certs:ro, agents:/agents]
     depends_on:
       wireguard: { condition: service_started }
       db-migrate: { condition: service_completed_successfully }

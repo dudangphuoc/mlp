@@ -85,15 +85,16 @@ public static class HostContainers
         RUN chmod 755 /usr/local/bin/mlp-shim && mkdir -p /mnt/data /mnt/weights && chmod 777 /mnt/data /mnt/weights
         """;
 
-    /// <summary>recipes/{name}:current → build command for this host: the recipe's Dockerfile and files (context =
-    /// recipes dir, as in CI) plus the platform serve layer and, when shim is given, the training layer.</summary>
+    /// <summary>recipes/{name}:current → build command for this host: Dockerfile generated from the manifest, recipe
+    /// files (context = recipes dir) plus the platform serve layer and, when shim is given, the training layer.</summary>
     public static ImageBuild? RecipeImage(string image, string? recipesDir, (string Url, string Sha256)? shim = null)
     {
         var m = System.Text.RegularExpressions.Regex.Match(image, @"^recipes/([a-z0-9-]+):current$");
         if (!m.Success || string.IsNullOrEmpty(recipesDir)) return null;
         var name = m.Groups[1].Value;
         var dir = Path.Combine(recipesDir, name);
-        if (!File.Exists(Path.Combine(dir, "Dockerfile"))) return null;
+        var fetches = new List<MLPlatform.Recipes.RecipeFetch>();
+        if (RecipeDockerfileText(dir, name, fetches) is not { } recipeDockerfile) return null;
         var files = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var root in new[] { dir, Path.Combine(recipesDir, "_shared") })
         {
@@ -103,15 +104,28 @@ public static class HostContainers
         }
         foreach (var r in new[] { "mlp_serve/__init__.py", "mlp_serve/server.py", "mlp_serve/types.py", "mlp_serve/selftest.py", "proto/mlplatform/v1/model_server.proto" })
             files["_serve/" + r] = System.Text.Encoding.UTF8.GetBytes(Resource("serve/" + r));
-        var dockerfile = File.ReadAllText(Path.Combine(dir, "Dockerfile")).Replace("\r\n", "\n") + ServeLayer + (shim is null ? "" : TrainLayer);
+        var dockerfile = recipeDockerfile + ServeLayer + (shim is null ? "" : TrainLayer);
         files["Dockerfile"] = System.Text.Encoding.UTF8.GetBytes(dockerfile);
         using var sha = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
         foreach (var (k, v) in files) { sha.AppendData(System.Text.Encoding.UTF8.GetBytes(k)); sha.AppendData(v); }
         if (shim is { } sh) sha.AppendData(System.Text.Encoding.UTF8.GetBytes("mlp-shim:" + sh.Sha256));
+        foreach (var f in fetches) sha.AppendData(System.Text.Encoding.UTF8.GetBytes($"fetch:{f.Path}={f.Url}#{f.Sha256}"));
         var b = new ImageBuild { Tag = $"mlp/recipe-{name}:{Convert.ToHexStringLower(sha.GetHashAndReset())[..12]}", TimeoutSeconds = 3600 };
         if (shim is { } s2) files["Dockerfile"] = System.Text.Encoding.UTF8.GetBytes(dockerfile.Replace("__MLP_SHIM_URL__", s2.Url));
         foreach (var (k, v) in files) b.Files[k] = ByteString.CopyFrom(v);
+        b.Fetches.AddRange(fetches.Select(f => new BuildFetch { Path = f.Path, Url = f.Url, Sha256 = f.Sha256 }));
         return b;
+    }
+
+    /// <summary>The recipe's Dockerfile, generated from mlp-recipe.yaml (environment.base); null when the recipe does not
+    /// describe an environment.</summary>
+    private static string? RecipeDockerfileText(string dir, string name, List<MLPlatform.Recipes.RecipeFetch> fetches)
+    {
+        var manifestPath = Path.Combine(dir, "mlp-recipe.yaml");
+        return File.Exists(manifestPath) && MLPlatform.Recipes.YamlJson.Parse(File.ReadAllText(manifestPath)) is System.Text.Json.Nodes.JsonObject m
+            && MLPlatform.Recipes.RecipeDockerfile.Applies(m)
+            ? MLPlatform.Recipes.RecipeDockerfile.Generate(m, name, File.Exists(Path.Combine(dir, "constraints.txt")), fetches)
+            : null;
     }
 
     public static string RayNodeName(Guid hostId) => "mlp-ray-node-" + hostId.ToString()[^12..];

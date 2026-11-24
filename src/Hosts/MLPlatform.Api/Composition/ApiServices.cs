@@ -80,6 +80,8 @@ public static class ApiServices
         s.AddSingleton<AgentRegistry>();
         s.AddHostedService<AgentListener>();
         s.AddSingleton<RecipeEnvironments>();
+        s.AddSingleton<RecipeSourceStore>();
+        s.AddSingleton<CatalogSource>();
         s.AddSingleton<WorkloadLauncher>();
     }
 

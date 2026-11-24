@@ -1,6 +1,6 @@
 # MLPlatform starter recipes
 
-Each directory is a **recipe** (D-20): `mlp-recipe.yaml` + `Dockerfile` + glue code (handler, scripts) when needed. These are **examples**, not limits (D-25): users can import more recipes from any repo (M17 S-17-3).
+Each directory is a **recipe** (D-20): `mlp-recipe.yaml` + glue code (handler, scripts) when needed. There is no hand-written Dockerfile: the platform generates it from the manifest (G7). These are **examples**, not limits (D-25): users can import more recipes from any repo (M17 S-17-3).
 
 - Field reference + template grammar + placeholders: [cookbook 20/08](../cookbook/20-kien-truc/08-recipe-va-runtime.md) §3–§4.
 - Schema: [`_schema/mlp-recipe.schema.json`](_schema/mlp-recipe.schema.json). Task catalog + standard converters: [`_tasks/tasks.yaml`](_tasks/tasks.yaml).
@@ -38,8 +38,11 @@ Where every recipe's code, packages and weights come from, and what is still mis
 - `_shared/classes/` — shared class lists for `variants.classes` (e.g. `coco80`).
 
 ## Build
-- The build context is the `recipes/` directory; every `COPY` in a Dockerfile uses paths relative to it: `docker build -f d-fine/Dockerfile recipes/`.
-- Builtin recipes are built by CI and pushed to the registry (D-30); the platform adds a final layer with `mlp-shim`, `mlplatform-sdk`, `mlp-serve` (which provides the `mlp_serve.types` that handlers import).
+- The platform generates the Dockerfile from `environment` (`base`, `apt`, `pip`, `env`, `copy`, `setup`, `check`, `workdir`). Print it with `dotnet run --project tools/MLPlatform.Cli -- recipe dockerfile recipes/<name>`.
+- The build never clones or downloads models: the control plane fetches the upstream repository at `source.commit` (and `source.extraRepos`) as an archive kept in S3, the agent downloads it into the build context, and `source.files` are single upstream files checked by sha256.
+- `source.downloads` (pretrained backbones) are fetched when the job starts by mlp-shim, checked by sha256 and kept in the workspace model cache on the machine (`/mnt/mlp-models/blobs/<sha256>`).
+- pip uses BuildKit's cache mount, so rebuilding after a change does not download wheels again. Exact versions come from `constraints.txt` (`tools/recipe-locks/lock.py`).
+- The build context is the `recipes/` directory: `copy.from` paths are relative to it. The platform adds a final layer with `mlp-shim` and `mlp-serve` (which provides the `mlp_serve.types` that handlers import).
 - Dev machines: build one image at a time, with `nice`, never in parallel (CLAUDE.md).
 
 ## Conventions used in these manifests (standard defined in 20/08)
@@ -59,7 +62,7 @@ Where every recipe's code, packages and weights come from, and what is still mis
 | `distributed: internal` + `{gpu_ids_csv}` | ultralytics-yolo |
 
 ## Next steps for each recipe
-1. Build the image (one at a time) and fix the Dockerfile until it builds.
+1. Build the image (one at a time) and fix `environment` until it builds.
 2. M17 R2 smoke test: convert a sample dataset → train a few steps → metrics arrive → model directory has the right layout → predict 1 sample.
 3. Finish the 3 VibeVoice handlers (read the demo code in the built image), redeclare `serve`/`assist`, then raise the maturity.
 4. Update `verification` and remove resolved `openItems`.

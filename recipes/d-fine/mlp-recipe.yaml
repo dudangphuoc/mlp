@@ -12,10 +12,10 @@ metadata:
     smokeTested: false
 source:
   git: https://github.com/Peterande/D-FINE
+  ref: master
   commit: 956d1709314c2c6a4df6f34de232054578a7449f
   commitDate: "2026-08-19"
-  packages: ["-r requirements.txt (upstream, unpinned)", "matplotlib", "opencv-python-headless", "onnx", "onnxsim", "transformers==4.48.3", "pycocotools"]   # also installed in the image (Dockerfile)
-  downloads:   # HGNetV2 backbones baked into the image (Dockerfile checks the sha256)
+  downloads:   # HGNetV2 backbones: fetched when the job starts, kept in the machine's model cache by sha256
     - {url: "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B0_stage1.pth", path: "/opt/recipe/src/weight/hgnetv2/PPHGNetV2_B0_stage1.pth", sha256: 70a372e8cbc59b34c5da2943261ecb633faf304a58e7e05461a27bd8d8b7f3d1}
     - {url: "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B1_stage1.pth", path: "/opt/recipe/src/weight/hgnetv2/PPHGNetV2_B1_stage1.pth", sha256: 3195a3fbd853af42c0c06eb121338077e96a5f7580daf503a4c05d4fc84b7fb9}
     - {url: "https://github.com/Peterande/storage/releases/download/dfinev1.0/PPHGNetV2_B2_stage1.pth", path: "/opt/recipe/src/weight/hgnetv2/PPHGNetV2_B2_stage1.pth", sha256: 41272985db6136ac11732b246c7ea794dcc203d0a8cbc463152c840b9d9f22d1}
@@ -29,7 +29,16 @@ license:
   notes: ""
 tasks: [detect]
 environment:
-  dockerfile: Dockerfile          # build context: the recipes/ directory
+  # torch 2.5.1: avoids the torch.load(weights_only=True) default of 2.6 (checkpoints hold optimizer/EMA state)
+  base: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+  apt: [libgl1, libglib2.0-0]
+  # not in requirements.txt: matplotlib (train), opencv (inference), onnx/onnxsim (export); transformers 5 needs torch ≥ 2.6;
+  # pycocotools: imported by recent faster-coco-eval at evaluation
+  pip: ["-r /opt/recipe/src/requirements.txt", matplotlib, opencv-python-headless, onnx, onnxsim, transformers==4.48.3, pycocotools]
+  copy: [{from: _shared/detr_family/, to: /opt/recipe/shared/}]
+  setup: ["touch /opt/recipe/shared/__init__.py"]
+  check: python -c "import faster_coco_eval, pycocotools, calflops, transformers, loguru, scipy, cv2"
+  workdir: /opt/recipe/src
   gpu: required
   minVramGb: 8
   python: "3.11"

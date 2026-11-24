@@ -15,16 +15,21 @@ metadata:
     smokeTested: false
 source:
   git: https://github.com/microsoft/VibeVoice
+  ref: main
   commit: 16fb2cb1217c9934a886e1948ffb06120caa2df5
   commitDate: "2026-10-08"
-  packages: ["peft", "tensorboard", "jiwer", "flash-attn (if the base image lacks it)"]   # also installed in the image (Dockerfile)
 license:
   code: MIT
   weights: MIT
   notes: ""
 tasks: [asr]
 environment:
-  dockerfile: Dockerfile
+  base: nvcr.io/nvidia/pytorch:25.12-py3   # ships flash_attn, which lora_finetune.py requires
+  apt: [ffmpeg]
+  pip: ["-e /opt/recipe/src", peft, tensorboard, jiwer]
+  copy: [{from: vibevoice-asr/handler.py, to: /opt/recipe/}, {from: _shared/converters/, to: /opt/recipe/shared/converters/}]
+  check: python -c "import flash_attn, vibevoice"
+  workdir: /opt/recipe
   gpu: required
   minVramGb: 24          # no official figure yet; ~8.7B-parameter model, bf16 + LoRA — see openItems
   minComputeCapability: "8.0"   # flash_attention_2 is hard-coded in lora_finetune.py → Ampere or newer

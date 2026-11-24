@@ -16,6 +16,19 @@ if (args is ["recipe", "check", var dir])
     }
     return errors == 0 ? 0 : 1;
 }
+if (args is ["recipe", "dockerfile", var recipeDir])
+{
+    var name = Path.GetFileName(Path.GetFullPath(recipeDir).TrimEnd('/'));
+    if (YamlJson.Parse(File.ReadAllText(Path.Combine(recipeDir, "mlp-recipe.yaml"))) is not JsonObject m || !RecipeDockerfile.Applies(m))
+    {
+        Console.Error.WriteLine("The manifest has no environment.base");
+        return 1;
+    }
+    var fetches = new List<RecipeFetch>();
+    Console.Write(RecipeDockerfile.Generate(m, name, File.Exists(Path.Combine(recipeDir, "constraints.txt")), fetches));
+    foreach (var f in fetches) Console.WriteLine($"# fetch {f.Path} ← {f.Url} {f.Sha256}");
+    return 0;
+}
 if (args is ["s3", "smoke", var ep, var ak, var sk])
 {
     using var http = new HttpClient();
