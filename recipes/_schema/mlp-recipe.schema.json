@@ -177,6 +177,62 @@
         },
         "revision": {
           "type": "string"
+        },
+        "extraRepos": {
+          "type": "array",
+          "description": "Other git repositories cloned into the image, each at a fixed commit",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "git",
+              "commit",
+              "path"
+            ],
+            "properties": {
+              "git": {
+                "type": "string"
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "downloads": {
+          "type": "array",
+          "description": "Files fetched into the image at build time (backbones, upstream scripts); sha256 when the Dockerfile verifies it",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "path"
+            ],
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "packages": {
+          "type": "array",
+          "description": "Extra pip packages the Dockerfile installs next to the source (documentation; the Dockerfile is what installs them)",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

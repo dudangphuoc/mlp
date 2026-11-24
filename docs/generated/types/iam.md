@@ -153,6 +153,8 @@
 | name | 2 | string |
 | created_at | 3 | Timestamp |
 | last_used_at | 4 | Timestamp |
+| workspace_id | 5 | string |
+| workspace_name | 6 | string |
 
 ## ListApiKeysResponse
 
@@ -165,6 +167,7 @@
 | Field | # | Type |
 |---|---:|---|
 | name | 1 | string |
+| workspace_id | 2 | string |
 
 ## CreatedApiKey
 

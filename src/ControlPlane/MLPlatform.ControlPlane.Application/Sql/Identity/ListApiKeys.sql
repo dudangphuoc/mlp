@@ -1,3 +1,4 @@
 -- mlp:query ListApiKeys :many
-SELECT id, name, created_at, last_seen_at FROM identity.sessions
-WHERE user_id = @user_id AND kind = 'api_key' AND revoked_at IS NULL ORDER BY created_at DESC;
+SELECT s.id, s.name, s.created_at, s.last_seen_at, s.key_workspace_id AS workspace_id, w.name AS workspace_name
+FROM identity.sessions s LEFT JOIN identity.workspaces w ON w.id = s.key_workspace_id
+WHERE s.user_id = @user_id AND s.kind = 'api_key' AND s.revoked_at IS NULL ORDER BY s.created_at DESC;

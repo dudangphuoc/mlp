@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlplatform"
-version = "0.1.0"
-description = "Client for models deployed on MLPlatform"
-requires-python = ">=3.8"
+version = "0.2.0"
+description = "MLPlatform SDK: track your own training code, call deployed models"
+requires-python = ">=3.9"
 dependencies = []
 
 [tool.setuptools]
-py-modules = ["mlplatform"]
+packages = ["mlplatform"]

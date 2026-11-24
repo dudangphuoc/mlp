@@ -3,7 +3,7 @@
   "info": {
     "title": "MLPlatform API",
     "version": "v1",
-    "x-proto-hash": "2569d8518cab7850"
+    "x-proto-hash": "2f146b09c19f894a"
   },
   "paths": {
     "/api/hosts/{id}/files": {
@@ -283,6 +283,63 @@
         "operationId": "Overlay.GET_overlay_peers",
         "tags": [
           "rest:Overlay"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
+    "/v1/debug/{run}/control": {
+      "get": {
+        "operationId": "Debug.ANY_v1_debug_run_control",
+        "tags": [
+          "rest:Debug"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
+    "/v1/debug/{run}/dev/{connection}": {
+      "get": {
+        "operationId": "Debug.ANY_v1_debug_run_dev_connection",
+        "tags": [
+          "rest:Debug"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-public": false
+      }
+    },
+    "/v1/debug/{run}/remote": {
+      "get": {
+        "operationId": "Debug.ANY_v1_debug_run_remote",
+        "tags": [
+          "rest:Debug"
         ],
         "responses": {
           "200": {
@@ -4865,7 +4922,8 @@
         "x-audience": "user",
         "x-access": "Authenticated",
         "x-streaming": false,
-        "x-module": "Identity"
+        "x-module": "Identity",
+        "x-scope-field": "workspace_id"
       }
     },
     "/mlplatform.v1.IamService/RevokeApiKey": {
@@ -11038,9 +11096,15 @@
         "x-kind": "command",
         "x-effect": "write",
         "x-audience": "agent",
-        "x-access": "WorkloadToken",
+        "x-access": "ScopedPermission",
         "x-streaming": false,
         "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
         "x-ref": {
           "run_id": {
             "entity": "Run",
@@ -11085,9 +11149,15 @@
         "x-kind": "command",
         "x-effect": "write",
         "x-audience": "agent",
-        "x-access": "WorkloadToken",
+        "x-access": "ScopedPermission",
         "x-streaming": false,
         "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
         "x-ref": {
           "run_id": {
             "entity": "Run",
@@ -12735,6 +12805,774 @@
           "run_id": {
             "entity": "Run",
             "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/OpenCodeRun": {
+      "post": {
+        "operationId": "TrackingService.OpenCodeRun",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "OpenCodeRunRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenCodeRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OpenCodeRunResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenCodeRunResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "OpenCodeRun",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ]
+      }
+    },
+    "/mlplatform.v1.TrackingService/HeartbeatCodeRun": {
+      "post": {
+        "operationId": "TrackingService.HeartbeatCodeRun",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "GetRunRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "HeartbeatCodeRun",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "run_id": {
+            "entity": "Run",
+            "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/FinishCodeRun": {
+      "post": {
+        "operationId": "TrackingService.FinishCodeRun",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "FinishCodeRunRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishCodeRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "FinishCodeRun",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "run_id": {
+            "entity": "Run",
+            "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/SetCodeRunParams": {
+      "post": {
+        "operationId": "TrackingService.SetCodeRunParams",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "SetCodeRunParamsRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCodeRunParamsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "SetCodeRunParams",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "run_id": {
+            "entity": "Run",
+            "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/CreateCodeSnapshotUpload": {
+      "post": {
+        "operationId": "TrackingService.CreateCodeSnapshotUpload",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "CreateCodeSnapshotUploadRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCodeSnapshotUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CodeSnapshotUpload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeSnapshotUpload"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "CreateCodeSnapshotUpload",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ]
+      }
+    },
+    "/mlplatform.v1.TrackingService/MatchCodeSource": {
+      "post": {
+        "operationId": "TrackingService.MatchCodeSource",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "MatchCodeSourceRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchCodeSourceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MatchCodeSourceResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchCodeSourceResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "MatchCodeSource",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ]
+      }
+    },
+    "/mlplatform.v1.TrackingService/ResolveModelRef": {
+      "post": {
+        "operationId": "TrackingService.ResolveModelRef",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "ResolveRefRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRefRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ResolvedModel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedModel"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "ResolveModelRef",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "run_id": {
+            "entity": "Run",
+            "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/ResolveDataset": {
+      "post": {
+        "operationId": "TrackingService.ResolveDataset",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "ResolveRefRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRefRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ResolvedDataset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedDataset"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "ResolveDataset",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "dataset.read",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor",
+          "reviewer",
+          "annotator",
+          "viewer"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "run_id": {
+            "entity": "Run",
+            "list": "TrackingService.ListRuns"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/ListCodeSources": {
+      "post": {
+        "operationId": "TrackingService.ListCodeSources",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "ListCodeSourcesRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListCodeSourcesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ListCodeSourcesResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCodeSourcesResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "ListCodeSources",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "run.read",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor",
+          "viewer"
+        ],
+        "x-scope-field": "workspace_id"
+      }
+    },
+    "/mlplatform.v1.TrackingService/CreateCodeSource": {
+      "post": {
+        "operationId": "TrackingService.CreateCodeSource",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "CreateCodeSourceRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCodeSourceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CodeSource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeSource"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "CreateCodeSource",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "source.manage",
+        "x-roles": [
+          "owner",
+          "admin"
+        ],
+        "x-scope-field": "workspace_id"
+      }
+    },
+    "/mlplatform.v1.TrackingService/DeleteCodeSource": {
+      "post": {
+        "operationId": "TrackingService.DeleteCodeSource",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "DeleteCodeSourceRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCodeSourceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "DeleteCodeSource",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "delete",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "source.manage",
+        "x-roles": [
+          "owner",
+          "admin"
+        ],
+        "x-scope-field": "workspace_id"
+      }
+    },
+    "/mlplatform.v1.TrackingService/ListCodeEntries": {
+      "post": {
+        "operationId": "TrackingService.ListCodeEntries",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "ListCodeEntriesRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListCodeEntriesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ListCodeEntriesResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCodeEntriesResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "ListCodeEntries",
+          "transport": "grpc-web"
+        },
+        "x-kind": "query",
+        "x-effect": "read",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "run.read",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor",
+          "viewer"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "project_id": {
+            "entity": "Project",
+            "list": "TrackingService.ListProjects"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/CreateCodeEntry": {
+      "post": {
+        "operationId": "TrackingService.CreateCodeEntry",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "CreateCodeEntryRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCodeEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CodeEntry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeEntry"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "CreateCodeEntry",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "write",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "project_id": {
+            "entity": "Project",
+            "list": "TrackingService.ListProjects"
+          }
+        }
+      }
+    },
+    "/mlplatform.v1.TrackingService/DeleteCodeEntry": {
+      "post": {
+        "operationId": "TrackingService.DeleteCodeEntry",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "DeleteCodeEntryRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCodeEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "DeleteCodeEntry",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "delete",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id"
+      }
+    },
+    "/mlplatform.v1.TrackingService/RunCodeEntry": {
+      "post": {
+        "operationId": "TrackingService.RunCodeEntry",
+        "tags": [
+          "TrackingService"
+        ],
+        "requestBody": {
+          "description": "RunCodeEntryRequest",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCodeEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          }
+        },
+        "x-grpc": {
+          "service": "mlplatform.v1.TrackingService",
+          "method": "RunCodeEntry",
+          "transport": "grpc-web"
+        },
+        "x-kind": "command",
+        "x-effect": "compute",
+        "x-audience": "user",
+        "x-access": "ScopedPermission",
+        "x-streaming": false,
+        "x-module": "Tracking",
+        "x-permission": "job.submit",
+        "x-roles": [
+          "owner",
+          "admin",
+          "editor"
+        ],
+        "x-scope-field": "workspace_id",
+        "x-ref": {
+          "entry_id": {
+            "entity": "Entry",
+            "list": null
           }
         }
       }
@@ -17978,6 +18816,12 @@
           "lastUsedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "workspaceName": {
+            "type": "string"
           }
         },
         "x-proto": "mlplatform.v1.ApiKey"
@@ -17998,6 +18842,9 @@
         "type": "object",
         "properties": {
           "name": {
+            "type": "string"
+          },
+          "workspaceId": {
             "type": "string"
           }
         },
@@ -23828,9 +24675,541 @@
           },
           "hostId": {
             "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "hostName": {
+            "type": "string"
+          },
+          "code": {
+            "$ref": "#/components/schemas/RunCode"
+          },
+          "exitCode": {
+            "type": "integer"
+          },
+          "hasExitCode": {
+            "type": "boolean"
+          },
+          "heartbeatAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "x-proto": "mlplatform.v1.Run"
+      },
+      "RunCode": {
+        "type": "object",
+        "properties": {
+          "gitRemote": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
+          },
+          "dirty": {
+            "type": "boolean"
+          },
+          "script": {
+            "type": "string"
+          },
+          "argv": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "python": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.RunCode"
+      },
+      "OpenCodeRunRequest": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "paramsJson": {
+            "type": "string"
+          },
+          "hostName": {
+            "type": "string"
+          },
+          "code": {
+            "$ref": "#/components/schemas/RunCode"
+          },
+          "remote": {
+            "$ref": "#/components/schemas/RemoteRun"
+          }
+        },
+        "x-proto": "mlplatform.v1.OpenCodeRunRequest"
+      },
+      "RemoteRun": {
+        "type": "object",
+        "properties": {
+          "machine": {
+            "type": "string"
+          },
+          "gpus": {
+            "type": "integer"
+          },
+          "image": {
+            "type": "string"
+          },
+          "snapshotSha256": {
+            "type": "string"
+          },
+          "workdir": {
+            "type": "string"
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "requirements": {
+            "type": "string"
+          },
+          "baseCommit": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "debugToken": {
+            "type": "string"
+          },
+          "debugParentPid": {
+            "type": "integer"
+          },
+          "debugRoot": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.RemoteRun"
+      },
+      "ResolveRefRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ResolveRefRequest"
+      },
+      "ResolvedModelFile": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "url": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
+        },
+        "x-proto": "mlplatform.v1.ResolvedModelFile"
+      },
+      "ResolvedModel": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedModelFile"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.ResolvedModel"
+      },
+      "ResolvedDatasetFile": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ResolvedDatasetFile"
+      },
+      "ResolvedDataset": {
+        "type": "object",
+        "properties": {
+          "versionId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedDatasetFile"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.ResolvedDataset"
+      },
+      "MatchCodeSourceRequest": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string"
+          },
+          "gitRemote": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.MatchCodeSourceRequest"
+      },
+      "MatchCodeSourceResponse": {
+        "type": "object",
+        "properties": {
+          "urlPrefix": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.MatchCodeSourceResponse"
+      },
+      "CodeSource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "urlPrefix": {
+            "type": "string"
+          },
+          "hasToken": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "x-proto": "mlplatform.v1.CodeSource"
+      },
+      "ListCodeSourcesRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ListCodeSourcesRequest"
+      },
+      "ListCodeSourcesResponse": {
+        "type": "object",
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeSource"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.ListCodeSourcesResponse"
+      },
+      "CreateCodeSourceRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "urlPrefix": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.CreateCodeSourceRequest"
+      },
+      "DeleteCodeSourceRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.DeleteCodeSourceRequest"
+      },
+      "CodeEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "gitRemote": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "script": {
+            "type": "string"
+          },
+          "machine": {
+            "type": "string"
+          },
+          "gpus": {
+            "type": "integer"
+          },
+          "image": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "x-proto": "mlplatform.v1.CodeEntry"
+      },
+      "ListCodeEntriesRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.ListCodeEntriesRequest"
+      },
+      "ListCodeEntriesResponse": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeEntry"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.ListCodeEntriesResponse"
+      },
+      "CreateCodeEntryRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "gitRemote": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "script": {
+            "type": "string"
+          },
+          "machine": {
+            "type": "string"
+          },
+          "gpus": {
+            "type": "integer"
+          },
+          "image": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.CreateCodeEntryRequest"
+      },
+      "DeleteCodeEntryRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.DeleteCodeEntryRequest"
+      },
+      "RunCodeEntryRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "entryId": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "machine": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "x-proto": "mlplatform.v1.RunCodeEntryRequest"
+      },
+      "CreateCodeSnapshotUploadRequest": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "format": "int64"
+          },
+          "data": {
+            "type": "boolean"
+          }
+        },
+        "x-proto": "mlplatform.v1.CreateCodeSnapshotUploadRequest"
+      },
+      "CodeSnapshotUpload": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "workspaceSlug": {
+            "type": "string"
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.CodeSnapshotUpload"
+      },
+      "OpenCodeRunResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/Run"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "workspaceSlug": {
+            "type": "string"
+          },
+          "projectSlug": {
+            "type": "string"
+          },
+          "webUrl": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.OpenCodeRunResponse"
+      },
+      "FinishCodeRunRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "exitCode": {
+            "type": "integer"
+          }
+        },
+        "x-proto": "mlplatform.v1.FinishCodeRunRequest"
+      },
+      "SetCodeRunParamsRequest": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "paramsJson": {
+            "type": "string"
+          }
+        },
+        "x-proto": "mlplatform.v1.SetCodeRunParamsRequest"
       },
       "ListRunsRequest": {
         "type": "object",

@@ -12,6 +12,9 @@ public sealed record ListWorkspacesQuery : IQuery<IReadOnlyList<MembershipRow>>;
 public sealed class ListWorkspacesQueryHandler(IReadSession db, ICurrentUser user)
     : IQueryHandler<ListWorkspacesQuery, IReadOnlyList<MembershipRow>>
 {
-    public async ValueTask<IReadOnlyList<MembershipRow>> Handle(ListWorkspacesQuery q, CancellationToken ct) =>
-        await db.ListMembershipsAsync(user.RequireUser(), ct);
+    public async ValueTask<IReadOnlyList<MembershipRow>> Handle(ListWorkspacesQuery q, CancellationToken ct)
+    {
+        var all = await db.ListMembershipsAsync(user.RequireUser(), ct);
+        return user.KeyWorkspaceId is { } only ? all.Where(m => m.Id == only).ToList() : all;
+    }
 }

@@ -14,6 +14,9 @@ metadata:
     smokeTested: false
 source:
   pip: ["transformers==5.19.0", "datasets", "evaluate==0.4.6", "seqeval", "accelerate", "tensorboard", "scikit-learn"]
+  downloads:   # training scripts of huggingface/transformers, pinned to the commit of tag v5.19.0
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/text-classification/run_classification.py", path: run_classification.py}
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/token-classification/run_ner.py", path: run_ner.py}
 license:
   code: Apache-2.0
   weights: per each Hub model's model card

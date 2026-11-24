@@ -18,15 +18,17 @@ Each directory is a **recipe** (D-20): `mlp-recipe.yaml` + `Dockerfile` + glue c
 | [rf-detr](rf-detr/) | detect, segment | `rfdetr==1.12.1` | Apache-2.0; XL/2XL: PML-1.0 | per variant | stable | ✔ (box + polygon) |
 | [ultralytics-yolo](ultralytics-yolo/) | detect, segment, classify, pose, obb | `ultralytics==8.4.215` | **AGPL-3.0** | ✔ | stable | ✔ (including obb) |
 | [sam2](sam2/) | assist `segment` (assist only) | facebookresearch/sam2 @2b90b9f | Apache-2.0 | — | stable | ✔ (assist) |
-| [hf-text](hf-text/) | text-classify, ner | transformers 5.19.0 (scripts pinned to the tag) | Apache-2.0; models per card | custom variant | stable | ✔ |
+| [hf-text](hf-text/) | text-classify, ner | transformers 5.19.0 (scripts pinned to commit `c4c4605` = tag v5.19.0) | Apache-2.0; models per card | custom variant | stable | ✔ |
 | [hf-llm-sft](hf-llm-sft/) | generate | `trl[peft]==1.18.1` | Apache-2.0; LLMs per card | ✔ | stable | ✔ (stream, adapter) |
-| [hf-auto](hf-auto/) | every task with an HF pipeline (serve/import) | `transformers==5.19.0` | per model card | ✔ | stable | ✔ |
-| [whisper](whisper/) | asr | transformers 5.19.0 + seq2seq script pinned to the tag | MIT | — | stable | ✔ |
+| [hf-auto](hf-auto/) | every task with an HF pipeline (serve/import) | `transformers==4.48.3` | per model card | ✔ | stable | ✔ |
+| [whisper](whisper/) | asr | transformers 5.19.0 + seq2seq script pinned to commit `c4c4605` = tag v5.19.0 | MIT | — | stable | ✔ |
 | [vibevoice-asr](vibevoice-asr/) | asr (train only) | microsoft/VibeVoice @16fb2cb | MIT | — | experimental | ✖ not yet — no `serve` declared |
 | [vibevoice-tts](vibevoice-tts/) | tts (train + batch predict) | vibevoice-community/VibeVoice @952326d | MIT | ✔ (research, no voice impersonation…) | experimental | ✖ not yet — no `serve` declared |
 | [vibevoice-realtime](vibevoice-realtime/) | tts (batch predict only) | microsoft/VibeVoice @16fb2cb | MIT | ✔ | experimental | ✖ not yet — no `serve` declared |
 | [tabular-gbdt](tabular-gbdt/) | tabular-classify, tabular-regress | sklearn, xgboost, lightgbm (script in the recipe) | BSD/Apache/MIT | — | stable | ✔ |
-| [generic-onnx](generic-onnx/) | classify, detect, tabular (serve/import `.onnx`, with `inspect`) | `onnxruntime-gpu==1.32.0` | MIT (runtime) | — | stable | ✔ |
+| [generic-onnx](generic-onnx/) | classify, detect, tabular (serve/import `.onnx`, with `inspect`) | `onnxruntime-gpu==1.22.0` (+ OpenVINO 2025.0, TensorRT 10.7) | MIT (runtime) | — | stable | ✔ |
+
+Where every recipe's code, packages and weights come from, and what is still missing: [docs/recipe-sources.md](../docs/recipe-sources.md).
 
 ## Directory layout
 - `_schema/` — JSON Schema of the manifest.

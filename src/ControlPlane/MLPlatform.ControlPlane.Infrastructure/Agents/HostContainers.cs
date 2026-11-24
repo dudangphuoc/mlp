@@ -65,7 +65,7 @@ public static class HostContainers
         # Debian/Ubuntu system Python (PEP 668) refuses pip without this; images may also ship only python3
         ENV PIP_BREAK_SYSTEM_PACKAGES=1
         RUN (command -v python >/dev/null || ln -s "$(command -v python3)" /usr/local/bin/python) \
-         && python -m pip install --no-cache-dir grpcio grpcio-tools protobuf \
+         && PIP_CONSTRAINT= python -m pip install --no-cache-dir grpcio grpcio-tools protobuf \
          && mkdir -p /opt/mlp-py/mlp_serve/gen /mnt/model /mnt/output && chmod 777 /mnt/model /mnt/output && cd /opt/mlp-py \
          && python -m grpc_tools.protoc -Iproto --python_out=mlp_serve/gen --grpc_python_out=mlp_serve/gen proto/mlplatform/v1/model_server.proto \
          && sed -i 's/^from mlplatform.v1 import/from mlp_serve.gen.mlplatform.v1 import/' mlp_serve/gen/mlplatform/v1/model_server_pb2_grpc.py \

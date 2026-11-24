@@ -14,7 +14,7 @@ metadata:
     built: false
     smokeTested: false
 source:
-  pip: ["onnxruntime-gpu==1.32.0"]
+  pip: ["onnxruntime-gpu==1.22.0", "onnx==1.18.0", "numpy", "pillow", "psutil==7.0.0", "openvino==2025.0.0", "tensorrt-cu12==10.7.0"]
 license:
   code: MIT                       # onnxruntime
   weights: "per the model the user imports"

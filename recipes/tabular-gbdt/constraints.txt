@@ -1,0 +1,16 @@
+# Exact versions for every pip install in tabular-gbdt/Dockerfile (PIP_CONSTRAINT); base image python:3.12-slim.
+# Regenerate with tools/recipe-locks/lock.py after changing the Dockerfile's packages.
+cloudpickle==3.1.3
+joblib==1.6.0
+lightgbm==4.7.0
+narwhals==2.29.0
+numpy==2.5.5
+nvidia-nccl-cu13==2.32.6
+pandas==3.1.1
+pyarrow==26.0.1
+python-dateutil==4.0.0
+scikit-learn==1.9.1
+scipy==1.18.1
+threadpoolctl==3.8.0
+tzdata==2026.6
+xgboost==3.4.1

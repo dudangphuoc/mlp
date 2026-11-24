@@ -61,6 +61,7 @@ public static class ApiServices
         s.AddScoped<IRequestBehavior, AuthorizationBehavior>();
         s.AddGeneratedHandlers();
         s.AddScoped<WorkspaceAuthorizer>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Tracking.RemoteCodeRunner>();
         s.AddScoped<MLPlatform.ControlPlane.Application.Labeling.LabelAccess>();
     }
 
@@ -116,6 +117,7 @@ public static class ApiServices
         s.AddHostedService<NotebookReaper>();
         s.AddHostedService<DataCacheJanitor>();
         s.AddHostedService<GpuHistoryJanitor>();
+        s.AddHostedService<CodeRunJanitor>();
         s.AddHostedService<MLPlatform.Api.Http.HostOps.TerminalRecordingJanitor>();
     }
 
@@ -148,9 +150,14 @@ public static class ApiServices
     private static void AddHubAndAi(this IServiceCollection s, IConfiguration cfg)
     {
         s.AddHttpClient("hf", c => { c.Timeout = Timeout.InfiniteTimeSpan; });
+        s.AddHttpClient("hf-noredirect", c => { c.Timeout = TimeSpan.FromSeconds(30); }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
         s.AddHttpClient("import", c => { c.Timeout = Timeout.InfiniteTimeSpan; c.DefaultRequestHeaders.UserAgent.ParseAdd("mlplatform-import/1.0"); });
         s.AddHttpClient("s3-put", c => { c.Timeout = Timeout.InfiniteTimeSpan; });
         s.AddSingleton<SecretBox>();
+        s.AddSingleton<MLPlatform.Api.Http.Debug.DebugRelay>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Tracking.ICodeSnapshotComposer, CodeSnapshotComposer>();
+        s.AddSingleton<MLPlatform.ControlPlane.Application.Tracking.ICodeEnvironment, CodeEnvImages>();
+        s.AddScoped<MLPlatform.ControlPlane.Application.Tracking.IModelRefResolver, ModelRefResolver>();
         s.AddHttpClient("ai", c => { c.Timeout = Timeout.InfiniteTimeSpan; c.DefaultRequestHeaders.UserAgent.ParseAdd("mlplatform-ai/1.0"); });
         s.AddSingleton<AiProviders>();
         s.AddSingleton<AiCircuits>();

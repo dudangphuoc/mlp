@@ -9,8 +9,8 @@ Path prefix: `/mlplatform.v1.RuntimeService/`
 | ReportAllocation | [ReportAllocationRequest](../types/runtime.md#reportallocationrequest) → [Empty](../types/common.md#empty) | write | WorkloadToken |  |  | Scheduling.ReportAllocationCommand |
 | Heartbeat | [RuntimeHeartbeat](../types/runtime.md#runtimeheartbeat) → [Empty](../types/common.md#empty) | write | WorkloadToken |  |  | Ops.WorkloadHeartbeatCommand |
 | ReportExit | [ReportExitRequest](../types/runtime.md#reportexitrequest) → [Empty](../types/common.md#empty) | read |  |  |  |  |
-| CreateArtifactUploads | [CreateArtifactUploadsRequest](../types/runtime.md#createartifactuploadsrequest) → [ArtifactUploads](../types/runtime.md#artifactuploads) | write | WorkloadToken |  |  | Tracking.CreateArtifactUploadsCommand |
-| CompleteArtifacts | [CompleteArtifactsRequest](../types/runtime.md#completeartifactsrequest) → [Empty](../types/common.md#empty) | write | WorkloadToken |  |  | Tracking.CompleteArtifactsCommand |
+| CreateArtifactUploads | [CreateArtifactUploadsRequest](../types/runtime.md#createartifactuploadsrequest) → [ArtifactUploads](../types/runtime.md#artifactuploads) | write | ScopedPermission | job.submit | owner, admin, editor | Tracking.CreateArtifactUploadsCommand |
+| CompleteArtifacts | [CompleteArtifactsRequest](../types/runtime.md#completeartifactsrequest) → [Empty](../types/common.md#empty) | write | ScopedPermission | job.submit | owner, admin, editor | Tracking.CompleteArtifactsCommand |
 | ReportProgress | [ProgressReport](../types/runtime.md#progressreport) → [Empty](../types/common.md#empty) | write | WorkloadToken |  |  | Ops.ReportProgressCommand |
 | CreateCheckpointUpload | [CheckpointUploadRequest](../types/runtime.md#checkpointuploadrequest) → [CheckpointUpload](../types/runtime.md#checkpointupload) | write | WorkloadToken |  |  | Ops.CreateCheckpointUploadCommand |
 | RegisterCheckpoint | [RegisterCheckpointRequest](../types/runtime.md#registercheckpointrequest) → [Empty](../types/common.md#empty) | write | WorkloadToken |  |  | Ops.RegisterCheckpointCommand |

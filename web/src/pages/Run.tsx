@@ -91,6 +91,9 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
   const lastMetric = o?.metrics[o.metrics.length - 1];
   const hostNames = (attempt?.hostIds ?? []).map((h) => map.data?.hosts.find((x) => x.id === h)?.name ?? h.slice(0, 8));
   const primary = metrics.find((m) => m.key === r.primaryMetricKey);
+  const isCode = r.origin === "code";
+  const codeLocal = isCode && !r.jobId;
+  const codeBeatAge = r.heartbeatAt ? now - secs(r.heartbeatAt) : null;
   const lower = lowerIsBetter(r.primaryMetricKey);
   const beatAge = attempt?.lastHeartbeatAt ? now - secs(attempt.lastHeartbeatAt) : null;
   const failure = st === "failed" ? errorExcerpt(lines) : null;
@@ -104,12 +107,12 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
       <PageHeader
         title={<span className="inline-flex items-center gap-2"><span className="font-normal text-fg-subtle">#{r.number}</span>{r.name}
           <button className="rounded p-1 text-fg-subtle hover:bg-surface-2 hover:text-fg" aria-label={t("Rename")} title={t("Rename")} onClick={() => setRenaming(r.name)}><Pencil className="h-3.5 w-3.5" /></button></span>}
-        subtitle={<span className="flex flex-wrap items-center gap-x-2 gap-y-1"><StateBadge state={st} />{r.recipe} / {r.variant} · {t("task {task}", { task: r.task })}
+        subtitle={<span className="flex flex-wrap items-center gap-x-2 gap-y-1"><StateBadge state={st} />{isCode ? <span className="font-mono text-xs">{r.code?.script || t("Code")}</span> : <>{r.recipe} / {r.variant} · {t("task {task}", { task: r.task })}</>}
           {r.createdBy && <> · {r.createdBy}</>} · <RelTime at={r.createdAt} /></span>}
         actions={<>
           {active && <button className="btn-ghost" onClick={() => setConfirm("stop")}><Square className="h-4 w-4" />{t("Stop")}</button>}
-          <button className="btn-ghost" disabled={cook.isPending} onClick={() => cook.mutate()}><CookingPot className="h-4 w-4" />{t("Cook again from #{n}", { n: r.number })}</button>
-          {r.state === "succeeded" && r.revisionNumber > 0 && (
+          {!isCode && <button className="btn-ghost" disabled={cook.isPending} onClick={() => cook.mutate()}><CookingPot className="h-4 w-4" />{t("Cook again from #{n}", { n: r.number })}</button>}
+          {!isCode && r.state === "succeeded" && r.revisionNumber > 0 && (
             <button className="btn-ghost" disabled={retrain.isPending} onClick={() => retrain.mutate()}>
               <RotateCw className="h-4 w-4" />{t("Train again from #{n}", { n: r.number })}</button>)}
           {r.state === "succeeded" && <button className={versions.length ? "btn-ghost" : "btn-primary"} onClick={() => setRegistering(r.name)}>{versions.length ? t("Register as another model") : t("Register model")}</button>}
@@ -117,7 +120,11 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
         </>} />
       <ErrorBox error={run.error ? errorText(run.error) : stop.error ? errorText(stop.error) : resume.error ? errorText(resume.error) : cook.error ? errorText(cook.error) : retrain.error ? errorText(retrain.error) : null} />
 
-      {st === "failed" && (
+      {st === "failed" && codeLocal && (
+        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <div className="font-medium">{r.hasExitCode ? t("The process exited with code {n}", { n: r.exitCode }) : t("The process stopped sending heartbeats")}</div>
+        </div>)}
+      {st === "failed" && !codeLocal && (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
           <div className="font-medium">{t("Training failed")}{r.attemptCount > 1 ? ` · ${t("after {n} attempts", { n: r.attemptCount })}` : ""}</div>
           {failure?.headline ? <div className="mono mt-1 break-words text-[13px] font-semibold">{failure.headline}</div>
@@ -126,7 +133,7 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
           <div className="mt-2 flex flex-wrap gap-2">
             <button className="btn-ghost h-8" onClick={() => setTab("log")}>{t("Open full log")}</button>
             {(o?.checkpoints.length ?? 0) > 0 && <button className="btn-ghost h-8" disabled={resume.isPending} onClick={() => resume.mutate()}><RotateCw className="h-4 w-4" />{t("Resume from checkpoint")}</button>}
-            <button className="btn-ghost h-8" disabled={cook.isPending} onClick={() => cook.mutate()}><CookingPot className="h-4 w-4" />{t("Cook again from #{n}", { n: r.number })}</button>
+            {!isCode && <button className="btn-ghost h-8" disabled={cook.isPending} onClick={() => cook.mutate()}><CookingPot className="h-4 w-4" />{t("Cook again from #{n}", { n: r.number })}</button>}
           </div>
         </div>)}
       {st === "cancelled" && <div className="mb-4 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-fg-muted">{reasonText(r.stateReason) || t("This run was stopped.")}</div>}
@@ -143,7 +150,11 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
           </span>
         </div>))}
 
-      {active && (
+      {active && codeLocal && (
+        <div className={`card mb-4 text-xs ${codeBeatAge !== null && codeBeatAge > 60 ? "text-danger" : "text-fg-subtle"}`}>
+          {t("Heartbeat")} {codeBeatAge !== null ? t("{n}s ago", { n: Math.max(0, Math.round(codeBeatAge)) }) : "—"} · {t("running on {host}", { host: r.hostName || "—" })}
+        </div>)}
+      {active && !codeLocal && (
         <div className="card mb-4">
           <PhaseBar state={st} progress={r.progress} />
           {r.progress && (detail
@@ -163,14 +174,18 @@ export function RunPage({ ws, id, onBack, go }: { ws: string; id: string; onBack
           sub={primary ? t("best {v} · {n} evaluations", { v: metricText(lower ? primary.min : primary.max), n: Number(primary.points) }) : undefined} />
         <Tile label={t("Duration")} value={dur(runSeconds(r, now))}
           sub={r.startedAt ? t("started {at}", { at: dateTime(r.startedAt) }) : t("not started yet")} />
-        <Tile label={t("Data")} value={r.datasetName ? <button className="truncate text-left hover:text-primary" onClick={() => go(`datasets/${r.datasetId}`)}>{r.datasetName} <span className="text-fg-subtle">v{r.datasetVersionNumber}</span></button> : "—"}
-          sub={backboneOnly(r) ? t("trained from scratch") : t("fine-tuned from pretrained weights")} />
-        <Tile label={t("Machine")} value={`${r.gpus} GPU · ${r.cpus} CPU`}
-          sub={[hostNames.join(", "), r.attemptCount > 1 ? t("{n} attempts", { n: r.attemptCount }) : ""].filter(Boolean).join(" · ") || undefined} />
+        {isCode ? <Tile label={t("Code")} value={<span className="font-mono text-base">{r.code?.commit ? r.code.commit.slice(0, 8) : "—"}</span>}
+          sub={[r.code?.branch, r.code?.dirty ? t("uncommitted changes") : ""].filter(Boolean).join(" · ") || undefined} />
+        : <Tile label={t("Data")} value={r.datasetName ? <button className="truncate text-left hover:text-primary" onClick={() => go(`datasets/${r.datasetId}`)}>{r.datasetName} <span className="text-fg-subtle">v{r.datasetVersionNumber}</span></button> : "—"}
+          sub={backboneOnly(r) ? t("trained from scratch") : t("fine-tuned from pretrained weights")} />}
+        {codeLocal ? <Tile label={t("Machine")} value={r.hostName || "—"} sub={r.code?.python ? `Python ${r.code.python}` : undefined} />
+        : <Tile label={t("Machine")} value={`${r.gpus} GPU · ${r.cpus} CPU`}
+          sub={[hostNames.join(", "), r.attemptCount > 1 ? t("{n} attempts", { n: r.attemptCount }) : ""].filter(Boolean).join(" · ") || undefined} />}
       </div>
 
       <Tabs<Tab> value={tab} onChange={setTab} tabs={[
-        { key: "overview", label: t("Overview") }, { key: "metrics", label: t("Metrics"), count: metrics.length }, { key: "log", label: t("Log") },
+        { key: "overview", label: t("Overview") }, { key: "metrics", label: t("Metrics"), count: metrics.length },
+        ...(codeLocal ? [] : [{ key: "log" as Tab, label: t("Log") }]),
         { key: "config", label: t("Configuration") }, { key: "files", label: t("Files"), count: files.data ? fileList.length : undefined }]} />
 
       {tab === "overview" && <Overview ws={ws} r={r} metrics={metrics} active={active} lines={lines} events={o?.events ?? []} attempts={o?.attempts ?? []}
@@ -256,25 +271,26 @@ function Overview({ ws, r, metrics, active, lines, events, attempts, onLog, onMe
   // Results first (validation / test), then the main training signals; the long tail lives in the Metrics tab.
   // Standard names are lowercase by convention (val/…, train/…); names in other casing are the recipe's own raw series.
   const rank = (k: string) => (k === r.primaryMetricKey ? 0 : /^(val|test|eval)\//.test(k) ? 1 : k === "train/loss" ? 2 : /^(train|lr)\//.test(k) ? 3 : 4);
-  const key = [...metrics].sort((a, b) => rank(a.key) - rank(b.key) || a.key.localeCompare(b.key)).filter((m) => rank(m.key) < 4).slice(0, 8);
+  const key = [...metrics].sort((a, b) => rank(a.key) - rank(b.key) || a.key.localeCompare(b.key)).filter((m) => r.origin === "code" || rank(m.key) < 4).slice(0, 8);
   const tail = lines.slice(-12);
+  const isCode = r.origin === "code" && !r.jobId;
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <div className="space-y-4 xl:col-span-2">
         {points.length > 0 ? <MetricChart title={r.primaryMetricKey} subtitle={t("last {v}", { v: metricText(points[points.length - 1][1]) })} series={[{ name: r.primaryMetricKey, points }]} height={260} />
           : !active && <div className="card text-sm text-fg-muted">{t("This run recorded no {k}.", { k: r.primaryMetricKey || t("result") })}</div>}
-        {(active || runState(r) === "failed") && (
+        {!isCode && (active || runState(r) === "failed") && (
           <div className="card">
             <div className="mb-2 flex items-center justify-between"><div className="text-sm font-medium">{t("Latest log lines")}</div>
               <button className="inline-flex items-center text-xs text-primary" onClick={onLog}>{t("Open full log")}<ChevronRight className="h-3.5 w-3.5" /></button></div>
             <pre className="mono max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[#0b0e13] p-3 text-[11px] leading-[1.45]" style={{ color: "#d5dae3" }}>
               {tail.length === 0 ? t("No log lines yet.") : tail.map((l) => l.text).join("\n")}</pre>
           </div>)}
-        <div className="card">
+        {!isCode && <div className="card">
           <div className="mb-2 flex items-center justify-between"><div className="text-sm font-medium">{t("Timeline")}</div>
             <button className="inline-flex items-center text-xs text-primary" onClick={onJob}>{t("Open job page")}<ChevronRight className="h-3.5 w-3.5" /></button></div>
           <EventList events={events} limit={10} />
-        </div>
+        </div>}
       </div>
       <div className="space-y-4">
         <div className="card">
@@ -369,12 +385,26 @@ function MetricGroup({ ws, runId, name, items, open, onToggle, active, smoothing
 
 /** What exactly was trained: every parameter with its effective value (overrides marked), and where the run came from. */
 function ConfigTab({ ws, r, go }: { ws: string; r: Run; go: (path: string) => void }) {
-  const recipe = useQuery({ queryKey: ["recipe", ws, r.recipe], queryFn: () => api.catalog.getRecipe({ workspaceId: ws, name: r.recipe }) });
+  const isCode = r.origin === "code";
+  const recipe = useQuery({ queryKey: ["recipe", ws, r.recipe], enabled: !isCode, queryFn: () => api.catalog.getRecipe({ workspaceId: ws, name: r.recipe }) });
   const defs = useMemo(() => { try { return (JSON.parse(recipe.data?.manifestJson || "{}").params ?? {}) as Record<string, ParamDef>; } catch { return {}; } }, [recipe.data]);
   const given = useMemo(() => { try { return JSON.parse(r.paramsJson || "{}") as Record<string, unknown>; } catch { return {}; } }, [r.paramsJson]);
   const keys = [...new Set([...Object.keys(defs), ...Object.keys(given)])];
   const [copied, setCopied] = useState(false);
-  const rows: [string, ReactNode][] = [
+  const codeRows: [string, ReactNode][] = [
+    [t("Repository"), <span key="g" className="font-mono text-xs">{r.code?.gitRemote || "—"}</span>],
+    [t("Branch"), r.code?.branch || "—"],
+    [t("Commit"), <span key="c" className="font-mono text-xs">{r.code?.commit ? `${r.code.commit.slice(0, 12)}${r.code.dirty ? " + " + t("uncommitted changes") : ""}` : "—"}</span>],
+    [t("Script"), <span key="s" className="font-mono text-xs">{[r.code?.script, ...(r.code?.argv ?? [])].filter(Boolean).join(" ") || "—"}</span>],
+    [t("Machine"), r.hostName || "—"],
+    ["Python", r.code?.python || "—"],
+    [t("Exit code"), r.hasExitCode ? String(r.exitCode) : "—"],
+    [t("Job"), r.jobId ? <button key="j" className="text-primary" onClick={() => go(`jobs/${r.jobId}`)}>{t("Open job page")}</button> : "—"],
+    [t("Created"), `${dateTime(r.createdAt)}${r.createdBy ? ` · ${r.createdBy}` : ""}`],
+    [t("Ended"), dateTime(r.endedAt)],
+    [t("Run ID"), <ShortId key="i" id={r.id} />],
+  ];
+  const rows: [string, ReactNode][] = isCode ? codeRows : [
     [t("Recipe"), <button key="r" className="text-primary" onClick={() => go(`catalog/${r.recipe}`)}>{recipe.data?.displayName ?? r.recipe}</button>],
     [t("Variant"), r.variant],
     [t("Revision"), r.revisionNumber > 0 ? <span key="v" className="font-mono">r{r.revisionNumber}</span> : <span key="v" className="text-fg-muted">{t("started before revisions existed")}</span>],
@@ -396,11 +426,11 @@ function ConfigTab({ ws, r, go }: { ws: string; r: Run; go: (path: string) => vo
           <button className="btn-ghost h-8 px-2 text-xs" onClick={() => { void navigator.clipboard.writeText(JSON.stringify(given, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 1200); }}>
             <Copy className="h-3.5 w-3.5" />{copied ? t("Copied") : t("Copy JSON")}</button>
         </div>
-        {keys.length === 0 ? <div className="p-4 text-sm text-fg-muted">{t("This recipe has no parameters.")}</div> : (
+        {keys.length === 0 ? <div className="p-4 text-sm text-fg-muted">{isCode ? t("No parameters") : t("This recipe has no parameters.")}</div> : (
           <table className="w-full text-sm">
             <thead className="border-b border-line text-left text-xs text-fg-muted"><tr><th className="px-4 py-2 font-medium">{t("Name")}</th><th className="px-4 py-2 font-medium">{t("Value")}</th><th className="px-4 py-2 font-medium">{t("Default")}</th></tr></thead>
             <tbody>{keys.map((k) => {
-              const d = defs[k] ?? {}, set = given[k] !== undefined, changed = set && String(given[k]) !== String(d.default ?? "");
+              const d = defs[k] ?? {}, set = given[k] !== undefined, changed = set && d.default !== undefined && String(given[k]) !== String(d.default);
               return (
                 <tr key={k} className="border-b border-line last:border-0 align-top">
                   <td className="whitespace-nowrap px-4 py-2 font-mono text-xs">{k}</td>

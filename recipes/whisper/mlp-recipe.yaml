@@ -7,7 +7,7 @@ metadata:
   description: >
     Fine-tune OpenAI Whisper with the transformers seq2seq script. The script was removed from the main branch
     on 2026-10-13 (PR #49357), so the recipe pins tag v5.19.0 — the last tag that still has it.
-  homepage: https://github.com/openai/whisper
+  homepage: https://github.com/huggingface/transformers   # code: transformers example script; weights: openai/whisper-* on Hugging Face
   verification:
     sourcesCheckedAt: "2026-11-17"
     built: false
@@ -21,7 +21,10 @@ source:
     - librosa
     - accelerate
     - tensorboard
-  # the script is fetched from tag v5.19.0 at build time (Dockerfile)
+    - datasets[audio]
+    - soundfile
+  downloads:   # training script of huggingface/transformers, pinned to the commit of tag v5.19.0
+    - {url: "https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/examples/pytorch/speech-recognition/run_speech_recognition_seq2seq.py", path: run_speech_recognition_seq2seq.py}
 license:
   code: MIT (openai/whisper) · Apache-2.0 (transformers example)
   weights: MIT

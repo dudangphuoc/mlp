@@ -21,5 +21,8 @@
 | GET | `/openapi/gateway.json` | OpenApi |  |
 | GET | `/openapi/v1.json` | OpenApi |  |
 | GET | `/overlay/peers` | Overlay |  |
+| ANY | `/v1/debug/{run:guid}/control` | Debug |  |
+| ANY | `/v1/debug/{run:guid}/dev/{connection:guid}` | Debug |  |
+| ANY | `/v1/debug/{run:guid}/remote` | Debug |  |
 | POST | `/v1/deployments/{ws:guid}/{slug}/feedback` | Inference | yes |
 | POST | `/v1/deployments/{ws:guid}/{slug}/predict` | Inference | yes |

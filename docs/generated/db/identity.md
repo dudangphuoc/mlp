@@ -82,6 +82,7 @@ Read by: `Identity/DeleteMember`, `Identity/GetMemberRole`, `Identity/ListMember
 | revoked_at | timestamptz | yes |  |
 | kind | text |  | 'session' |
 | name | text | yes |  |
+| key_workspace_id | uuid | yes |  |
 
 Written by: `Identity/InsertApiKey`, `Identity/InsertSession`, `Identity/RevokeApiKey`, `Identity/RevokeOtherSessions`, `Identity/RevokeSession`
 
@@ -119,5 +120,5 @@ Read by: `Ai/GetRun`, `Ai/ListAudit`, `Ai/ListRuns`, `Identity/CountUsers`, `Ide
 
 Written by: `Identity/InsertWorkspace`, `Identity/RenameWorkspace`
 
-Read by: `Identity/ListMemberships`, `Identity/SlugExists`, `Platform/ListWorkspaceSlugs`
+Read by: `Identity/ListApiKeys`, `Identity/ListMemberships`, `Identity/SlugExists`, `Platform/ListWorkspaceSlugs`
 

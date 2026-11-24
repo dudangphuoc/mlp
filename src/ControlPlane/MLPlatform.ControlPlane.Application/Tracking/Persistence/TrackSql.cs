@@ -54,6 +54,44 @@ public static partial class TrackSql
         Guid? retrainOfRunId, Guid? hostId, CancellationToken ct);
     [SqlQuery("Track/RunExtras.sql")]
     public static partial Task<List<RunExtraRow>> RunExtrasAsync(this IReadSession db, Guid workspaceId, Guid[] ids, CancellationToken ct);
+    [SqlQuery("Track/InsertCodeRun.sql")]
+    public static partial Task InsertCodeRunAsync(this IWriteSession db, Guid id, Guid projectId, Guid workspaceId, string name, Guid userId, string task,
+        string paramsJson, DateTimeOffset now, int number, string hostName, string codeJson, CancellationToken ct);
+    [SqlQuery("Track/InsertRemoteCodeRun.sql")]
+    public static partial Task InsertRemoteCodeRunAsync(this IWriteSession db, Guid id, Guid projectId, Guid workspaceId, string name, Guid jobId, Guid userId,
+        string task, string paramsJson, DateTimeOffset now, int number, int gpus, string hostName, string codeJson, CancellationToken ct);
+    [SqlQuery("Track/InsertCodeSource.sql")]
+    public static partial Task InsertCodeSourceAsync(this IWriteSession db, Guid id, Guid workspaceId, string urlPrefix, string? secretEnc, Guid createdBy,
+        DateTimeOffset now, CancellationToken ct);
+    [SqlQuery("Track/ListCodeSources.sql")]
+    public static partial Task<List<CodeSourceRow>> ListCodeSourcesAsync(this IReadSession db, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Track/DeleteCodeSource.sql")]
+    public static partial Task<long> DeleteCodeSourceAsync(this IWriteSession db, Guid id, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Track/GetCodeRun.sql")]
+    public static partial Task<CodeRunRow?> GetCodeRunAsync(this IReadSession db, Guid id, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Track/TouchCodeRun.sql")]
+    public static partial Task<long> TouchCodeRunAsync(this IWriteSession db, Guid id, Guid workspaceId, DateTimeOffset now, CancellationToken ct);
+    [SqlQuery("Track/FinishCodeRun.sql")]
+    public static partial Task<long> FinishCodeRunAsync(this IWriteSession db, Guid id, Guid workspaceId, string state, int exitCode, DateTimeOffset now, CancellationToken ct);
+    [SqlQuery("Track/SetCodeRunParams.sql")]
+    public static partial Task SetCodeRunParamsAsync(this IWriteSession db, Guid id, Guid workspaceId, string paramsJson, CancellationToken ct);
+    [SqlQuery("Track/ExpireCodeRuns.sql")]
+    public static partial Task<long> ExpireCodeRunsAsync(this IWriteSession db, DateTimeOffset now, DateTimeOffset cutoff, CancellationToken ct);
+    [SqlQuery("Track/AdoptPrimaryMetric.sql")]
+    public static partial Task AdoptPrimaryMetricAsync(this IWriteSession db, Guid id, Guid workspaceId, string key, CancellationToken ct);
+    [SqlQuery("Track/MarkDebugRunCancelled.sql")]
+    public static partial Task MarkDebugRunCancelledAsync(this IWriteSession db, Guid id, Guid workspaceId, DateTimeOffset since, CancellationToken ct);
+    [SqlQuery("Track/InsertCodeEntry.sql")]
+    public static partial Task InsertCodeEntryAsync(this IWriteSession db, Guid id, Guid workspaceId, Guid projectId, string name, string gitRemote, string defaultRef,
+        string script, string machine, int gpus, string image, Guid createdBy, DateTimeOffset now, CancellationToken ct);
+    [SqlQuery("Track/ListCodeEntries.sql")]
+    public static partial Task<List<CodeEntryRow>> ListCodeEntriesAsync(this IReadSession db, Guid workspaceId, Guid projectId, CancellationToken ct);
+    [SqlQuery("Track/GetCodeEntry.sql")]
+    public static partial Task<CodeEntryRow?> GetCodeEntryAsync(this IReadSession db, Guid id, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Track/DeleteCodeEntry.sql")]
+    public static partial Task<long> DeleteCodeEntryAsync(this IWriteSession db, Guid id, Guid workspaceId, CancellationToken ct);
+    [SqlQuery("Track/GetProjectBySlug.sql")]
+    public static partial Task<ProjectRow?> GetProjectBySlugAsync(this IReadSession db, Guid workspaceId, string slug, CancellationToken ct);
     [SqlQuery("Track/InsertRun.sql")]
     public static partial Task InsertRunAsync(this IWriteSession db, Guid id, Guid projectId, Guid workspaceId, string name, Guid jobId,
         Guid userId, string recipe, string variant, string task, string paramsJson, string primaryMetricKey, DateTimeOffset now,

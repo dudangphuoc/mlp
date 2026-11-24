@@ -19,10 +19,10 @@ public static class AuthMiddleware
         {
             var sp = ctx.RequestServices;
             var hash = sp.GetRequiredService<TokenService>().Hash(token);
-            var uid = await sp.GetRequiredService<IReadSession>().GetSessionUserAsync(hash, ctx.RequestAborted);
-            if (uid is { } id)
+            var session = await sp.GetRequiredService<IReadSession>().GetSessionUserAsync(hash, ctx.RequestAborted);
+            if (session is { } s)
             {
-                sp.GetRequiredService<CurrentUser>().SignIn(id, hash);
+                sp.GetRequiredService<CurrentUser>().SignIn(s.UserId, hash, s.WorkspaceId);
             }
         }
         await next();

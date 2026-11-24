@@ -33,6 +33,7 @@ export MLP_AGENT_PIN="$(openssl x509 -in "$STATE/agent-cert.crt" -outform der | 
 export Kestrel__Endpoints__h2__Url=http://0.0.0.0:5080 Kestrel__Endpoints__h2__Protocols=Http2
 export Kestrel__Endpoints__web__Url=http://127.0.0.1:5081 Kestrel__Endpoints__web__Protocols=Http1
 export MLP__Scheduler__Enabled=true MLP__Scheduler__ApiAddressForRay=host.docker.internal:5080 MLP__Scheduler__DefaultWorkloadNetwork=$NET
+export MLP__Scheduler__ApiHttpForWorkloads=http://host.docker.internal:5081
 export MLP__Ray__AutoStartNodes=true MLP__Ray__HeadAddress=mlp-ray-head:6379 MLP__Ray__NodeNetwork=$NET MLP__Ray__MaxCpusPerNode=1
 export MLP__S3__Endpoint=http://127.0.0.1:8333 MLP__S3__AccessKey=mlpdevaccess MLP__S3__SecretKey=mlpdevsecret-change-me
 export MLP__S3__PublicEndpoint=http://127.0.0.1:8333 MLP__S3__WorkloadEndpoint=http://mlp-s3-dev:8333

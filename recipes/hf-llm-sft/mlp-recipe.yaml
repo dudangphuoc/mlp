@@ -11,7 +11,7 @@ metadata:
     built: false
     smokeTested: false
 source:
-  pip: ["trl[peft]==1.18.1", "transformers==5.23.0", "peft==0.21.3", "accelerate==1.16.0", "datasets==5.2.0", "tensorboard"]
+  pip: ["trl[peft]==1.18.1", "transformers==5.23.0", "peft==0.21.3", "accelerate==1.16.0", "datasets==5.2.0", "bitsandbytes", "tensorboard"]
 license:
   code: Apache-2.0
   weights: per the base model's model card

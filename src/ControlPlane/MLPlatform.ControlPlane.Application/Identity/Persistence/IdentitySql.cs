@@ -25,7 +25,7 @@ public static partial class IdentitySql
         DateTimeOffset createdAt, CancellationToken ct);
 
     [SqlQuery("Identity/GetSessionUser.sql")]
-    public static partial Task<Guid?> GetSessionUserAsync(this IReadSession db, string tokenHash, CancellationToken ct);
+    public static partial Task<SessionUserRow?> GetSessionUserAsync(this IReadSession db, string tokenHash, CancellationToken ct);
 
     [SqlQuery("Identity/RevokeSession.sql")]
     public static partial Task RevokeSessionAsync(this IWriteSession db, string tokenHash, DateTimeOffset now, CancellationToken ct);

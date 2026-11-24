@@ -9,7 +9,7 @@ using Empty = MLPlatform.Contracts.V1.Empty;
 namespace MLPlatform.Api.Grpc;
 
 public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client s3,
-    MLPlatform.ControlPlane.Infrastructure.LogStore logs) : TrackingService.TrackingServiceBase
+    MLPlatform.ControlPlane.Infrastructure.LogStore logs, IConfiguration cfg, SecretBox box) : TrackingService.TrackingServiceBase
 {
     private static Guid G(string s, string f) =>
         Guid.TryParse(s, out var g) ? g : throw new ValidationException(new Dictionary<string, string> { [f] = "Invalid UUID" });
@@ -71,6 +71,137 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
             r.Points.Select(p => (p.Key, p.Step, p.Value, p.At is null ? (DateTimeOffset?)null : p.At.ToDateTimeOffset())).ToList()), ctx.CancellationToken);
         return new Empty();
     }
+
+    public override async Task<OpenCodeRunResponse> OpenCodeRun(OpenCodeRunRequest r, ServerCallContext ctx)
+    {
+        var code = r.Code ?? new RunCode();
+        var codeJson = System.Text.Json.JsonSerializer.Serialize(new CodeJson(code.GitRemote, code.Commit, code.Dirty, code.Script, [.. code.Argv], code.Python, code.Branch),
+            CodeJsonContext.Default.CodeJson);
+        var remote = r.Remote is { } rr
+            ? new RemoteCodeRun(rr.Machine, rr.Gpus, rr.Image, rr.SnapshotSha256, rr.Workdir, [.. rr.Command], rr.Env.ToDictionary(), rr.Requirements,
+                code.GitRemote, rr.BaseCommit, [.. rr.Deleted], rr.Data.ToDictionary(),
+                rr.DebugToken.Length > 0 ? new RemoteDebug(rr.DebugToken, rr.DebugParentPid, rr.DebugRoot) : null)
+            : null;
+        var opened = await mediator.Send(new OpenCodeRunCommand(r.Workspace, r.Project, r.Name, r.ParamsJson, r.HostName, codeJson, remote), ctx.CancellationToken);
+        return new OpenCodeRunResponse
+        {
+            Run = await View(opened.WorkspaceId, opened.RunId, ctx), WorkspaceId = opened.WorkspaceId.ToString(),
+            WorkspaceSlug = opened.WorkspaceSlug, ProjectSlug = opened.ProjectSlug,
+            WebUrl = $"{(cfg["PublicUrl"] ?? "").TrimEnd('/')}/w/{opened.WorkspaceSlug}/projects/{opened.ProjectId}/runs/{opened.RunId}",
+        };
+    }
+
+    public override async Task<Empty> HeartbeatCodeRun(GetRunRequest r, ServerCallContext ctx)
+    {
+        await mediator.Send(new HeartbeatCodeRunCommand(G(r.WorkspaceId, "workspace_id"), G(r.RunId, "run_id")), ctx.CancellationToken);
+        return new Empty();
+    }
+
+    public override async Task<Run> FinishCodeRun(FinishCodeRunRequest r, ServerCallContext ctx)
+    {
+        var ws = G(r.WorkspaceId, "workspace_id"); var id = G(r.RunId, "run_id");
+        await mediator.Send(new FinishCodeRunCommand(ws, id, r.ExitCode), ctx.CancellationToken);
+        return await View(ws, id, ctx);
+    }
+
+    public override async Task<Empty> SetCodeRunParams(SetCodeRunParamsRequest r, ServerCallContext ctx)
+    {
+        var workload = WorkloadToken(ctx);
+        var ws = workload is null ? G(r.WorkspaceId, "workspace_id") : Guid.Empty;
+        await mediator.Send(new SetCodeRunParamsCommand(ws, G(r.RunId, "run_id"), r.ParamsJson, workload), ctx.CancellationToken);
+        return new Empty();
+    }
+
+    public override async Task<CodeSnapshotUpload> CreateCodeSnapshotUpload(CreateCodeSnapshotUploadRequest r, ServerCallContext ctx)
+    {
+        var u = await mediator.Send(new CreateCodeSnapshotUploadCommand(r.Workspace, r.Sha256, r.SizeBytes, r.Data), ctx.CancellationToken);
+        return new CodeSnapshotUpload { WorkspaceId = u.WorkspaceId.ToString(), WorkspaceSlug = u.WorkspaceSlug, Exists = u.Exists, Url = u.Url };
+    }
+
+    public override async Task<MatchCodeSourceResponse> MatchCodeSource(MatchCodeSourceRequest r, ServerCallContext ctx) =>
+        new() { UrlPrefix = await mediator.Query(new MatchCodeSourceQuery(r.Workspace, r.GitRemote), ctx.CancellationToken) };
+
+    public override async Task<ListCodeSourcesResponse> ListCodeSources(ListCodeSourcesRequest r, ServerCallContext ctx)
+    {
+        var res = new ListCodeSourcesResponse();
+        res.Sources.AddRange((await mediator.Query(new ListCodeSourcesQuery(G(r.WorkspaceId, "workspace_id")), ctx.CancellationToken)).Select(ToProto));
+        return res;
+    }
+
+    public override async Task<CodeSource> CreateCodeSource(CreateCodeSourceRequest r, ServerCallContext ctx)
+    {
+        var ws = G(r.WorkspaceId, "workspace_id");
+        var id = await mediator.Send(new CreateCodeSourceCommand(ws, r.UrlPrefix, string.IsNullOrWhiteSpace(r.Token) ? null : box.Seal(r.Token.Trim())), ctx.CancellationToken);
+        return (await mediator.Query(new ListCodeSourcesQuery(ws), ctx.CancellationToken)).Where(s => s.Id == id).Select(ToProto).First();
+    }
+
+    public override async Task<Empty> DeleteCodeSource(DeleteCodeSourceRequest r, ServerCallContext ctx)
+    {
+        await mediator.Send(new DeleteCodeSourceCommand(G(r.WorkspaceId, "workspace_id"), G(r.Id, "id")), ctx.CancellationToken);
+        return new Empty();
+    }
+
+    public override async Task<ListCodeEntriesResponse> ListCodeEntries(ListCodeEntriesRequest r, ServerCallContext ctx)
+    {
+        var res = new ListCodeEntriesResponse();
+        res.Entries.AddRange((await mediator.Query(new ListCodeEntriesQuery(G(r.WorkspaceId, "workspace_id"), G(r.ProjectId, "project_id")), ctx.CancellationToken)).Select(ToProto));
+        return res;
+    }
+
+    public override async Task<CodeEntry> CreateCodeEntry(CreateCodeEntryRequest r, ServerCallContext ctx)
+    {
+        var ws = G(r.WorkspaceId, "workspace_id"); var project = G(r.ProjectId, "project_id");
+        var id = await mediator.Send(new CreateCodeEntryCommand(ws, project, r.Name, r.GitRemote, r.Ref, r.Script, r.Machine, r.Gpus, r.Image), ctx.CancellationToken);
+        return (await mediator.Query(new ListCodeEntriesQuery(ws, project), ctx.CancellationToken)).Where(e => e.Id == id).Select(ToProto).First();
+    }
+
+    public override async Task<Empty> DeleteCodeEntry(DeleteCodeEntryRequest r, ServerCallContext ctx)
+    {
+        await mediator.Send(new DeleteCodeEntryCommand(G(r.WorkspaceId, "workspace_id"), G(r.Id, "id")), ctx.CancellationToken);
+        return new Empty();
+    }
+
+    public override async Task<Run> RunCodeEntry(RunCodeEntryRequest r, ServerCallContext ctx)
+    {
+        var ws = G(r.WorkspaceId, "workspace_id");
+        var opened = await mediator.Send(new RunCodeEntryCommand(ws, G(r.EntryId, "entry_id"), r.Ref, r.Machine, r.Params.ToDictionary()), ctx.CancellationToken);
+        return await View(ws, opened.RunId, ctx);
+    }
+
+    private static CodeEntry ToProto(CodeEntryRow e) => new()
+    {
+        Id = e.Id.ToString(), ProjectId = e.ProjectId.ToString(), Name = e.Name, GitRemote = e.GitRemote, Ref = e.Ref, Script = e.Script, Machine = e.Machine,
+        Gpus = e.Gpus, Image = e.Image, CreatedAt = Timestamp.FromDateTimeOffset(e.CreatedAt),
+    };
+
+    private static CodeSource ToProto(CodeSourceRow s) => new()
+    {
+        Id = s.Id.ToString(), UrlPrefix = s.UrlPrefix, HasToken = s.SecretEnc is not null, CreatedAt = Timestamp.FromDateTimeOffset(s.CreatedAt),
+    };
+
+    public override async Task<ResolvedModel> ResolveModelRef(ResolveRefRequest r, ServerCallContext ctx)
+    {
+        var workload = WorkloadToken(ctx);
+        var m = await mediator.Send(new ResolveModelRefCommand(workload is null ? G(r.WorkspaceId, "workspace_id") : Guid.Empty,
+            workload is null ? null : G(r.RunId, "run_id"), workload, r.Ref), ctx.CancellationToken);
+        var res = new ResolvedModel { Repo = m.Repo, Revision = m.Revision };
+        res.Files.AddRange(m.Files.Select(f => new ResolvedModelFile
+            { Path = f.Path, SizeBytes = f.Size, Url = f.Url, Content = f.Content is null ? Google.Protobuf.ByteString.Empty : Google.Protobuf.ByteString.CopyFrom(f.Content) }));
+        return res;
+    }
+
+    public override async Task<ResolvedDataset> ResolveDataset(ResolveRefRequest r, ServerCallContext ctx)
+    {
+        var workload = WorkloadToken(ctx);
+        var d = await mediator.Send(new ResolveCodeDatasetCommand(workload is null ? G(r.WorkspaceId, "workspace_id") : Guid.Empty,
+            workload is null ? null : G(r.RunId, "run_id"), workload, r.Ref), ctx.CancellationToken);
+        var res = new ResolvedDataset { VersionId = d.VersionId.ToString(), Name = d.Name, Version = d.Version };
+        res.Files.AddRange(d.Files.Select(f => new ResolvedDatasetFile { Path = f.Path, SizeBytes = f.Size, Url = f.Url }));
+        return res;
+    }
+
+    private static string? WorkloadToken(ServerCallContext ctx) =>
+        ctx.RequestHeaders.GetValue("authorization") is { } h && h.StartsWith("Bearer mlpj_", StringComparison.Ordinal) ? h[7..] : null;
 
     public override async Task<GetMetricsResponse> GetMetrics(GetMetricsRequest r, ServerCallContext ctx)
     {
@@ -274,6 +405,17 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
         return res;
     }
 
+    private static void AddCodeRun(Run run, RunExtraRow x)
+    {
+        run.Origin = x.Origin; run.HostName = x.HostName ?? "";
+        if (x.ExitCode is { } exit) { run.ExitCode = exit; run.HasExitCode = true; }
+        if (x.HeartbeatAt is { } beat) run.HeartbeatAt = Timestamp.FromDateTimeOffset(beat);
+        if (x.Code is not { Length: > 0 } json || System.Text.Json.JsonSerializer.Deserialize(json, CodeJsonContext.Default.CodeJson) is not { } code) return;
+        run.Code = new RunCode { GitRemote = code.GitRemote ?? "", Commit = code.Commit ?? "", Dirty = code.Dirty, Script = code.Script ?? "",
+            Python = code.Python ?? "", Branch = code.Branch ?? "" };
+        run.Code.Argv.AddRange(code.Argv ?? []);
+    }
+
     private static Run ToProto(RunView v)
     {
         var r = v.Run;
@@ -292,8 +434,10 @@ public sealed class TrackingGrpc(IMediator mediator, MLPlatform.Storage.S3Client
         {
             run.RevisionNumber = x.RevisionNumber ?? 0; run.TrainKind = x.TrainKind ?? ""; run.RetrainOfNumber = x.RetrainOfNumber ?? 0;
             run.HostId = x.HostId?.ToString() ?? "";
+            AddCodeRun(run, x);
         }
         if (v.Job?.StartedAt is { } started) run.StartedAt = Timestamp.FromDateTimeOffset(started);
+        else if (v.Extra?.Origin == "code") run.StartedAt = run.CreatedAt;
         if (r.EndedAt is { } ended) run.EndedAt = Timestamp.FromDateTimeOffset(ended);
         if (!RunRules.Finished(r.State) && v.Job?.Progress is { } pj && System.Text.Json.Nodes.JsonNode.Parse(pj) is System.Text.Json.Nodes.JsonObject p)
         {

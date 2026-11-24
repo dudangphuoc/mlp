@@ -283,6 +283,249 @@
 | start_kind | 31 | string |
 | retrain_of_number | 32 | int32 |
 | host_id | 33 | string |
+| origin | 34 | string |
+| host_name | 35 | string |
+| code | 36 | RunCode |
+| exit_code | 37 | int32 |
+| has_exit_code | 38 | bool |
+| heartbeat_at | 39 | Timestamp |
+
+## RunCode
+
+| Field | # | Type |
+|---|---:|---|
+| git_remote | 1 | string |
+| commit | 2 | string |
+| dirty | 3 | bool |
+| script | 4 | string |
+| argv | 5 | repeated string |
+| python | 6 | string |
+| branch | 7 | string |
+
+## OpenCodeRunRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace | 1 | string |
+| project | 2 | string |
+| name | 3 | string |
+| params_json | 4 | string |
+| host_name | 5 | string |
+| code | 6 | RunCode |
+| remote | 7 | RemoteRun |
+
+## RemoteRun
+
+| Field | # | Type |
+|---|---:|---|
+| machine | 1 | string |
+| gpus | 2 | int32 |
+| image | 3 | string |
+| snapshot_sha256 | 4 | string |
+| workdir | 5 | string |
+| command | 6 | repeated string |
+| env | 7 | map<string, string> |
+| requirements | 8 | string |
+| base_commit | 9 | string |
+| deleted | 10 | repeated string |
+| data | 11 | map<string, string> |
+| debug_token | 12 | string |
+| debug_parent_pid | 13 | int32 |
+| debug_root | 14 | string |
+
+## ResolveRefRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| run_id | 2 | string |
+| ref | 3 | string |
+
+## ResolvedModelFile
+
+| Field | # | Type |
+|---|---:|---|
+| path | 1 | string |
+| size_bytes | 2 | int64 |
+| url | 3 | string |
+| content | 4 | bytes |
+
+## ResolvedModel
+
+| Field | # | Type |
+|---|---:|---|
+| repo | 1 | string |
+| revision | 2 | string |
+| files | 3 | repeated ResolvedModelFile |
+
+## ResolvedDatasetFile
+
+| Field | # | Type |
+|---|---:|---|
+| path | 1 | string |
+| size_bytes | 2 | int64 |
+| url | 3 | string |
+
+## ResolvedDataset
+
+| Field | # | Type |
+|---|---:|---|
+| version_id | 1 | string |
+| name | 2 | string |
+| version | 3 | int32 |
+| files | 4 | repeated ResolvedDatasetFile |
+
+## MatchCodeSourceRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace | 1 | string |
+| git_remote | 2 | string |
+
+## MatchCodeSourceResponse
+
+| Field | # | Type |
+|---|---:|---|
+| url_prefix | 1 | string |
+
+## CodeSource
+
+| Field | # | Type |
+|---|---:|---|
+| id | 1 | string |
+| url_prefix | 2 | string |
+| has_token | 3 | bool |
+| created_at | 4 | Timestamp |
+
+## ListCodeSourcesRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+
+## ListCodeSourcesResponse
+
+| Field | # | Type |
+|---|---:|---|
+| sources | 1 | repeated CodeSource |
+
+## CreateCodeSourceRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| url_prefix | 2 | string |
+| token | 3 | string |
+
+## DeleteCodeSourceRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| id | 2 | string |
+
+## CodeEntry
+
+| Field | # | Type |
+|---|---:|---|
+| id | 1 | string |
+| project_id | 2 | string |
+| name | 3 | string |
+| git_remote | 4 | string |
+| ref | 5 | string |
+| script | 6 | string |
+| machine | 7 | string |
+| gpus | 8 | int32 |
+| image | 9 | string |
+| created_at | 10 | Timestamp |
+
+## ListCodeEntriesRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| project_id | 2 | string |
+
+## ListCodeEntriesResponse
+
+| Field | # | Type |
+|---|---:|---|
+| entries | 1 | repeated CodeEntry |
+
+## CreateCodeEntryRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| project_id | 2 | string |
+| name | 3 | string |
+| git_remote | 4 | string |
+| ref | 5 | string |
+| script | 6 | string |
+| machine | 7 | string |
+| gpus | 8 | int32 |
+| image | 9 | string |
+
+## DeleteCodeEntryRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| id | 2 | string |
+
+## RunCodeEntryRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| entry_id | 2 | string |
+| ref | 3 | string |
+| machine | 4 | string |
+| params | 5 | map<string, string> |
+
+## CreateCodeSnapshotUploadRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace | 1 | string |
+| sha256 | 2 | string |
+| size_bytes | 3 | int64 |
+| data | 4 | bool |
+
+## CodeSnapshotUpload
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| workspace_slug | 2 | string |
+| exists | 3 | bool |
+| url | 4 | string |
+
+## OpenCodeRunResponse
+
+| Field | # | Type |
+|---|---:|---|
+| run | 1 | Run |
+| workspace_id | 2 | string |
+| workspace_slug | 3 | string |
+| project_slug | 4 | string |
+| web_url | 5 | string |
+
+## FinishCodeRunRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| run_id | 2 | string |
+| exit_code | 3 | int32 |
+
+## SetCodeRunParamsRequest
+
+| Field | # | Type |
+|---|---:|---|
+| workspace_id | 1 | string |
+| run_id | 2 | string |
+| params_json | 3 | string |
 
 ## ListRunsRequest
 

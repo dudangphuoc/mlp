@@ -11,7 +11,7 @@ metadata:
     built: false
     smokeTested: false
 source:
-  pip: ["ultralytics==8.4.215"]
+  pip: ["ultralytics==8.4.215", "onnx", "onnxslim"]
 license:
   code: AGPL-3.0
   weights: AGPL-3.0

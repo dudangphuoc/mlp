@@ -8,6 +8,7 @@ import { CHART_COLORS, MetricChart, metricText } from "../components/MetricChart
 import { dur, ProgressLine, reasonText, secs, useNow } from "../components/JobProgress";
 import { cookAgain, RecipeCanvas } from "../components/RecipeCanvas";
 import { RunComparison } from "../components/RunComparison";
+import { CodeEntries } from "../components/CodeEntries";
 import { translate as t } from "../i18n";
 import { useCrumb } from "../lib/crumbs";
 import { useSticky } from "../lib/persist";
@@ -81,10 +82,10 @@ export const runSeconds = (r: Run, now: number) => (r.startedAt ? (r.endedAt ? s
 export const lowerIsBetter = (key: string) => /(loss|error|wer|cer|rmse|mae|mse|perplexity)/i.test(key);
 /** "Fine-tune" or "Train again", plus the starting point when it is not the variant's pretrained weights. */
 export const backboneOnly = (r: Run) => r.startKind === "backbone" || (!r.startKind && r.fromScratch);   // runs from before revisions only carry from_scratch
-export const runKind = (r: Run) => `${r.trainKind === "retrain" ? t("Train again") + (r.retrainOfNumber > 0 ? ` #${r.retrainOfNumber}` : "") : t("Fine-tune")}${backboneOnly(r) ? ` · ${t("backbone only")}` : ""}`;
+export const runKind = (r: Run) => r.origin === "code" ? t("Code") : `${r.trainKind === "retrain" ? t("Train again") + (r.retrainOfNumber > 0 ? ` #${r.retrainOfNumber}` : "") : t("Fine-tune")}${backboneOnly(r) ? ` · ${t("backbone only")}` : ""}`;
 
-type PTab = "recipe" | "runs" | "models";
-const PTABS: PTab[] = ["recipe", "runs", "models"];
+type PTab = "recipe" | "repo" | "runs" | "models";
+const PTABS: PTab[] = ["recipe", "repo", "runs", "models"];
 
 function parseParams(json: string): Record<string, unknown> {
   try { const o = JSON.parse(json || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; }
@@ -196,7 +197,7 @@ export function ProjectPage({ ws, id, onBack, onRun, go }: { ws: string; id: str
           {best && <> · {t("best {k} {v} (run #{n})", { k: primaryKey, v: metricText(best.primaryMetricValue), n: best.number })}</>}</span>}
         actions={tab !== "recipe" ? <button className="btn-primary" onClick={() => setTab("recipe")}><Play className="h-4 w-4" />{t("New training")}</button> : undefined} />
       <ErrorBox error={runs.error ? errorText(runs.error) : stop.error ? errorText(stop.error) : cook.error ? errorText(cook.error) : null} onRetry={() => void runs.refetch()} />
-      <Tabs<PTab> value={tab} onChange={setTab} tabs={[{ key: "recipe", label: t("Recipe") }, { key: "runs", label: t("Run history"), count: list.length }, { key: "models", label: t("Models") }]} />
+      <Tabs<PTab> value={tab} onChange={setTab} tabs={[{ key: "recipe", label: t("Recipe") }, { key: "repo", label: "Repo" }, { key: "runs", label: t("Run history"), count: list.length }, { key: "models", label: t("Models") }]} />
 
       {tab === "recipe" && (
         <>
@@ -208,6 +209,8 @@ export function ProjectPage({ ws, id, onBack, onRun, go }: { ws: string; id: str
             </button>))}
           {project && !runs.isLoading ? <RecipeCanvas ws={ws} projectId={id} task={project.task} runs={list} go={go} onStarted={(run) => onRun(run.id)} /> : <div className="skeleton h-64" />}
         </>)}
+
+      {tab === "repo" && <CodeEntries ws={ws} projectId={id} onRun={onRun} />}
 
       {tab === "models" && <ProjectModels ws={ws} projectId={id} runs={list} onRun={onRun} go={go} />}
 
@@ -236,7 +239,7 @@ export function ProjectPage({ ws, id, onBack, onRun, go }: { ws: string; id: str
                 <div className="min-w-0">
                   <div className="flex items-center gap-2"><span className="tabular-nums text-fg-subtle">#{r.number}</span><span className="truncate font-medium">{r.name}</span>
                     {best?.id === r.id && scored.length > 1 && <span className="badge bg-emerald-100 text-emerald-700">{t("best")}</span>}</div>
-                  <div className="text-xs text-fg-muted">{r.recipe} / {r.variant}</div>
+                  <div className="text-xs text-fg-muted">{r.origin === "code" ? <span className="font-mono">{r.code?.script || r.hostName}</span> : <>{r.recipe} / {r.variant}</>}</div>
                 </div>) },
               { key: "state", header: t("Status"), value: (r) => runState(r), cell: (r) => <RunStatus r={r} /> },
               { key: "metric", header: primaryKey || t("Result"), align: "right", value: (r) => (r.hasPrimaryMetric ? r.primaryMetricValue : undefined),

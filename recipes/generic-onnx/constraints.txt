@@ -1,0 +1,21 @@
+# Exact versions for every pip install in generic-onnx/Dockerfile (PIP_CONSTRAINT); base image nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 (Ubuntu python3).
+# Regenerate with tools/recipe-locks/lock.py after changing the Dockerfile's packages.
+coloredlogs==15.0.1
+flatbuffers==25.12.19
+humanfriendly==10.0
+mpmath==1.3.0
+numpy==2.2.6
+nvidia-cuda-runtime-cu12==12.9.79
+onnx==1.18.0
+onnxruntime-gpu==1.22.0
+openvino-telemetry==2025.2.0
+openvino==2025.0.0
+packaging==26.3
+pillow==13.0.0
+protobuf==7.36.2
+psutil==7.0.0
+sympy==1.14.0
+tensorrt-cu12-bindings==10.7.0
+tensorrt-cu12-libs==10.7.0
+tensorrt-cu12==10.7.0
+typing-extensions==4.16.0

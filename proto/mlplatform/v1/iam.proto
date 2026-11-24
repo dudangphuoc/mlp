@@ -103,9 +103,10 @@ message Invitation { string token = 1; google.protobuf.Timestamp expires_at = 2;
 
 message UpdateProfileRequest { string display_name = 1; }
 message ChangePasswordRequest { string current_password = 1; string new_password = 2; }
-message ApiKey { string id = 1; string name = 2; google.protobuf.Timestamp created_at = 3; google.protobuf.Timestamp last_used_at = 4; }
+message ApiKey { string id = 1; string name = 2; google.protobuf.Timestamp created_at = 3; google.protobuf.Timestamp last_used_at = 4;
+  string workspace_id = 5; string workspace_name = 6; }   // empty workspace = every workspace of the owner
 message ListApiKeysResponse { repeated ApiKey keys = 1; }
-message CreateApiKeyRequest { string name = 1; }
+message CreateApiKeyRequest { string name = 1; string workspace_id = 2; }   // optional: limit the key to one workspace
 message CreatedApiKey { ApiKey key = 1; string token = 2; }   // the mlpk_… token is shown only once
 message RevokeApiKeyRequest { string id = 1; }
 message UpdateWorkspaceRequest { string workspace_id = 1; string name = 2; }

@@ -51,6 +51,7 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
             if (await PrepareRecipeImageAsync(a, alloc.HostId, session, spec.Image, isServe, ct) is not { } tag) return false;
             sw.Image = tag;
         }
+        else if (!await PrepareCodeEnvAsync(sw, a, spec, session, ct)) return false;
         if (spec.Env.TryGetValue("MLP_SHM_GB", out var shmGb) && ulong.TryParse(shmGb, out var gb) && gb > 0) sw.ShmBytes = gb << 30;
         if (isNotebook && !await ConfigureNotebookAsync(sw, a, spec, alloc, session, ct)) return false;
         sw.Command.AddRange(spec.Command);
@@ -73,6 +74,28 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         }
         await ReportStartedAsync(a, alloc, res.Endpoint, isNotebook, isServe, servePort, ct);
         return true;
+    }
+
+    private async Task<bool> BuildCodeEnvAsync(AttemptRow a, AgentSession session, ImageBuild build, CancellationToken ct)
+    {
+        var built = await session.SendCommandAsync(new AgentCommand { ImageBuild = build }, TimeSpan.FromMinutes(50), ct);
+        if (built.Ok) return true;
+        await FailAsync(a.Id, built.ErrorReason, "Environment image build failed: " + built.Message, ct);
+        return false;
+    }
+
+    private async Task<bool> PrepareCodeEnvAsync(ContainerSpec sw, AttemptRow a, JobSpecDto spec, AgentSession session, CancellationToken ct)
+    {
+        if (CodeEnvImages.Build(spec.Image, spec.Env) is not { } envBuild) return true;
+        if (!await BuildCodeEnvAsync(a, session, envBuild, ct)) return false;
+        AddCodeCaches(sw, a.WorkspaceId);
+        return true;
+    }
+
+    private static void AddCodeCaches(ContainerSpec sw, Guid workspaceId)
+    {
+        sw.Mounts.Add(new Mount { Source = $"mlp-models-{workspaceId:N}", Target = "/mnt/mlp-models" });
+        sw.Mounts.Add(new Mount { Source = $"mlp-codedata-{workspaceId:N}", Target = "/mnt/mlp-data" });
     }
 
     private ContainerSpec BaseSpec(AttemptRow a, JobSpecDto spec, AllocationRow alloc, int nodeRank)
@@ -140,6 +163,7 @@ public sealed class WorkloadLauncher(AgentRegistry agents, IServiceScopeFactory 
         sw.Env["MLP_JOB_TOKEN"] = workloadToken;
         using (var act = MLPlatform.Cqrs.Pipeline.Source.StartActivity("LaunchAttempt")) if (act?.Id is { } tp) sw.Env["TRACEPARENT"] = tp;
         sw.Env["MLP_API"] = cfg["Scheduler:ApiAddressForWorkloads"] ?? cfg["Scheduler:ApiAddressForRay"] ?? "10.88.0.1:5080";
+        sw.Env["MLP_API_HTTP"] = cfg["Scheduler:ApiHttpForWorkloads"] ?? "http://" + sw.Env["MLP_API"].Split(':')[0] + ":5081";
     }
 
     private async Task AddRunOutputAsync(ContainerSpec sw, AttemptRow a, Guid hostId, Guid runId, CancellationToken ct)

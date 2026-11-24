@@ -11,7 +11,7 @@ metadata:
     built: false
     smokeTested: false
 source:
-  pip: ["rfdetr[train,onnx]==1.12.1"]
+  pip: ["rfdetr[train,onnx]==1.12.1", "tensorboard"]
 license:
   code: Apache-2.0
   weights: Apache-2.0 (Nano/Small/Medium/Large, all Seg, Keypoint Preview) · PML-1.0 (Atto/Femto/Pico/XL/2XL)

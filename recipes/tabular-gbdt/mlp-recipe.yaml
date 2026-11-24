@@ -28,7 +28,7 @@ tasks: [tabular-classify, tabular-regress]
 environment:
   dockerfile: Dockerfile
   gpu: optional            # XGBoost device=cuda when a GPU is granted
-  python: "3.11"
+  python: "3.12"
 data:
   input: parquet                  # {split}.parquet + schema.json (task, target, features) — M04 S-04-9
 variants:

@@ -58,7 +58,7 @@ public sealed class RuntimeGrpc(IMediator mediator, WorkloadLauncher launcher) :
     public override async Task<ArtifactUploads> CreateArtifactUploads(CreateArtifactUploadsRequest r, ServerCallContext ctx)
     {
         if (!Guid.TryParse(r.RunId, out var run)) throw new ValidationException(new Dictionary<string, string> { ["run_id"] = "Invalid UUID" });
-        var urls = await mediator.Send(new MLPlatform.ControlPlane.Application.Tracking.CreateArtifactUploadsCommand(Token(ctx), run, [.. r.Paths]), ctx.CancellationToken);
+        var urls = await mediator.Send(new MLPlatform.ControlPlane.Application.Tracking.CreateArtifactUploadsCommand(WorkloadTokenOrNull(ctx), run, [.. r.Paths]), ctx.CancellationToken);
         var res = new ArtifactUploads();
         res.Urls.AddRange(urls);
         return res;
@@ -67,8 +67,10 @@ public sealed class RuntimeGrpc(IMediator mediator, WorkloadLauncher launcher) :
     public override async Task<Empty> CompleteArtifacts(CompleteArtifactsRequest r, ServerCallContext ctx)
     {
         if (!Guid.TryParse(r.RunId, out var run)) throw new ValidationException(new Dictionary<string, string> { ["run_id"] = "Invalid UUID" });
-        await mediator.Send(new MLPlatform.ControlPlane.Application.Tracking.CompleteArtifactsCommand(Token(ctx), run,
+        await mediator.Send(new MLPlatform.ControlPlane.Application.Tracking.CompleteArtifactsCommand(WorkloadTokenOrNull(ctx), run,
             r.Files.Select(f => (f.Path, f.SizeBytes)).ToList()), ctx.CancellationToken);
         return new Empty();
     }
+
+    private static string? WorkloadTokenOrNull(ServerCallContext ctx) => Token(ctx) is { } t && t.StartsWith("mlpj_", StringComparison.Ordinal) ? t : null;
 }

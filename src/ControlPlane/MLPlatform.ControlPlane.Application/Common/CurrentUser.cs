@@ -8,7 +8,10 @@ public sealed class CurrentUser : ICurrentUser
 
     public string? SessionTokenHash { get; private set; }
 
-    public void SignIn(Guid userId, string sessionTokenHash) => (UserId, SessionTokenHash) = (userId, sessionTokenHash);
+    public Guid? KeyWorkspaceId { get; private set; }
+
+    public void SignIn(Guid userId, string sessionTokenHash, Guid? keyWorkspaceId = null) =>
+        (UserId, SessionTokenHash, KeyWorkspaceId) = (userId, sessionTokenHash, keyWorkspaceId);
 
     public void ActAs(Guid userId) => UserId = userId;
 }

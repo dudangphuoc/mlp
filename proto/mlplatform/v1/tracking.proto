@@ -14,6 +14,21 @@ service TrackingService {
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
   rpc GetRun(GetRunRequest) returns (Run);
   rpc LogMetrics(LogMetricsRequest) returns (Empty);            // user (SDK) or mlpj_ job token (shim)
+  rpc OpenCodeRun(OpenCodeRunRequest) returns (OpenCodeRunResponse);     // SDK: a run of the developer's own code; project made on first use
+  rpc HeartbeatCodeRun(GetRunRequest) returns (Empty);                   // SDK: the process is alive (missing for 90 s → failed)
+  rpc FinishCodeRun(FinishCodeRunRequest) returns (Run);                 // SDK: the process ended with this exit code
+  rpc SetCodeRunParams(SetCodeRunParamsRequest) returns (Empty);         // SDK: parameters the code declared
+  rpc CreateCodeSnapshotUpload(CreateCodeSnapshotUploadRequest) returns (CodeSnapshotUpload);   // SDK: upload target for the code to run remotely
+  rpc MatchCodeSource(MatchCodeSourceRequest) returns (MatchCodeSourceResponse);  // SDK: can the server fetch this git remote itself?
+  rpc ResolveModelRef(ResolveRefRequest) returns (ResolvedModel);           // SDK: hf://owner/name[@rev][#file=path] → commit + download links
+  rpc ResolveDataset(ResolveRefRequest) returns (ResolvedDataset);          // SDK: dataset[@N] → version + download links
+  rpc ListCodeSources(ListCodeSourcesRequest) returns (ListCodeSourcesResponse);   // git URL prefixes the server fetches code from
+  rpc CreateCodeSource(CreateCodeSourceRequest) returns (CodeSource);
+  rpc DeleteCodeSource(DeleteCodeSourceRequest) returns (Empty);
+  rpc ListCodeEntries(ListCodeEntriesRequest) returns (ListCodeEntriesResponse);   // repository scripts startable from a project
+  rpc CreateCodeEntry(CreateCodeEntryRequest) returns (CodeEntry);
+  rpc DeleteCodeEntry(DeleteCodeEntryRequest) returns (Empty);
+  rpc RunCodeEntry(RunCodeEntryRequest) returns (Run);                     // ref → commit, fetched by the server, run on a cluster machine
   rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
   // Depth pass (D-41): everything a person needs to follow, stop, tidy up and reuse a run from its own page.
   rpc ListMetricKeys(GetRunRequest) returns (ListMetricKeysResponse);    // one row per metric, no points
@@ -208,7 +223,76 @@ message Run {
   string start_kind = 31;                   // pretrained | backbone
   int32 retrain_of_number = 32;
   string host_id = 33;                      // machine the run was pinned to, if any
+  string origin = 34;                       // recipe | code (opened by the SDK from the developer's own code)
+  string host_name = 35;                    // code runs: the machine the code ran on
+  RunCode code = 36;                        // code runs: where the code came from
+  int32 exit_code = 37;
+  bool has_exit_code = 38;
+  google.protobuf.Timestamp heartbeat_at = 39;
 }
+message RunCode {
+  string git_remote = 1;                    // credentials stripped
+  string commit = 2;
+  bool dirty = 3;                           // uncommitted or untracked changes
+  string script = 4;                        // relative to the repository root
+  repeated string argv = 5;
+  string python = 6;
+  string branch = 7;
+}
+message OpenCodeRunRequest {
+  string workspace = 1;                     // slug or id; empty = the API key's workspace or the caller's only one
+  string project = 2;                       // slug; created on first use
+  string name = 3;
+  string params_json = 4;
+  string host_name = 5;
+  RunCode code = 6;
+  RemoteRun remote = 7;                     // set: run the uploaded code on a cluster machine instead of here
+}
+message RemoteRun {
+  string machine = 1;                       // machine name, or "auto"
+  int32 gpus = 2;
+  string image = 3;                         // base image; empty = platform default
+  string snapshot_sha256 = 4;
+  string workdir = 5;                       // working folder relative to the snapshot root
+  repeated string command = 6;              // e.g. ["python", "train.py", "--lr", "1e-4"]
+  map<string, string> env = 7;              // forwarded variables (MLP_* are reserved)
+  string requirements = 8;                  // requirements.txt content, installed into the environment image
+  string base_commit = 9;                   // set: the snapshot holds only changed files; the server fetches this commit of code.git_remote
+  repeated string deleted = 10;             // files deleted since base_commit
+  map<string, string> data = 11;            // local data folder as written in the code → SHA-256 of its uploaded archive
+  string debug_token = 12;                  // set: F5 debug; the IDE adapter's access token, the code runs under debugpy through the relay
+  int32 debug_parent_pid = 13;              // the developer's process the remote one joins as a subprocess
+  string debug_root = 14;                   // repository root on the developer's machine (path mapping)
+}
+message ResolveRefRequest { string workspace_id = 1; string run_id = 2; string ref = 3; }   // run_id with a job token from inside a run
+message ResolvedModelFile { string path = 1; int64 size_bytes = 2; string url = 3; bytes content = 4; }   // content: small private files without a shareable link
+message ResolvedModel { string repo = 1; string revision = 2; repeated ResolvedModelFile files = 3; }
+message ResolvedDatasetFile { string path = 1; int64 size_bytes = 2; string url = 3; }
+message ResolvedDataset { string version_id = 1; string name = 2; int32 version = 3; repeated ResolvedDatasetFile files = 4; }
+message MatchCodeSourceRequest { string workspace = 1; string git_remote = 2; }
+message MatchCodeSourceResponse { string url_prefix = 1; }   // empty = not covered: upload every file
+message CodeSource { string id = 1; string url_prefix = 2; bool has_token = 3; google.protobuf.Timestamp created_at = 4; }
+message ListCodeSourcesRequest { string workspace_id = 1; }
+message ListCodeSourcesResponse { repeated CodeSource sources = 1; }
+message CreateCodeSourceRequest { string workspace_id = 1; string url_prefix = 2; string token = 3; }
+message DeleteCodeSourceRequest { string workspace_id = 1; string id = 2; }
+message CodeEntry {
+  string id = 1; string project_id = 2; string name = 3; string git_remote = 4; string ref = 5; string script = 6;
+  string machine = 7; int32 gpus = 8; string image = 9; google.protobuf.Timestamp created_at = 10;
+}
+message ListCodeEntriesRequest { string workspace_id = 1; string project_id = 2; }
+message ListCodeEntriesResponse { repeated CodeEntry entries = 1; }
+message CreateCodeEntryRequest {
+  string workspace_id = 1; string project_id = 2; string name = 3; string git_remote = 4; string ref = 5; string script = 6;
+  string machine = 7; int32 gpus = 8; string image = 9;
+}
+message DeleteCodeEntryRequest { string workspace_id = 1; string id = 2; }
+message RunCodeEntryRequest { string workspace_id = 1; string entry_id = 2; string ref = 3; string machine = 4; map<string, string> params = 5; }
+message CreateCodeSnapshotUploadRequest { string workspace = 1; string sha256 = 2; int64 size_bytes = 3; bool data = 4; }   // data: a local data folder (up to 5 GB)
+message CodeSnapshotUpload { string workspace_id = 1; string workspace_slug = 2; bool exists = 3; string url = 4; }
+message OpenCodeRunResponse { Run run = 1; string workspace_id = 2; string workspace_slug = 3; string project_slug = 4; string web_url = 5; }
+message FinishCodeRunRequest { string workspace_id = 1; string run_id = 2; int32 exit_code = 3; }
+message SetCodeRunParamsRequest { string workspace_id = 1; string run_id = 2; string params_json = 3; }
 message ListRunsRequest { string workspace_id = 1; string project_id = 2; }
 message ListRunsResponse { repeated Run runs = 1; }
 message GetRunRequest { string workspace_id = 1; string run_id = 2; }

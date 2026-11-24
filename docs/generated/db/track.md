@@ -2,6 +2,42 @@
 
 # Database schema `track`
 
+## track.code_entries
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| id | uuid |  |  |
+| workspace_id | uuid |  |  |
+| project_id | uuid |  |  |
+| name | text |  |  |
+| git_remote | text |  |  |
+| ref | text |  |  |
+| script | text |  |  |
+| machine | text |  |  |
+| gpus | int |  |  |
+| image | text |  |  |
+| created_by | uuid |  |  |
+| created_at | timestamptz |  |  |
+
+Written by: `Track/DeleteCodeEntry`, `Track/InsertCodeEntry`
+
+Read by: `Track/DeleteCodeEntry`, `Track/GetCodeEntry`, `Track/ListCodeEntries`
+
+## track.code_sources
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| id | uuid |  |  |
+| workspace_id | uuid |  |  |
+| url_prefix | text |  |  |
+| secret_enc | text | yes |  |
+| created_by | uuid |  |  |
+| created_at | timestamptz |  |  |
+
+Written by: `Track/DeleteCodeSource`, `Track/InsertCodeSource`
+
+Read by: `Track/DeleteCodeSource`, `Track/ListCodeSources`
+
 ## track.drafts
 
 | Column | Type | Null | Default |
@@ -74,7 +110,7 @@ Read by: `Track/GetProjectRecipe`, `Track/GetProjectRecipeByName`, `Track/ListPr
 
 Written by: `Track/InsertProject`
 
-Read by: `Track/GetProject`, `Track/ListProjects`, `Track/NextRunNumber`, `Track/NextTrialRunNumber`, `Track/ProjectStats`, `Track/RecipeUsage`
+Read by: `Track/GetProject`, `Track/GetProjectBySlug`, `Track/ListProjects`, `Track/NextRunNumber`, `Track/NextTrialRunNumber`, `Track/ProjectStats`, `Track/RecipeUsage`
 
 ## track.revisions
 
@@ -142,10 +178,15 @@ Read by: `Track/DeleteRun`, `Track/ListRunArtifacts`
 | host_id | uuid | yes |  |
 | is_trial | boolean |  | false |
 | trial_id | uuid | yes |  |
+| origin | text |  | 'recipe' |
+| host_name | text | yes |  |
+| code | jsonb | yes |  |
+| exit_code | int | yes |  |
+| heartbeat_at | timestamptz | yes |  |
 
-Written by: `Track/DeleteRun`, `Track/InsertRun`, `Track/MarkRunTrial`, `Track/RenameRun`, `Track/SetPrimaryMetric`, `Track/SetRunRevision`, `Track/SetRunState`, `Track/SetRunTrial`
+Written by: `Track/AdoptPrimaryMetric`, `Track/DeleteRun`, `Track/ExpireCodeRuns`, `Track/FinishCodeRun`, `Track/InsertCodeRun`, `Track/InsertRemoteCodeRun`, `Track/InsertRun`, `Track/MarkDebugRunCancelled`, `Track/MarkRunTrial`, `Track/RenameRun`, `Track/SetCodeRunParams`, `Track/SetPrimaryMetric`, `Track/SetRunRevision`, `Track/SetRunState`, `Track/SetRunTrial`, `Track/TouchCodeRun`
 
-Read by: `Notify/RunInfoByJob`, `Track/DeleteRun`, `Track/GetRun`, `Track/GetRunByJob`, `Track/GetTrial`, `Track/GetTrialByRun`, `Track/LatestTrial`, `Track/ListRevisions`, `Track/ListRuns`, `Track/NextRunNumber`, `Track/NextTrialRunNumber`, `Track/ProjectStats`, `Track/RecipeUsage`, `Track/RunExtras`, `Track/RunsUsingVersion`, `Tune/ListTrials`, `Tune/SyncTrials`
+Read by: `Notify/RunInfoByJob`, `Track/DeleteRun`, `Track/GetCodeRun`, `Track/GetRun`, `Track/GetRunByJob`, `Track/GetTrial`, `Track/GetTrialByRun`, `Track/LatestTrial`, `Track/ListRevisions`, `Track/ListRuns`, `Track/NextRunNumber`, `Track/NextTrialRunNumber`, `Track/ProjectStats`, `Track/RecipeUsage`, `Track/RunExtras`, `Track/RunsUsingVersion`, `Tune/ListTrials`, `Tune/SyncTrials`
 
 ## track.trials
 

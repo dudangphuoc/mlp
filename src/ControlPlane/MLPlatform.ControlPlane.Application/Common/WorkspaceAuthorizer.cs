@@ -12,6 +12,7 @@ public sealed class WorkspaceAuthorizer(IReadSession db, ICurrentUser user)
     public async Task<Guid> RequireAsync(Guid workspaceId, string permission, CancellationToken ct)
     {
         var uid = user.RequireUser();
+        if (!KeyAllows(workspaceId)) throw new NotFoundException("IAM_WORKSPACE_NOT_FOUND", "Workspace not found");
         var role = await RoleAsync(workspaceId, uid, ct)
                    ?? throw new NotFoundException("IAM_WORKSPACE_NOT_FOUND", "Workspace not found");
         if (!Permissions.Allows(role, permission))
@@ -22,7 +23,9 @@ public sealed class WorkspaceAuthorizer(IReadSession db, ICurrentUser user)
     /// <summary>Whether the permission is held (does not throw) — used for wider view scopes such as the Admin's
     /// "All".</summary>
     public async Task<bool> HasAsync(Guid workspaceId, string permission, CancellationToken ct) =>
-        user.UserId is { } uid && await RoleAsync(workspaceId, uid, ct) is { } role && Permissions.Allows(role, permission);
+        user.UserId is { } uid && KeyAllows(workspaceId) && await RoleAsync(workspaceId, uid, ct) is { } role && Permissions.Allows(role, permission);
+
+    private bool KeyAllows(Guid workspaceId) => user.KeyWorkspaceId is not { } only || only == workspaceId;
 
     private async Task<string?> RoleAsync(Guid workspaceId, Guid userId, CancellationToken ct)
     {

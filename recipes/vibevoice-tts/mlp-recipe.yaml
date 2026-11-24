@@ -18,6 +18,7 @@ source:
   git: https://github.com/vibevoice-community/VibeVoice
   commit: 952326ddb264062466a888cf32a5b2f4e803e16e
   commitDate: "2026-08-29"
+  packages: ["tensorboard", "flash-attn (optional)"]   # also installed in the image (Dockerfile)
 license:
   code: MIT
   weights: MIT

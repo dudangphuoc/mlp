@@ -25,6 +25,7 @@
     <EmbeddedResource Include="../../../python/mlp_serve/types.py" LogicalName="serve/mlp_serve/types.py" />
     <EmbeddedResource Include="../../../python/mlp_serve/selftest.py" LogicalName="serve/mlp_serve/selftest.py" />
     <EmbeddedResource Include="../../../proto/mlplatform/v1/model_server.proto" LogicalName="serve/proto/mlplatform/v1/model_server.proto" />
+    <EmbeddedResource Include="../../../sdk/python/mlplatform/*.py" LogicalName="sdk/mlplatform/%(Filename)%(Extension)" />
     <EmbeddedResource Include="../../../deploy/agent-upgrade/upgrade.sh" LogicalName="agent-upgrade/upgrade.sh" />
     <EmbeddedResource Include="../../../deploy/agent-upgrade/upgrade.ps1" LogicalName="agent-upgrade/upgrade.ps1" />
   </ItemGroup>

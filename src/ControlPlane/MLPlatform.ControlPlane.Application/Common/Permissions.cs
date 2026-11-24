@@ -17,6 +17,7 @@ public static class Permissions
         ["dataset.write"] = ["owner", "admin", "editor"],
         ["dataset.read"] = ["owner", "admin", "editor", "reviewer", "annotator", "viewer"],
         ["job.submit"] = ["owner", "admin", "editor"],
+        ["source.manage"] = ["owner", "admin"],
         ["model.write"] = ["owner", "admin", "editor"],
         ["model.promote_production"] = ["owner", "admin"],
         ["run.read"] = ["owner", "admin", "editor", "viewer"],

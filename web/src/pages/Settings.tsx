@@ -37,10 +37,10 @@ export function SettingsPage({ ws, me, go }: { ws: string; me: Me; go: (p: strin
       <Tabs<Tab> tabs={tabs} value={tab} onChange={(t) => go(`settings?tab=${t}`)} />
       {tab === "profile" && <Profile me={me} />}
       {tab === "members" && <Members ws={ws} me={me} />}
-      {tab === "api-keys" && <ApiKeys />}
+      {tab === "api-keys" && <ApiKeys ws={ws} me={me} />}
       {tab === "mcp" && <McpConnect go={go} />}
       {tab === "workspace" && <WorkspaceTab ws={ws} me={me} />}
-      {tab === "integrations" && <Integrations ws={ws} canManage={canMembers} />}
+      {tab === "integrations" && <><CodeSources ws={ws} canManage={canMembers} /><Integrations ws={ws} canManage={canMembers} /></>}
       {tab === "notifications" && <NotificationSettingsPage ws={ws} />}
       {tab === "audit" && <Audit ws={ws} />}
       {tab === "system" && <SystemSettings />}
@@ -173,32 +173,38 @@ function InviteDialog({ ws, onClose }: { ws: string; onClose: () => void }) {
   );
 }
 
-function ApiKeys() {
+function ApiKeys({ ws, me }: { ws: string; me: Me }) {
   const qc = useQueryClient();
+  const [scope, setScope] = useState(ws);
   const keys = useQuery({ queryKey: ["api-keys"], queryFn: () => api.iam.listApiKeys({}) });
   const [name, setName] = useState("");
   const [created, setCreated] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(null);
-  const create = useMutation({ mutationFn: () => api.iam.createApiKey({ name }), onSuccess: (r) => { setCreated(r.token); setName(""); void qc.invalidateQueries({ queryKey: ["api-keys"] }); } });
+  const create = useMutation({ mutationFn: () => api.iam.createApiKey({ name, workspaceId: scope }), onSuccess: (r) => { setCreated(r.token); setName(""); void qc.invalidateQueries({ queryKey: ["api-keys"] }); } });
   const revoke = useMutation({ mutationFn: (id: string) => api.iam.revokeApiKey({ id }), onSuccess: () => { setRevoking(null); void qc.invalidateQueries({ queryKey: ["api-keys"] }); } });
   return (
     <>
       <Section title={t("Create API key")}>
         <div className="flex max-w-lg gap-2">
           <input className="input" placeholder={t("Key name, e.g. laptop-cli")} value={name} onChange={(e) => setName(e.target.value)} />
+          <select className="input w-auto shrink-0" aria-label="Workspace" value={scope} onChange={(e) => setScope(e.target.value)}>
+            {me.workspaces.map((w) => <option key={w.workspaceId} value={w.workspaceId}>{w.name}</option>)}
+            <option value="">{t("All workspaces")}</option>
+          </select>
           <button className="btn-primary shrink-0" disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>{t("Create key")}</button>
         </div>
         <ErrorBox error={create.error ? errorText(create.error) : null} />
         {created && (
           <div className="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             <div>{t("Copy the key now — it will not be shown again.")}</div>
-            <CommandBlock text={created} />
+            <CommandBlock text={`MLP_API_URL=${window.location.origin}\nMLP_API_KEY=${created}`} />
             <button className="text-xs underline" onClick={() => setCreated(null)}>{t("Saved, hide it")}</button>
           </div>)}
       </Section>
       <DataTable rows={keys.data?.keys ?? []} loading={keys.isLoading} rowKey={(k) => k.id} search={false} empty={t("No API keys yet.")}
         columns={[
           { key: "name", header: t("Name"), value: (k) => k.name, cell: (k) => <span className="font-medium">{k.name}</span> },
+          { key: "ws", header: "Workspace", value: (k) => k.workspaceName, cell: (k) => k.workspaceId ? k.workspaceName : <span className="text-fg-muted">{t("All workspaces")}</span> },
           { key: "id", header: "ID", cell: (k) => <ShortId id={k.id} /> },
           { key: "created", header: t("Created"), value: (k) => ts(k.createdAt)?.getTime(), cell: (k) => <RelTime at={k.createdAt} /> },
           { key: "used", header: t("Last used"), value: (k) => ts(k.lastUsedAt)?.getTime(), cell: (k) => <RelTime at={k.lastUsedAt} /> },
@@ -256,6 +262,38 @@ function Audit({ ws }: { ws: string }) {
 }
 
 /** S-01-10: workspace Hugging Face token (reads gated/private repos, downloads weights). The secret is never returned to the client (M01 R10). */
+function CodeSources({ ws, canManage }: { ws: string; canManage: boolean }) {
+  const qc = useQueryClient();
+  const list = useQuery({ queryKey: ["code-sources", ws], queryFn: () => api.tracking.listCodeSources({ workspaceId: ws }) });
+  const [prefix, setPrefix] = useState("");
+  const [token, setToken] = useState("");
+  const [removing, setRemoving] = useState<{ id: string; urlPrefix: string } | null>(null);
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["code-sources", ws] });
+  const add = useMutation({ mutationFn: () => api.tracking.createCodeSource({ workspaceId: ws, urlPrefix: prefix.trim(), token }), onSuccess: () => { setPrefix(""); setToken(""); refresh(); } });
+  const remove = useMutation({ mutationFn: (id: string) => api.tracking.deleteCodeSource({ workspaceId: ws, id }), onSuccess: () => { setRemoving(null); refresh(); } });
+  return (
+    <Section title={t("Code sources")}>
+      {canManage && (
+        <div className="mb-3 flex max-w-3xl flex-wrap gap-2">
+          <input className="input min-w-64 flex-1 mono" placeholder="https://github.com/org" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+          <input className="input w-56 mono" type="password" autoComplete="off" placeholder={t("Token")} value={token} onChange={(e) => setToken(e.target.value)} />
+          <button className="btn-primary shrink-0" disabled={!prefix.trim().startsWith("https://") || add.isPending} onClick={() => add.mutate()}>{t("Add source")}</button>
+        </div>)}
+      <ErrorBox error={add.error ? errorText(add.error) : remove.error ? errorText(remove.error) : null} />
+      <DataTable rows={list.data?.sources ?? []} loading={list.isLoading} rowKey={(s) => s.id} search={false} empty={t("No code sources yet.")}
+        columns={[
+          { key: "prefix", header: "URL", value: (s) => s.urlPrefix, cell: (s) => <span className="mono text-xs">{s.urlPrefix}</span> },
+          { key: "token", header: t("Token"), value: (s) => (s.hasToken ? 1 : 0), cell: (s) => (s.hasToken ? <span className="mono text-fg-subtle">••••</span> : <span className="text-fg-muted">{t("Public")}</span>) },
+          { key: "by", header: t("Created"), value: (s) => ts(s.createdAt)?.getTime(), cell: (s) => <span className="text-xs"><RelTime at={s.createdAt} /></span> },
+          { key: "a", header: "", align: "right", cell: (s) => canManage && <button className="text-xs text-danger hover:underline" onClick={() => setRemoving({ id: s.id, urlPrefix: s.urlPrefix })}>{t("Delete")}</button> },
+        ]} />
+      {removing && <ConfirmDialog title={t("Delete source {url}?", { url: removing.urlPrefix })} label={t("Delete")} busy={remove.isPending}
+        consequence={t("New runs from these repositories upload every file; runs already started are not affected.")}
+        onClose={() => setRemoving(null)} onConfirm={() => remove.mutate(removing.id)} />}
+    </Section>
+  );
+}
+
 function Integrations({ ws, canManage }: { ws: string; canManage: boolean }) {
   const qc = useQueryClient();
   const st = useQuery({ queryKey: ["hub-token", ws], queryFn: () => api.hub.getHubToken({ workspaceId: ws }) });

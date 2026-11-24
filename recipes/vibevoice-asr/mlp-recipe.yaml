@@ -17,6 +17,7 @@ source:
   git: https://github.com/microsoft/VibeVoice
   commit: 16fb2cb1217c9934a886e1948ffb06120caa2df5
   commitDate: "2026-10-08"
+  packages: ["peft", "tensorboard", "jiwer", "flash-attn (if the base image lacks it)"]   # also installed in the image (Dockerfile)
 license:
   code: MIT
   weights: MIT

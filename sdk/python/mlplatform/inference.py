@@ -1,6 +1,4 @@
-"""MLPlatform client for Python — call a deployed model from your application.
-
-One file, standard library only (Python 3.8+). Copy it into your project or install the package (`pip install .` in sdk/python).
+"""Call a model deployed on MLPlatform from your application (standard library only).
 
     from mlplatform import Client
 
@@ -20,7 +18,6 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
-__version__ = "0.1.0"
 __all__ = ["Client", "MLPlatformError"]
 
 Image = Union[str, bytes, "os.PathLike[str]"]

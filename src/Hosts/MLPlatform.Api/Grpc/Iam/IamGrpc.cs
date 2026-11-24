@@ -25,7 +25,10 @@ public sealed class IamGrpc(IMediator mediator) : IamService.IamServiceBase
     }
 
     private static ApiKey Key(ApiKeyRow k) => new()
-        { Id = k.Id.ToString(), Name = k.Name ?? "", CreatedAt = Timestamp.FromDateTimeOffset(k.CreatedAt), LastUsedAt = Timestamp.FromDateTimeOffset(k.LastSeenAt) };
+        {
+            Id = k.Id.ToString(), Name = k.Name ?? "", CreatedAt = Timestamp.FromDateTimeOffset(k.CreatedAt), LastUsedAt = Timestamp.FromDateTimeOffset(k.LastSeenAt),
+            WorkspaceId = k.WorkspaceId?.ToString() ?? "", WorkspaceName = k.WorkspaceName ?? "",
+        };
 
     public override async Task<ListApiKeysResponse> ListApiKeys(Empty r, ServerCallContext ctx)
     {
@@ -36,9 +39,11 @@ public sealed class IamGrpc(IMediator mediator) : IamService.IamServiceBase
 
     public override async Task<CreatedApiKey> CreateApiKey(CreateApiKeyRequest r, ServerCallContext ctx)
     {
-        var (id, token) = await mediator.Send(new CreateApiKeyCommand(r.Name), ctx.CancellationToken);
+        Guid? workspace = string.IsNullOrEmpty(r.WorkspaceId) ? null : Guid.TryParse(r.WorkspaceId, out var w) ? w
+            : throw new ValidationException(new Dictionary<string, string> { ["workspace_id"] = "Invalid UUID" });
+        var (id, token) = await mediator.Send(new CreateApiKeyCommand(r.Name, workspace), ctx.CancellationToken);
         var now = Timestamp.FromDateTimeOffset(TimeProvider.System.GetUtcNow());
-        return new CreatedApiKey { Token = token, Key = new ApiKey { Id = id.ToString(), Name = r.Name.Trim(), CreatedAt = now, LastUsedAt = now } };
+        return new CreatedApiKey { Token = token, Key = new ApiKey { Id = id.ToString(), Name = r.Name.Trim(), CreatedAt = now, LastUsedAt = now, WorkspaceId = r.WorkspaceId } };
     }
 
     public override async Task<Empty> RevokeApiKey(RevokeApiKeyRequest r, ServerCallContext ctx)

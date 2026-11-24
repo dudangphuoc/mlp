@@ -30,13 +30,19 @@ public sealed class LogMetricsCommandHandler(IWriteSession db, IClock clock, Tok
         }
         else await auth.RequireAsync(run.WorkspaceId, "job.submit", ct);
         if (c.Points.Count > 10_000) throw new ResourceExhaustedException("TRACK_BATCH_TOO_LARGE", "At most 10,000 points per batch");
+        var primaryKey = run.PrimaryMetricKey;
+        if (primaryKey.Length == 0 && c.Points.FirstOrDefault(p => double.IsFinite(p.Value)).Key is { Length: > 0 } first)
+        {
+            await db.AdoptPrimaryMetricAsync(run.Id, run.WorkspaceId, first, ct);
+            primaryKey = first;
+        }
         double? lastPrimary = null;
         long lastStep = long.MinValue;
         foreach (var p in c.Points)
         {
             if (!double.IsFinite(p.Value)) continue;
             await db.InsertMetricAsync(run.Id, p.Key, p.Step, p.At ?? clock.UtcNow, p.Value, ct);
-            if (p.Key == run.PrimaryMetricKey && p.Step >= lastStep) { lastPrimary = p.Value; lastStep = p.Step; }
+            if (p.Key == primaryKey && p.Step >= lastStep) { lastPrimary = p.Value; lastStep = p.Step; }
         }
         if (lastPrimary is { } v) await db.SetPrimaryMetricAsync(run.Id, v, ct);
         if (run.State == "queued") await db.SetRunStateAsync(run.Id, "running", clock.UtcNow, ct);

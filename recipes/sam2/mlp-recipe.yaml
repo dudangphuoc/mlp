@@ -17,6 +17,7 @@ source:
   git: https://github.com/facebookresearch/sam2
   commit: 2b90b9f5ceec907a1c18123530e92e794ad901a4
   commitDate: "2024-12-16"
+  packages: ["opencv-python-headless"]   # also installed in the image (Dockerfile)
 license:
   code: Apache-2.0
   weights: Apache-2.0

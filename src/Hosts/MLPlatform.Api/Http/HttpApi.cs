@@ -1,3 +1,4 @@
+using MLPlatform.Api.Http.Debug;
 using MLPlatform.Api.Http.Health;
 using MLPlatform.Api.Http.HostOps;
 using MLPlatform.Api.Http.Install;
@@ -25,5 +26,6 @@ public static class HttpApi
         app.MapInstallScripts(cfg);
         app.MapAgentBuilds();
         app.MapOpenApi();
+        app.MapDebugRelay();
     }
 }
